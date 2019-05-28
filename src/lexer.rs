@@ -12,6 +12,10 @@ pub struct Token {
 pub enum TokenType {
     TFn,
     TLabel(String),
+    TOpenParen,
+    TCloseParen,
+    TOpenCurly,
+    TCloseCurly,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -28,17 +32,11 @@ pub fn read_tokens(mut tagged_iter: TaggedIter) -> Result<Vec<Token>, TokenizerE
         let ch = tagged_iter.next();
 
         if ch.is_none() || ch.unwrap().is_whitespace() {
-            if !temp.is_empty() {
-                tokens.push(Token {
-                    token_type: if temp == "fn" {
-                        TokenType::TFn
-                    } else {
-                        TokenType::TLabel(temp.clone())
-                    },
-                    span: Span { start, end: pos },
-                });
-                temp.clear();
-            }
+            flush_temp(
+                &mut tokens,
+                std::mem::replace(&mut temp, String::new()),
+                Span { start, end: pos },
+            );
 
             if ch.is_none() {
                 break;
@@ -46,10 +44,39 @@ pub fn read_tokens(mut tagged_iter: TaggedIter) -> Result<Vec<Token>, TokenizerE
             start = tagged_iter.pos();
         } else {
             let ch = ch.unwrap();
+            if "(){}".contains(ch) {
+                flush_temp(
+                    &mut tokens,
+                    std::mem::replace(&mut temp, String::new()),
+                    Span { start, end: pos },
+                );
+                start = pos;
+            }
             temp.push(ch);
         }
     }
+
     Ok(tokens)
+}
+
+fn flush_temp(tokens: &mut Vec<Token>, temp: String, span: Span) {
+    const SYMBOLS: [(&str, TokenType); 5] = [
+        ("fn", TokenType::TFn),
+        ("(", TokenType::TOpenParen),
+        (")", TokenType::TCloseParen),
+        ("{", TokenType::TOpenCurly),
+        ("}", TokenType::TCloseCurly),
+    ];
+    if !temp.is_empty() {
+        tokens.push(Token {
+            token_type: if let Some(i) = SYMBOLS.iter().position(|(s, _)| *s == temp) {
+                SYMBOLS[i].1.clone()
+            } else {
+                TokenType::TLabel(temp)
+            },
+            span,
+        });
+    }
 }
 
 impl fmt::Display for TokenizerError {
@@ -131,6 +158,75 @@ mod tests {
                     }
                 }
             }])
+        );
+    }
+
+    #[test]
+    fn test_read_tokens_parens() {
+        assert_eq!(
+            read_tokens(TaggedIter::new("(){}".to_string(), "file".to_string())),
+            Ok(vec![
+                Token {
+                    token_type: TokenType::TOpenParen,
+                    span: Span {
+                        start: Pos {
+                            line: 0,
+                            column: 0,
+                            index: 0
+                        },
+                        end: Pos {
+                            line: 0,
+                            column: 1,
+                            index: 1
+                        }
+                    }
+                },
+                Token {
+                    token_type: TokenType::TCloseParen,
+                    span: Span {
+                        start: Pos {
+                            line: 0,
+                            column: 1,
+                            index: 1
+                        },
+                        end: Pos {
+                            line: 0,
+                            column: 2,
+                            index: 2
+                        }
+                    }
+                },
+                Token {
+                    token_type: TokenType::TOpenCurly,
+                    span: Span {
+                        start: Pos {
+                            line: 0,
+                            column: 2,
+                            index: 2
+                        },
+                        end: Pos {
+                            line: 0,
+                            column: 3,
+                            index: 3
+                        }
+                    }
+                },
+                Token {
+                    token_type: TokenType::TCloseCurly,
+                    span: Span {
+                        start: Pos {
+                            line: 0,
+                            column: 3,
+                            index: 3
+                        },
+                        end: Pos {
+                            line: 0,
+                            column: 4,
+                            index: 4
+                        }
+                    }
+                }
+            ])
         );
     }
 }
