@@ -15,13 +15,25 @@ fn parse_top_level(tokens: &[Token], index: &mut usize) -> Result<TopLevel, ()> 
 fn parse_fn(tokens: &[Token], index: &mut usize) -> Result<Function, ()> {
     expect_token(tokens, index, &TokenType::TFn)?;
     let name = expect_label(tokens, index)?;
-    expect_token(tokens, index, &TokenType::TOpenParen)?;
-    expect_token(tokens, index, &TokenType::TCloseParen)?;
-    expect_token(tokens, index, &TokenType::TOpenCurly)?;
-    expect_token(tokens, index, &TokenType::TCloseCurly)?;
+    let parameters = parse_parameters(tokens, index)?;
+    let body = parse_block(tokens, index)?;
     Ok(Function {
         name: name.to_string(),
+        parameters,
+        body,
     })
+}
+
+fn parse_parameters(tokens: &[Token], index: &mut usize) -> Result<Vec<Parameter>, ()> {
+    expect_token(tokens, index, &TokenType::TOpenParen)?;
+    expect_token(tokens, index, &TokenType::TCloseParen)?;
+    Ok(Vec::new())
+}
+
+fn parse_block(tokens: &[Token], index: &mut usize) -> Result<Vec<Statement>, ()> {
+    expect_token(tokens, index, &TokenType::TOpenCurly)?;
+    expect_token(tokens, index, &TokenType::TCloseCurly)?;
+    Ok(Vec::new())
 }
 
 fn expect_label<'a>(tokens: &'a [Token], index: &mut usize) -> Result<&'a str, ()> {
@@ -131,7 +143,7 @@ mod tests {
         .into_iter()
         .map(make_token)
         .collect::<Vec<_>>();
-        for i in 0..tokens.len() {
+        for i in 0..tokens.len() - 1 {
             dbg!(i);
             let mut index = 0;
             assert!(parse_fn(&tokens[0..i], &mut index).is_err());
