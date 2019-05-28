@@ -19,13 +19,10 @@ pub enum TokenizerError {}
 pub fn read_tokens(mut tagged_iter: TaggedIter) -> Result<Vec<Token>, TokenizerError> {
     let mut tokens = Vec::new();
     while !tagged_iter.eof() {
-        if tagged_iter.looking_at("fn") {
-            let start = tagged_iter.pos();
-            tagged_iter.nth("fn".len());
-            let end = tagged_iter.pos();
+        if let Some(span) = tagged_iter.advance_over("fn") {
             tokens.push(Token {
                 token_type: TokenType::TFn,
-                span: Span { start, end },
+                span,
             });
         } else {
             tagged_iter.next().unwrap();
@@ -65,7 +62,7 @@ mod tests {
     #[test]
     fn test_read_tokens_fn_token() {
         assert_eq!(
-            read_tokens(TaggedIter::new("fn".to_string(), "file".to_string())),
+            read_tokens(TaggedIter::new("fn ".to_string(), "file".to_string())),
             Ok(vec![Token {
                 token_type: TokenType::TFn,
                 span: Span {
