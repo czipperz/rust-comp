@@ -152,13 +152,6 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_fn_eof() {
-        let mut index = 0;
-        assert!(parse_fn(&[make_token(TFn)], &mut index).is_err());
-        assert_eq!(index, 1);
-    }
-
-    #[test]
     fn test_parse_fn_matching() {
         let mut index = 0;
         let f = parse_fn(
@@ -178,5 +171,7 @@ mod tests {
         .unwrap();
         assert_eq!(index, 6);
         assert_eq!(f.name, "f");
+        assert_eq!(f.parameters.len(), 0);
+        assert_eq!(f.body.len(), 0);
     }
 }
