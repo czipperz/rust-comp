@@ -4,8 +4,8 @@ use std::fmt;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Token {
-    token_type: TokenType,
-    span: Span,
+    pub token_type: TokenType,
+    pub span: Span,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -93,18 +93,12 @@ mod tests {
 
     #[test]
     fn test_read_tokens_empty_file() {
-        assert_eq!(
-            read_tokens(TaggedIter::new("".to_string())),
-            Ok(vec![])
-        );
+        assert_eq!(read_tokens(TaggedIter::new("".to_string())), Ok(vec![]));
     }
 
     #[test]
     fn test_read_tokens_whitespace_file() {
-        assert_eq!(
-            read_tokens(TaggedIter::new("  ".to_string())),
-            Ok(vec![])
-        );
+        assert_eq!(read_tokens(TaggedIter::new("  ".to_string())), Ok(vec![]));
     }
 
     #[test]

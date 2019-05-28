@@ -1,9 +1,11 @@
+mod ast;
 mod lex;
+mod parse;
 mod pos;
 mod tagged_iter;
 
-use std::io;
 use std::fs::File;
+use std::io;
 fn read_file(name: &str) -> io::Result<String> {
     use io::Read;
     let mut contents = String::new();
