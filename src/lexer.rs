@@ -94,7 +94,7 @@ mod tests {
     #[test]
     fn test_read_tokens_empty_file() {
         assert_eq!(
-            read_tokens(TaggedIter::new("".to_string(), "file".to_string())),
+            read_tokens(TaggedIter::new("".to_string())),
             Ok(vec![])
         );
     }
@@ -102,7 +102,7 @@ mod tests {
     #[test]
     fn test_read_tokens_whitespace_file() {
         assert_eq!(
-            read_tokens(TaggedIter::new("  ".to_string(), "file".to_string())),
+            read_tokens(TaggedIter::new("  ".to_string())),
             Ok(vec![])
         );
     }
@@ -110,7 +110,7 @@ mod tests {
     #[test]
     fn test_read_tokens_fn_eof() {
         assert_eq!(
-            read_tokens(TaggedIter::new("fn".to_string(), "file".to_string())),
+            read_tokens(TaggedIter::new("fn".to_string())),
             Ok(vec![Token {
                 token_type: TokenType::TFn,
                 span: Span {
@@ -128,7 +128,7 @@ mod tests {
     #[test]
     fn test_read_tokens_fn_space() {
         assert_eq!(
-            read_tokens(TaggedIter::new("fn ".to_string(), "file".to_string())),
+            read_tokens(TaggedIter::new("fn ".to_string())),
             Ok(vec![Token {
                 token_type: TokenType::TFn,
                 span: Span {
@@ -146,7 +146,7 @@ mod tests {
     #[test]
     fn test_read_tokens_fnx() {
         assert_eq!(
-            read_tokens(TaggedIter::new("fnx".to_string(), "file".to_string())),
+            read_tokens(TaggedIter::new("fnx".to_string())),
             Ok(vec![Token {
                 token_type: TokenType::TLabel("fnx".to_string()),
                 span: Span {
@@ -164,7 +164,7 @@ mod tests {
     #[test]
     fn test_read_tokens_parens() {
         assert_eq!(
-            read_tokens(TaggedIter::new("(){}".to_string(), "file".to_string())),
+            read_tokens(TaggedIter::new("(){}".to_string())),
             Ok(vec![
                 Token {
                     token_type: TokenType::TOpenParen,
