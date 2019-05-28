@@ -26,19 +26,6 @@ impl TaggedIter {
     pub fn eof(&self) -> bool {
         self.pos.index == self.contents.len()
     }
-
-    pub fn advance_over(&mut self, s: &str) -> Option<Span> {
-        if self.contents[self.pos.index..].starts_with(s) {
-            let start = self.pos;
-            for _ in s.chars() {
-                self.next();
-            }
-            let end = self.pos;
-            Some(Span { start, end })
-        } else {
-            None
-        }
-    }
 }
 
 impl Iterator for TaggedIter {
@@ -124,24 +111,5 @@ mod tests {
         assert!(!x.eof());
         x.next();
         assert!(x.eof());
-    }
-
-    #[test]
-    fn test_advance_over() {
-        let mut x = TaggedIter::new("abc".to_string(), "file".to_string());
-        let end = Pos {
-            line: 0,
-            column: 2,
-            index: 2,
-        };
-        assert_eq!(
-            x.advance_over("ab"),
-            Some(Span {
-                start: Pos::start(),
-                end,
-            })
-        );
-        assert_eq!(x.advance_over("ab"), None);
-        assert_eq!(x.pos(), end);
     }
 }
