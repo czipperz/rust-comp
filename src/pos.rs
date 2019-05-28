@@ -1,6 +1,12 @@
 use std::ops::{Deref, DerefMut};
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
+pub struct Span {
+    pub start: Pos,
+    pub end: Pos,
+}
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub struct FilePos<'a> {
     pub file_name: &'a str,
     pub pos: Pos,

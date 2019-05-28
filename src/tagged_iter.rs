@@ -15,11 +15,20 @@ impl TaggedIter {
         }
     }
 
-    pub fn pos(&self) -> FilePos {
-        FilePos {
-            file_name: &self.file_name,
-            pos: self.pos,
-        }
+    pub fn file_name(&self) -> &str {
+        &self.file_name
+    }
+
+    pub fn pos(&self) -> Pos {
+        self.pos
+    }
+
+    pub fn eof(&self) -> bool {
+        self.pos.index == self.contents.len()
+    }
+
+    pub fn looking_at(&self, s: &str) -> bool {
+        self.contents[self.pos.index..].starts_with(s)
     }
 }
 
@@ -89,10 +98,29 @@ mod tests {
     }
 
     #[test]
+    fn test_file_name() {
+        let x = TaggedIter::new("a\nb".to_string(), "file".to_string());
+        assert_eq!(x.file_name(), "file");
+    }
+
+    #[test]
     fn test_pos() {
         let x = TaggedIter::new("a\nb".to_string(), "file".to_string());
-        let p = x.pos();
-        assert_eq!(p.file_name, "file");
-        assert_eq!(p.pos, x.pos);
+        assert_eq!(x.pos(), x.pos);
+    }
+
+    #[test]
+    fn test_eof() {
+        let mut x = TaggedIter::new("a".to_string(), "file".to_string());
+        assert!(!x.eof());
+        x.next();
+        assert!(x.eof());
+    }
+
+    #[test]
+    fn test_looking_at() {
+        let x = TaggedIter::new("abc".to_string(), "file".to_string());
+        assert!(x.looking_at("ab"));
+        assert!(!x.looking_at("bc"));
     }
 }

@@ -1,3 +1,4 @@
+mod lexer;
 mod pos;
 mod tagged_iter;
 
