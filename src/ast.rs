@@ -14,4 +14,6 @@ pub struct Function {
 pub struct Parameter {}
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Statement {}
+pub enum Statement {
+    Empty,
+}

@@ -16,6 +16,7 @@ pub enum TokenType {
     CloseParen,
     OpenCurly,
     CloseCurly,
+    Semicolon,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -40,7 +41,7 @@ pub fn read_tokens(mut tagged_iter: TaggedIter) -> Result<Vec<Token>, TokenizerE
             start = tagged_iter.pos();
         } else {
             let ch = ch.unwrap();
-            if "(){}".contains(ch) {
+            if "(){};".contains(ch) {
                 flush_temp(&mut tokens, &mut temp, Span { start, end: pos });
                 start = pos;
             }
@@ -52,12 +53,13 @@ pub fn read_tokens(mut tagged_iter: TaggedIter) -> Result<Vec<Token>, TokenizerE
 }
 
 fn flush_temp(tokens: &mut Vec<Token>, temp: &mut String, span: Span) {
-    const SYMBOLS: [(&str, TokenType); 5] = [
+    const SYMBOLS: [(&str, TokenType); 6] = [
         ("fn", TokenType::Fn),
         ("(", TokenType::OpenParen),
         (")", TokenType::CloseParen),
         ("{", TokenType::OpenCurly),
         ("}", TokenType::CloseCurly),
+        (";", TokenType::Semicolon),
     ];
     if !temp.is_empty() {
         tokens.push(Token {
@@ -149,9 +151,9 @@ mod tests {
     }
 
     #[test]
-    fn test_read_tokens_parens() {
+    fn test_read_tokens_symbols() {
         assert_eq!(
-            read_tokens(TaggedIter::new("(){}".to_string())),
+            read_tokens(TaggedIter::new("(){};".to_string())),
             Ok(vec![
                 Token {
                     token_type: TokenType::OpenParen,
@@ -212,7 +214,22 @@ mod tests {
                             index: 4
                         }
                     }
-                }
+                },
+                Token {
+                    token_type: TokenType::Semicolon,
+                    span: Span {
+                        start: Pos {
+                            line: 0,
+                            column: 4,
+                            index: 4
+                        },
+                        end: Pos {
+                            line: 0,
+                            column: 5,
+                            index: 5
+                        }
+                    }
+                },
             ])
         );
     }
