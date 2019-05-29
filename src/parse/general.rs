@@ -1,27 +1,31 @@
+use super::Error;
 use crate::lex::*;
 
-pub fn expect_label<'a>(tokens: &'a [Token], index: &mut usize) -> Result<&'a str, ()> {
+pub fn expect_label<'a>(tokens: &'a [Token], index: &mut usize) -> Result<&'a str, Error> {
     if *index >= tokens.len() {
-        Err(())
+        Err(Error::EOF)
     } else {
         match tokens[*index].token_type {
             TokenType::Label(ref label) => {
                 *index += 1;
                 Ok(&label)
             }
-            _ => Err(()),
+            _ => Err(Error::ExpectedToken(
+                TokenType::Label("".to_string()),
+                tokens[*index].span.start,
+            )),
         }
     }
 }
 
-pub fn expect_token(tokens: &[Token], index: &mut usize, expected: &TokenType) -> Result<(), ()> {
+pub fn expect_token(tokens: &[Token], index: &mut usize, expected: TokenType) -> Result<(), Error> {
     if *index >= tokens.len() {
-        Err(())
-    } else if tokens[*index].token_type == *expected {
+        Err(Error::EOF)
+    } else if tokens[*index].token_type == expected {
         *index += 1;
         Ok(())
     } else {
-        Err(())
+        Err(Error::ExpectedToken(expected, tokens[*index].span.start))
     }
 }
 
@@ -88,14 +92,14 @@ mod tests {
     #[test]
     fn test_expect_token_out_of_bounds() {
         let mut index = 0;
-        assert!(expect_token(&[], &mut index, &TokenType::Fn).is_err());
+        assert!(expect_token(&[], &mut index, TokenType::Fn).is_err());
         assert_eq!(index, 0);
     }
 
     #[test]
     fn test_expect_token_matches() {
         let mut index = 0;
-        assert!(expect_token(&[make_token(TokenType::Fn)], &mut index, &TokenType::Fn).is_ok());
+        assert!(expect_token(&[make_token(TokenType::Fn)], &mut index, TokenType::Fn).is_ok());
         assert_eq!(index, 1);
     }
 
@@ -105,7 +109,7 @@ mod tests {
         assert!(expect_token(
             &[make_token(TokenType::Fn)],
             &mut index,
-            &TokenType::OpenParen
+            TokenType::OpenParen
         )
         .is_err());
         assert_eq!(index, 0);

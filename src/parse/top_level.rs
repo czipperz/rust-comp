@@ -1,18 +1,19 @@
+use super::body::expect_block;
+use super::general::*;
+use super::Error;
 use crate::ast::*;
 use crate::lex::{Token, TokenType};
-use super::general::*;
-use super::body::expect_block;
 
-pub fn parse(tokens: &[Token]) -> Result<Vec<TopLevel>, ()> {
+pub fn parse(tokens: &[Token]) -> Result<Vec<TopLevel>, Error> {
     many(expect_top_level, tokens, &mut 0)
 }
 
-fn expect_top_level(tokens: &[Token], index: &mut usize) -> Result<TopLevel, ()> {
+fn expect_top_level(tokens: &[Token], index: &mut usize) -> Result<TopLevel, Error> {
     expect_fn(tokens, index).map(TopLevel::Function)
 }
 
-fn expect_fn(tokens: &[Token], index: &mut usize) -> Result<Function, ()> {
-    expect_token(tokens, index, &TokenType::Fn)?;
+fn expect_fn(tokens: &[Token], index: &mut usize) -> Result<Function, Error> {
+    expect_token(tokens, index, TokenType::Fn)?;
     let name = expect_label(tokens, index)?;
     let parameters = expect_parameters(tokens, index)?;
     let body = expect_block(tokens, index)?;
@@ -23,9 +24,9 @@ fn expect_fn(tokens: &[Token], index: &mut usize) -> Result<Function, ()> {
     })
 }
 
-fn expect_parameters(tokens: &[Token], index: &mut usize) -> Result<Vec<Parameter>, ()> {
-    expect_token(tokens, index, &TokenType::OpenParen)?;
-    expect_token(tokens, index, &TokenType::CloseParen)?;
+fn expect_parameters(tokens: &[Token], index: &mut usize) -> Result<Vec<Parameter>, Error> {
+    expect_token(tokens, index, TokenType::OpenParen)?;
+    expect_token(tokens, index, TokenType::CloseParen)?;
     Ok(Vec::new())
 }
 

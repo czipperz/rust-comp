@@ -1,19 +1,20 @@
 use super::general::*;
+use super::Error;
 use crate::ast::*;
 use crate::lex::*;
 
-pub fn expect_block(tokens: &[Token], index: &mut usize) -> Result<Vec<Statement>, ()> {
-    expect_token(tokens, index, &TokenType::OpenCurly)?;
+pub fn expect_block(tokens: &[Token], index: &mut usize) -> Result<Vec<Statement>, Error> {
+    expect_token(tokens, index, TokenType::OpenCurly)?;
     let statements = many(expect_statement, tokens, index)?;
-    expect_token(tokens, index, &TokenType::CloseCurly)?;
+    expect_token(tokens, index, TokenType::CloseCurly)?;
     Ok(statements)
 }
 
-fn expect_statement(tokens: &[Token], index: &mut usize) -> Result<Statement, ()> {
-    if expect_token(tokens, index, &TokenType::Semicolon).is_ok() {
+fn expect_statement(tokens: &[Token], index: &mut usize) -> Result<Statement, Error> {
+    if expect_token(tokens, index, TokenType::Semicolon).is_ok() {
         Ok(Statement::Empty)
     } else {
-        Err(())
+        Err(Error::EOF)
     }
 }
 
