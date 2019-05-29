@@ -1,23 +1,23 @@
 use crate::ast::*;
 use crate::lex::{Token, TokenType};
 use super::general::*;
-use super::body::parse_block;
+use super::body::expect_block;
 
 pub fn parse(tokens: &[Token]) -> Result<(), ()> {
     let mut index = 0;
-    parse_top_level(tokens, &mut index)?;
+    expect_top_level(tokens, &mut index)?;
     Ok(())
 }
 
-fn parse_top_level(tokens: &[Token], index: &mut usize) -> Result<TopLevel, ()> {
-    parse_fn(tokens, index).map(TopLevel::Function)
+fn expect_top_level(tokens: &[Token], index: &mut usize) -> Result<TopLevel, ()> {
+    expect_fn(tokens, index).map(TopLevel::Function)
 }
 
-fn parse_fn(tokens: &[Token], index: &mut usize) -> Result<Function, ()> {
+fn expect_fn(tokens: &[Token], index: &mut usize) -> Result<Function, ()> {
     expect_token(tokens, index, &TokenType::Fn)?;
     let name = expect_label(tokens, index)?;
-    let parameters = parse_parameters(tokens, index)?;
-    let body = parse_block(tokens, index)?;
+    let parameters = expect_parameters(tokens, index)?;
+    let body = expect_block(tokens, index)?;
     Ok(Function {
         name: name.to_string(),
         parameters,
@@ -25,7 +25,7 @@ fn parse_fn(tokens: &[Token], index: &mut usize) -> Result<Function, ()> {
     })
 }
 
-fn parse_parameters(tokens: &[Token], index: &mut usize) -> Result<Vec<Parameter>, ()> {
+fn expect_parameters(tokens: &[Token], index: &mut usize) -> Result<Vec<Parameter>, ()> {
     expect_token(tokens, index, &TokenType::OpenParen)?;
     expect_token(tokens, index, &TokenType::CloseParen)?;
     Ok(Vec::new())
@@ -37,7 +37,7 @@ mod tests {
     use TokenType::*;
 
     #[test]
-    fn test_parse_fn_invalid() {
+    fn test_expect_fn_invalid() {
         let tokens = &vec![
             Fn,
             Label("f".to_string()),
@@ -52,15 +52,15 @@ mod tests {
         for i in 0..tokens.len() - 1 {
             dbg!(i);
             let mut index = 0;
-            assert!(parse_fn(&tokens[0..i], &mut index).is_err());
+            assert!(expect_fn(&tokens[0..i], &mut index).is_err());
             assert_eq!(index, i);
         }
     }
 
     #[test]
-    fn test_parse_fn_matching() {
+    fn test_expect_fn_matching() {
         let mut index = 0;
-        let f = parse_fn(
+        let f = expect_fn(
             &vec![
                 Fn,
                 Label("f".to_string()),
