@@ -25,6 +25,22 @@ pub fn expect_token(tokens: &[Token], index: &mut usize, expected: &TokenType) -
     }
 }
 
+pub fn many<T, E>(
+    mut f: impl FnMut(&[Token], &mut usize) -> Result<T, E>,
+    tokens: &[Token],
+    index: &mut usize,
+) -> Result<Vec<T>, E> {
+    let mut xs = Vec::new();
+    loop {
+        let old_index = *index;
+        match f(tokens, index) {
+            Ok(x) => xs.push(x),
+            Err(_) if old_index == *index => return Ok(xs),
+            Err(e) => Err(e)?,
+        }
+    }
+}
+
 #[cfg(test)]
 pub fn make_token(token_type: TokenType) -> Token {
     use crate::pos::*;
@@ -93,5 +109,65 @@ mod tests {
         )
         .is_err());
         assert_eq!(index, 0);
+    }
+
+    #[test]
+    fn test_many_ok_no_move_then_err_no_move() {
+        let mut first = true;
+        assert_eq!(
+            many(
+                |_, _| if first {
+                    first = false;
+                    Ok(())
+                } else {
+                    Err(())
+                },
+                &[],
+                &mut 0
+            ),
+            Ok(vec![()])
+        );
+    }
+
+    #[test]
+    fn test_many_ok_move_then_err_move() {
+        let mut first = true;
+        assert_eq!(
+            many(
+                |_, index| {
+                    *index += 1;
+                    if first {
+                        first = false;
+                        Ok(())
+                    } else {
+                        Err(())
+                    }
+                },
+                &[],
+                &mut 0
+            ),
+            Err(())
+        );
+    }
+
+    #[test]
+    fn test_many_ok_move_then_err_no_move() {
+        let mut first = true;
+        assert_eq!(
+            many(
+                |_, index| {
+                    if first {
+                        first = false;
+                        *index += 1;
+                        Ok(())
+                    } else {
+                        Err(())
+                    }
+                },
+                &[],
+                &mut 0
+            ),
+            Ok(vec![()])
+        );
     }
 }

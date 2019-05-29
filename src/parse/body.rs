@@ -3,14 +3,8 @@ use crate::ast::*;
 use crate::lex::*;
 
 pub fn expect_block(tokens: &[Token], index: &mut usize) -> Result<Vec<Statement>, ()> {
-    let mut statements = Vec::new();
     expect_token(tokens, index, &TokenType::OpenCurly)?;
-    loop {
-        match expect_statement(tokens, index) {
-            Ok(statement) => statements.push(statement),
-            Err(_) => break,
-        }
-    }
+    let statements = many(expect_statement, tokens, index)?;
     expect_token(tokens, index, &TokenType::CloseCurly)?;
     Ok(statements)
 }

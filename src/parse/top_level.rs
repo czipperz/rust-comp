@@ -4,15 +4,7 @@ use super::general::*;
 use super::body::expect_block;
 
 pub fn parse(tokens: &[Token]) -> Result<Vec<TopLevel>, ()> {
-    let mut top_levels = Vec::new();
-    let mut index = 0;
-    loop {
-        match expect_top_level(tokens, &mut index) {
-            Ok(top_level) => top_levels.push(top_level),
-            Err(_) => break,
-        }
-    }
-    Ok(top_levels)
+    many(expect_top_level, tokens, &mut 0)
 }
 
 fn expect_top_level(tokens: &[Token], index: &mut usize) -> Result<TopLevel, ()> {
