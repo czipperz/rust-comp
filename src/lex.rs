@@ -10,12 +10,12 @@ pub struct Token {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum TokenType {
-    TFn,
-    TLabel(String),
-    TOpenParen,
-    TCloseParen,
-    TOpenCurly,
-    TCloseCurly,
+    Fn,
+    Label(String),
+    OpenParen,
+    CloseParen,
+    OpenCurly,
+    CloseCurly,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -53,18 +53,18 @@ pub fn read_tokens(mut tagged_iter: TaggedIter) -> Result<Vec<Token>, TokenizerE
 
 fn flush_temp(tokens: &mut Vec<Token>, temp: &mut String, span: Span) {
     const SYMBOLS: [(&str, TokenType); 5] = [
-        ("fn", TokenType::TFn),
-        ("(", TokenType::TOpenParen),
-        (")", TokenType::TCloseParen),
-        ("{", TokenType::TOpenCurly),
-        ("}", TokenType::TCloseCurly),
+        ("fn", TokenType::Fn),
+        ("(", TokenType::OpenParen),
+        (")", TokenType::CloseParen),
+        ("{", TokenType::OpenCurly),
+        ("}", TokenType::CloseCurly),
     ];
     if !temp.is_empty() {
         tokens.push(Token {
             token_type: if let Some(i) = SYMBOLS.iter().position(|(s, _)| *s == temp) {
                 SYMBOLS[i].1.clone()
             } else {
-                TokenType::TLabel(temp.clone())
+                TokenType::Label(temp.clone())
             },
             span,
         });
@@ -99,7 +99,7 @@ mod tests {
         assert_eq!(
             read_tokens(TaggedIter::new("fn".to_string())),
             Ok(vec![Token {
-                token_type: TokenType::TFn,
+                token_type: TokenType::Fn,
                 span: Span {
                     start: Pos::start(),
                     end: Pos {
@@ -117,7 +117,7 @@ mod tests {
         assert_eq!(
             read_tokens(TaggedIter::new("fn ".to_string())),
             Ok(vec![Token {
-                token_type: TokenType::TFn,
+                token_type: TokenType::Fn,
                 span: Span {
                     start: Pos::start(),
                     end: Pos {
@@ -135,7 +135,7 @@ mod tests {
         assert_eq!(
             read_tokens(TaggedIter::new("fnx".to_string())),
             Ok(vec![Token {
-                token_type: TokenType::TLabel("fnx".to_string()),
+                token_type: TokenType::Label("fnx".to_string()),
                 span: Span {
                     start: Pos::start(),
                     end: Pos {
@@ -154,7 +154,7 @@ mod tests {
             read_tokens(TaggedIter::new("(){}".to_string())),
             Ok(vec![
                 Token {
-                    token_type: TokenType::TOpenParen,
+                    token_type: TokenType::OpenParen,
                     span: Span {
                         start: Pos {
                             line: 0,
@@ -169,7 +169,7 @@ mod tests {
                     }
                 },
                 Token {
-                    token_type: TokenType::TCloseParen,
+                    token_type: TokenType::CloseParen,
                     span: Span {
                         start: Pos {
                             line: 0,
@@ -184,7 +184,7 @@ mod tests {
                     }
                 },
                 Token {
-                    token_type: TokenType::TOpenCurly,
+                    token_type: TokenType::OpenCurly,
                     span: Span {
                         start: Pos {
                             line: 0,
@@ -199,7 +199,7 @@ mod tests {
                     }
                 },
                 Token {
-                    token_type: TokenType::TCloseCurly,
+                    token_type: TokenType::CloseCurly,
                     span: Span {
                         start: Pos {
                             line: 0,

@@ -14,7 +14,7 @@ fn parse_top_level(tokens: &[Token], index: &mut usize) -> Result<TopLevel, ()> 
 }
 
 fn parse_fn(tokens: &[Token], index: &mut usize) -> Result<Function, ()> {
-    expect_token(tokens, index, &TokenType::TFn)?;
+    expect_token(tokens, index, &TokenType::Fn)?;
     let name = expect_label(tokens, index)?;
     let parameters = parse_parameters(tokens, index)?;
     let body = parse_block(tokens, index)?;
@@ -26,8 +26,8 @@ fn parse_fn(tokens: &[Token], index: &mut usize) -> Result<Function, ()> {
 }
 
 fn parse_parameters(tokens: &[Token], index: &mut usize) -> Result<Vec<Parameter>, ()> {
-    expect_token(tokens, index, &TokenType::TOpenParen)?;
-    expect_token(tokens, index, &TokenType::TCloseParen)?;
+    expect_token(tokens, index, &TokenType::OpenParen)?;
+    expect_token(tokens, index, &TokenType::CloseParen)?;
     Ok(Vec::new())
 }
 
@@ -39,12 +39,12 @@ mod tests {
     #[test]
     fn test_parse_fn_invalid() {
         let tokens = &vec![
-            TFn,
-            TLabel("f".to_string()),
-            TOpenParen,
-            TCloseParen,
-            TOpenCurly,
-            TCloseCurly,
+            Fn,
+            Label("f".to_string()),
+            OpenParen,
+            CloseParen,
+            OpenCurly,
+            CloseCurly,
         ]
         .into_iter()
         .map(make_token)
@@ -62,12 +62,12 @@ mod tests {
         let mut index = 0;
         let f = parse_fn(
             &vec![
-                TFn,
-                TLabel("f".to_string()),
-                TOpenParen,
-                TCloseParen,
-                TOpenCurly,
-                TCloseCurly,
+                Fn,
+                Label("f".to_string()),
+                OpenParen,
+                CloseParen,
+                OpenCurly,
+                CloseCurly,
             ]
             .into_iter()
             .map(make_token)

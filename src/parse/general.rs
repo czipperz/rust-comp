@@ -5,7 +5,7 @@ pub fn expect_label<'a>(tokens: &'a [Token], index: &mut usize) -> Result<&'a st
         Err(())
     } else {
         match tokens[*index].token_type {
-            TokenType::TLabel(ref label) => {
+            TokenType::Label(ref label) => {
                 *index += 1;
                 Ok(&label)
             }
@@ -53,7 +53,7 @@ mod tests {
         let mut index = 0;
         assert_eq!(
             expect_label(
-                &[make_token(TokenType::TLabel("abc".to_string()))],
+                &[make_token(TokenType::Label("abc".to_string()))],
                 &mut index
             )
             .unwrap(),
@@ -65,21 +65,21 @@ mod tests {
     #[test]
     fn test_expect_label_no_match() {
         let mut index = 0;
-        assert!(expect_label(&[make_token(TokenType::TFn)], &mut index).is_err());
+        assert!(expect_label(&[make_token(TokenType::Fn)], &mut index).is_err());
         assert_eq!(index, 0);
     }
 
     #[test]
     fn test_expect_token_out_of_bounds() {
         let mut index = 0;
-        assert!(expect_token(&[], &mut index, &TokenType::TFn).is_err());
+        assert!(expect_token(&[], &mut index, &TokenType::Fn).is_err());
         assert_eq!(index, 0);
     }
 
     #[test]
     fn test_expect_token_matches() {
         let mut index = 0;
-        assert!(expect_token(&[make_token(TokenType::TFn)], &mut index, &TokenType::TFn).is_ok());
+        assert!(expect_token(&[make_token(TokenType::Fn)], &mut index, &TokenType::Fn).is_ok());
         assert_eq!(index, 1);
     }
 
@@ -87,9 +87,9 @@ mod tests {
     fn test_expect_token_no_match() {
         let mut index = 0;
         assert!(expect_token(
-            &[make_token(TokenType::TFn)],
+            &[make_token(TokenType::Fn)],
             &mut index,
-            &TokenType::TOpenParen
+            &TokenType::OpenParen
         )
         .is_err());
         assert_eq!(index, 0);
