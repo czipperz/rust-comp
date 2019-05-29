@@ -32,11 +32,7 @@ pub fn read_tokens(mut tagged_iter: TaggedIter) -> Result<Vec<Token>, TokenizerE
         let ch = tagged_iter.next();
 
         if ch.is_none() || ch.unwrap().is_whitespace() {
-            flush_temp(
-                &mut tokens,
-                std::mem::replace(&mut temp, String::new()),
-                Span { start, end: pos },
-            );
+            flush_temp(&mut tokens, &mut temp, Span { start, end: pos });
 
             if ch.is_none() {
                 break;
@@ -45,11 +41,7 @@ pub fn read_tokens(mut tagged_iter: TaggedIter) -> Result<Vec<Token>, TokenizerE
         } else {
             let ch = ch.unwrap();
             if "(){}".contains(ch) {
-                flush_temp(
-                    &mut tokens,
-                    std::mem::replace(&mut temp, String::new()),
-                    Span { start, end: pos },
-                );
+                flush_temp(&mut tokens, &mut temp, Span { start, end: pos });
                 start = pos;
             }
             temp.push(ch);
@@ -59,7 +51,7 @@ pub fn read_tokens(mut tagged_iter: TaggedIter) -> Result<Vec<Token>, TokenizerE
     Ok(tokens)
 }
 
-fn flush_temp(tokens: &mut Vec<Token>, temp: String, span: Span) {
+fn flush_temp(tokens: &mut Vec<Token>, temp: &mut String, span: Span) {
     const SYMBOLS: [(&str, TokenType); 5] = [
         ("fn", TokenType::TFn),
         ("(", TokenType::TOpenParen),
@@ -72,10 +64,11 @@ fn flush_temp(tokens: &mut Vec<Token>, temp: String, span: Span) {
             token_type: if let Some(i) = SYMBOLS.iter().position(|(s, _)| *s == temp) {
                 SYMBOLS[i].1.clone()
             } else {
-                TokenType::TLabel(temp)
+                TokenType::TLabel(temp.clone())
             },
             span,
         });
+        temp.clear();
     }
 }
 
