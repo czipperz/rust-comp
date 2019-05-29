@@ -1,22 +1,22 @@
 use super::body::expect_block;
-use super::general::*;
+use super::parser::*;
 use super::Error;
 use crate::ast::*;
 use crate::lex::{Token, TokenType};
 
 pub fn parse(tokens: &[Token]) -> Result<Vec<TopLevel>, Error> {
-    many(expect_top_level, tokens, &mut 0)
+    Parser::new(tokens).many(expect_top_level)
 }
 
-fn expect_top_level(tokens: &[Token], index: &mut usize) -> Result<TopLevel, Error> {
-    expect_fn(tokens, index).map(TopLevel::Function)
+fn expect_top_level(parser: &mut Parser) -> Result<TopLevel, Error> {
+    expect_fn(parser).map(TopLevel::Function)
 }
 
-fn expect_fn(tokens: &[Token], index: &mut usize) -> Result<Function, Error> {
-    expect_token(tokens, index, TokenType::Fn)?;
-    let name = expect_label(tokens, index)?;
-    let parameters = expect_parameters(tokens, index)?;
-    let body = expect_block(tokens, index)?;
+fn expect_fn(parser: &mut Parser) -> Result<Function, Error> {
+    parser.expect_token(TokenType::Fn)?;
+    let name = parser.expect_label()?;
+    let parameters = expect_parameters(parser)?;
+    let body = expect_block(parser)?;
     Ok(Function {
         name: name.to_string(),
         parameters,
@@ -24,9 +24,9 @@ fn expect_fn(tokens: &[Token], index: &mut usize) -> Result<Function, Error> {
     })
 }
 
-fn expect_parameters(tokens: &[Token], index: &mut usize) -> Result<Vec<Parameter>, Error> {
-    expect_token(tokens, index, TokenType::OpenParen)?;
-    expect_token(tokens, index, TokenType::CloseParen)?;
+fn expect_parameters(parser: &mut Parser) -> Result<Vec<Parameter>, Error> {
+    parser.expect_token(TokenType::OpenParen)?;
+    parser.expect_token(TokenType::CloseParen)?;
     Ok(Vec::new())
 }
 
@@ -37,44 +37,35 @@ mod tests {
 
     #[test]
     fn test_expect_fn_invalid() {
-        let tokens = &vec![
+        let tokens = make_tokens(vec![
             Fn,
             Label("f".to_string()),
             OpenParen,
             CloseParen,
             OpenCurly,
             CloseCurly,
-        ]
-        .into_iter()
-        .map(make_token)
-        .collect::<Vec<_>>();
+        ]);
         for i in 0..tokens.len() - 1 {
             dbg!(i);
-            let mut index = 0;
-            assert!(expect_fn(&tokens[0..i], &mut index).is_err());
-            assert_eq!(index, i);
+            let mut parser = Parser::new(&tokens[0..i]);
+            assert!(expect_fn(&mut parser).is_err());
+            assert_eq!(parser.index, i);
         }
     }
 
     #[test]
     fn test_expect_fn_matching() {
-        let mut index = 0;
-        let f = expect_fn(
-            &vec![
-                Fn,
-                Label("f".to_string()),
-                OpenParen,
-                CloseParen,
-                OpenCurly,
-                CloseCurly,
-            ]
-            .into_iter()
-            .map(make_token)
-            .collect::<Vec<_>>(),
-            &mut index,
-        )
-        .unwrap();
-        assert_eq!(index, 6);
+        let tokens = make_tokens(vec![
+            Fn,
+            Label("f".to_string()),
+            OpenParen,
+            CloseParen,
+            OpenCurly,
+            CloseCurly,
+        ]);
+        let mut parser = Parser::new(&tokens);
+        let f = expect_fn(&mut parser).unwrap();
+        assert_eq!(parser.index, 6);
         assert_eq!(f.name, "f");
         assert_eq!(f.parameters.len(), 0);
         assert_eq!(f.body.len(), 0);
