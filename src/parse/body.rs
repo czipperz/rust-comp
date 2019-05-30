@@ -4,14 +4,14 @@ use crate::ast::*;
 use crate::lex::*;
 
 pub fn expect_block(parser: &mut Parser) -> Result<Vec<Statement>, Error> {
-    parser.expect_token(TokenType::OpenCurly)?;
+    parser.expect_token(TokenValue::OpenCurly)?;
     let statements = parser.many(expect_statement)?;
-    parser.expect_token(TokenType::CloseCurly)?;
+    parser.expect_token(TokenValue::CloseCurly)?;
     Ok(statements)
 }
 
 fn expect_statement(parser: &mut Parser) -> Result<Statement, Error> {
-    if parser.expect_token(TokenType::Semicolon).is_ok() {
+    if parser.expect_token(TokenValue::Semicolon).is_ok() {
         Ok(Statement::Empty)
     } else {
         Err(Error::EOF)
@@ -24,7 +24,7 @@ mod tests {
 
     #[test]
     fn test_expect_block_no_statements() {
-        let tokens = make_tokens(vec![TokenType::OpenCurly, TokenType::CloseCurly]);
+        let tokens = make_tokens(vec![TokenValue::OpenCurly, TokenValue::CloseCurly]);
         let mut parser = Parser::new(&tokens);
         let statements = expect_block(&mut parser).unwrap();
         assert_eq!(parser.index, 2);
@@ -34,10 +34,10 @@ mod tests {
     #[test]
     fn test_expect_block_with_statements() {
         let tokens = make_tokens(vec![
-            TokenType::OpenCurly,
-            TokenType::Semicolon,
-            TokenType::Semicolon,
-            TokenType::CloseCurly,
+            TokenValue::OpenCurly,
+            TokenValue::Semicolon,
+            TokenValue::Semicolon,
+            TokenValue::CloseCurly,
         ]);
         let mut parser = Parser::new(&tokens);
         let statements = expect_block(&mut parser).unwrap();
@@ -54,7 +54,7 @@ mod tests {
 
     #[test]
     fn test_expect_statement_semicolon() {
-        let tokens = make_tokens(vec![TokenType::Semicolon]);
+        let tokens = make_tokens(vec![TokenValue::Semicolon]);
         let mut parser = Parser::new(&tokens);
         let statement = expect_statement(&mut parser).unwrap();
         assert_eq!(parser.index, 1);

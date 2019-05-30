@@ -4,12 +4,12 @@ use std::fmt;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Token {
-    pub token_type: TokenType,
+    pub value: TokenValue,
     pub span: Span,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum TokenType {
+pub enum TokenValue {
     Fn,
     Label(String),
     OpenParen,
@@ -53,20 +53,20 @@ pub fn read_tokens(mut tagged_iter: TaggedIter) -> Result<Vec<Token>, TokenizerE
 }
 
 fn flush_temp(tokens: &mut Vec<Token>, temp: &mut String, span: Span) {
-    const SYMBOLS: [(&str, TokenType); 6] = [
-        ("fn", TokenType::Fn),
-        ("(", TokenType::OpenParen),
-        (")", TokenType::CloseParen),
-        ("{", TokenType::OpenCurly),
-        ("}", TokenType::CloseCurly),
-        (";", TokenType::Semicolon),
+    const SYMBOLS: [(&str, TokenValue); 6] = [
+        ("fn", TokenValue::Fn),
+        ("(", TokenValue::OpenParen),
+        (")", TokenValue::CloseParen),
+        ("{", TokenValue::OpenCurly),
+        ("}", TokenValue::CloseCurly),
+        (";", TokenValue::Semicolon),
     ];
     if !temp.is_empty() {
         tokens.push(Token {
-            token_type: if let Some(i) = SYMBOLS.iter().position(|(s, _)| *s == temp) {
+            value: if let Some(i) = SYMBOLS.iter().position(|(s, _)| *s == temp) {
                 SYMBOLS[i].1.clone()
             } else {
-                TokenType::Label(temp.clone())
+                TokenValue::Label(temp.clone())
             },
             span,
         });
@@ -101,7 +101,7 @@ mod tests {
         assert_eq!(
             read_tokens(TaggedIter::new("fn".to_string())),
             Ok(vec![Token {
-                token_type: TokenType::Fn,
+                value: TokenValue::Fn,
                 span: Span {
                     start: Pos::start(),
                     end: Pos {
@@ -119,7 +119,7 @@ mod tests {
         assert_eq!(
             read_tokens(TaggedIter::new("fn ".to_string())),
             Ok(vec![Token {
-                token_type: TokenType::Fn,
+                value: TokenValue::Fn,
                 span: Span {
                     start: Pos::start(),
                     end: Pos {
@@ -137,7 +137,7 @@ mod tests {
         assert_eq!(
             read_tokens(TaggedIter::new("fnx".to_string())),
             Ok(vec![Token {
-                token_type: TokenType::Label("fnx".to_string()),
+                value: TokenValue::Label("fnx".to_string()),
                 span: Span {
                     start: Pos::start(),
                     end: Pos {
@@ -156,7 +156,7 @@ mod tests {
             read_tokens(TaggedIter::new("(){};".to_string())),
             Ok(vec![
                 Token {
-                    token_type: TokenType::OpenParen,
+                    value: TokenValue::OpenParen,
                     span: Span {
                         start: Pos {
                             line: 0,
@@ -171,7 +171,7 @@ mod tests {
                     }
                 },
                 Token {
-                    token_type: TokenType::CloseParen,
+                    value: TokenValue::CloseParen,
                     span: Span {
                         start: Pos {
                             line: 0,
@@ -186,7 +186,7 @@ mod tests {
                     }
                 },
                 Token {
-                    token_type: TokenType::OpenCurly,
+                    value: TokenValue::OpenCurly,
                     span: Span {
                         start: Pos {
                             line: 0,
@@ -201,7 +201,7 @@ mod tests {
                     }
                 },
                 Token {
-                    token_type: TokenType::CloseCurly,
+                    value: TokenValue::CloseCurly,
                     span: Span {
                         start: Pos {
                             line: 0,
@@ -216,7 +216,7 @@ mod tests {
                     }
                 },
                 Token {
-                    token_type: TokenType::Semicolon,
+                    value: TokenValue::Semicolon,
                     span: Span {
                         start: Pos {
                             line: 0,

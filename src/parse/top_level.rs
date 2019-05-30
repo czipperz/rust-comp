@@ -2,7 +2,7 @@ use super::body::expect_block;
 use super::parser::*;
 use super::Error;
 use crate::ast::*;
-use crate::lex::{Token, TokenType};
+use crate::lex::{Token, TokenValue};
 
 pub fn parse(tokens: &[Token]) -> Result<Vec<TopLevel>, Error> {
     Parser::new(tokens).many(expect_top_level)
@@ -13,7 +13,7 @@ fn expect_top_level(parser: &mut Parser) -> Result<TopLevel, Error> {
 }
 
 fn expect_fn(parser: &mut Parser) -> Result<Function, Error> {
-    parser.expect_token(TokenType::Fn)?;
+    parser.expect_token(TokenValue::Fn)?;
     let name = parser.expect_label()?;
     let parameters = expect_parameters(parser)?;
     let body = expect_block(parser)?;
@@ -25,15 +25,15 @@ fn expect_fn(parser: &mut Parser) -> Result<Function, Error> {
 }
 
 fn expect_parameters(parser: &mut Parser) -> Result<Vec<Parameter>, Error> {
-    parser.expect_token(TokenType::OpenParen)?;
-    parser.expect_token(TokenType::CloseParen)?;
+    parser.expect_token(TokenValue::OpenParen)?;
+    parser.expect_token(TokenValue::CloseParen)?;
     Ok(Vec::new())
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use TokenType::*;
+    use TokenValue::*;
 
     #[test]
     fn test_expect_fn_invalid() {
