@@ -1,4 +1,4 @@
-use crate::lex::TokenValue;
+use crate::token::TokenValue;
 use crate::pos::Span;
 
 #[derive(Clone, Debug, PartialEq, Eq)]

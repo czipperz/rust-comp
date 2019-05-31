@@ -1,8 +1,8 @@
 use super::body::expect_block;
-use super::parser::*;
+use super::parser::Parser;
 use super::Error;
 use crate::ast::*;
-use crate::lex::{Token, TokenValue};
+use crate::token::*;
 use crate::pos::Pos;
 
 pub fn parse(file_contents: &str, tokens: &[Token], eofpos: Pos) -> Result<Vec<TopLevel>, Error> {

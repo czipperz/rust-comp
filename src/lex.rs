@@ -1,23 +1,7 @@
 use crate::pos::*;
 use crate::tagged_iter::TaggedIter;
+use crate::token::*;
 use std::fmt;
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Token {
-    pub value: TokenValue,
-    pub span: Span,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub enum TokenValue {
-    Fn,
-    Label,
-    OpenParen,
-    CloseParen,
-    OpenCurly,
-    CloseCurly,
-    Semicolon,
-}
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum TokenizerError {}

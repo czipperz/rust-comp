@@ -3,6 +3,7 @@ mod lex;
 mod parse;
 mod pos;
 mod tagged_iter;
+mod token;
 
 use std::fs::File;
 use std::io;

@@ -1,7 +1,7 @@
-use super::parser::*;
+use super::parser::Parser;
 use super::Error;
 use crate::ast::*;
-use crate::lex::*;
+use crate::token::*;
 
 pub fn expect_block(parser: &mut Parser) -> Result<Vec<Statement>, Error> {
     parser.expect_token(TokenValue::OpenCurly)?;
