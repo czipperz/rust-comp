@@ -1,4 +1,4 @@
-use std::ops::{Deref, DerefMut};
+use std::ops::{Deref, DerefMut, Index};
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub struct Span {
@@ -17,6 +17,20 @@ pub struct Pos {
     pub line: usize,
     pub column: usize,
     pub index: usize,
+}
+
+impl Index<Span> for str {
+    type Output = str;
+    fn index(&self, span: Span) -> &str {
+        &self[span.start.index..span.end.index]
+    }
+}
+
+impl Index<Span> for String {
+    type Output = str;
+    fn index(&self, span: Span) -> &str {
+        &self.as_str()[span]
+    }
 }
 
 impl<'a> Deref for FilePos<'a> {
