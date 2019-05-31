@@ -14,7 +14,7 @@ fn expect_statement(parser: &mut Parser) -> Result<Statement, Error> {
     if parser.expect_token(TokenValue::Semicolon).is_ok() {
         Ok(Statement::Empty)
     } else {
-        Err(Error::EOF)
+        Err(Error::Expected("statement", parser.span()))
     }
 }
 

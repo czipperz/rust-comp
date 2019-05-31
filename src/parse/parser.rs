@@ -19,6 +19,14 @@ impl<'a> Parser<'a> {
         }
     }
 
+    pub fn span(&self) -> Span {
+        if self.index < self.tokens.len() {
+            self.tokens[self.index].span
+        } else {
+            self.eof()
+        }
+    }
+
     pub fn eof(&self) -> Span {
         let mut end = self.eofpos;
         end.increment(' ');
@@ -34,15 +42,17 @@ impl<'a> Parser<'a> {
     }
 
     pub fn expect_token(&mut self, expected: TokenValue) -> Result<(), Error> {
-        if self.index >= self.tokens.len() {
-            Err(Error::EOF)
-        } else if self.tokens[self.index].value == expected {
+        if self.index < self.tokens.len() && self.tokens[self.index].value == expected {
             self.index += 1;
             Ok(())
         } else {
             Err(Error::ExpectedToken(
                 expected,
-                self.tokens[self.index].span.start,
+                if self.index < self.tokens.len() {
+                    self.tokens[self.index].span
+                } else {
+                    self.eof()
+                },
             ))
         }
     }
@@ -83,6 +93,59 @@ pub fn make_token(value: TokenValue) -> Token {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_span_in_bounds() {
+        let tokens = [Token {
+            value: TokenValue::Fn,
+            span: Span {
+                start: Pos::start(),
+                end: Pos {
+                    line: 0,
+                    column: 2,
+                    index: 2,
+                },
+            },
+        }];
+        let parser = Parser::new(
+            "fn",
+            &tokens,
+            Pos {
+                line: 0,
+                column: 2,
+                index: 2,
+            },
+        );
+        assert_eq!(
+            parser.span(),
+            Span {
+                start: Pos {
+                    line: 0,
+                    column: 0,
+                    index: 0,
+                },
+                end: Pos {
+                    line: 0,
+                    column: 2,
+                    index: 2,
+                }
+            }
+        );
+    }
+
+    #[test]
+    fn test_span_out_of_bounds() {
+        let parser = Parser::new(
+            "  ",
+            &[],
+            Pos {
+                line: 0,
+                column: 2,
+                index: 2,
+            },
+        );
+        assert_eq!(parser.span(), parser.eof());
+    }
 
     #[test]
     fn test_eof() {
