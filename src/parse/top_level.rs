@@ -1,12 +1,16 @@
 use super::body::expect_block;
+use super::combinator::many;
 use super::parser::Parser;
 use super::Error;
 use crate::ast::*;
-use crate::token::*;
 use crate::pos::Pos;
+use crate::token::*;
 
 pub fn parse(file_contents: &str, tokens: &[Token], eofpos: Pos) -> Result<Vec<TopLevel>, Error> {
-    Parser::new(file_contents, tokens, eofpos).many(expect_top_level)
+    many(
+        &mut Parser::new(file_contents, tokens, eofpos),
+        expect_top_level,
+    )
 }
 
 fn expect_top_level(parser: &mut Parser) -> Result<TopLevel, Error> {

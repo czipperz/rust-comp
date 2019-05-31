@@ -56,21 +56,6 @@ impl<'a> Parser<'a> {
             ))
         }
     }
-
-    pub fn many<T, E, F>(&mut self, mut f: F) -> Result<Vec<T>, E>
-    where
-        F: FnMut(&mut Self) -> Result<T, E>,
-    {
-        let mut xs = Vec::new();
-        loop {
-            let old_index = self.index;
-            match f(self) {
-                Ok(x) => xs.push(x),
-                Err(_) if old_index == self.index => return Ok(xs),
-                Err(e) => Err(e)?,
-            }
-        }
-    }
 }
 
 #[cfg(test)]
@@ -217,53 +202,5 @@ mod tests {
         let mut parser = Parser::new("", &tokens, Pos::start());
         assert!(parser.expect_token(TokenValue::OpenParen).is_err());
         assert_eq!(parser.index, 0);
-    }
-
-    #[test]
-    fn test_many_ok_no_move_then_err_no_move() {
-        let mut first = true;
-        assert_eq!(
-            Parser::new("", &[], Pos::start()).many(|_| if first {
-                first = false;
-                Ok(())
-            } else {
-                Err(())
-            }),
-            Ok(vec![()])
-        );
-    }
-
-    #[test]
-    fn test_many_ok_move_then_err_move() {
-        let mut first = true;
-        assert_eq!(
-            Parser::new("", &[], Pos::start()).many(|parser| {
-                parser.index += 1;
-                if first {
-                    first = false;
-                    Ok(())
-                } else {
-                    Err(())
-                }
-            }),
-            Err(())
-        );
-    }
-
-    #[test]
-    fn test_many_ok_move_then_err_no_move() {
-        let mut first = true;
-        assert_eq!(
-            Parser::new("", &[], Pos::start()).many(|parser| {
-                if first {
-                    first = false;
-                    parser.index += 1;
-                    Ok(())
-                } else {
-                    Err(())
-                }
-            }),
-            Ok(vec![()])
-        );
     }
 }

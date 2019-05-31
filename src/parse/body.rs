@@ -1,3 +1,4 @@
+use super::combinator::many;
 use super::parser::Parser;
 use super::Error;
 use crate::ast::*;
@@ -5,7 +6,7 @@ use crate::token::*;
 
 pub fn expect_block(parser: &mut Parser) -> Result<Vec<Statement>, Error> {
     parser.expect_token(TokenValue::OpenCurly)?;
-    let statements = parser.many(expect_statement)?;
+    let statements = many(parser, expect_statement)?;
     parser.expect_token(TokenValue::CloseCurly)?;
     Ok(statements)
 }
@@ -13,6 +14,8 @@ pub fn expect_block(parser: &mut Parser) -> Result<Vec<Statement>, Error> {
 fn expect_statement(parser: &mut Parser) -> Result<Statement, Error> {
     if parser.expect_token(TokenValue::Semicolon).is_ok() {
         Ok(Statement::Empty)
+    // } else if let Ok(expression) = expect_expression(parser) {
+    //     Ok(expression)
     } else {
         Err(Error::Expected("statement", parser.span()))
     }
