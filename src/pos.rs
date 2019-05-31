@@ -106,6 +106,8 @@ mod tests {
     fn test_increment_index() {
         let mut pos = Pos::start();
 
+        // It appears that rustfmt will change this to ' ' instead of
+        // 'greekletter'.  This causes this test to fail instead of pass.
         pos.increment('μ');
         assert_eq!(pos.index, 2);
 
