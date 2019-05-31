@@ -21,11 +21,12 @@ fn expect_statement(parser: &mut Parser) -> Result<Statement, Error> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::pos::Pos;
 
     #[test]
     fn test_expect_block_no_statements() {
         let tokens = make_tokens(vec![TokenValue::OpenCurly, TokenValue::CloseCurly]);
-        let mut parser = Parser::new("{}", &tokens);
+        let mut parser = Parser::new("{}", &tokens, Pos::start());
         let statements = expect_block(&mut parser).unwrap();
         assert_eq!(parser.index, 2);
         assert_eq!(statements.len(), 0);
@@ -39,7 +40,7 @@ mod tests {
             TokenValue::Semicolon,
             TokenValue::CloseCurly,
         ]);
-        let mut parser = Parser::new("{;;}", &tokens);
+        let mut parser = Parser::new("{;;}", &tokens, Pos::start());
         let statements = expect_block(&mut parser).unwrap();
         assert_eq!(parser.index, 4);
         assert_eq!(statements, [Statement::Empty, Statement::Empty]);
@@ -47,7 +48,7 @@ mod tests {
 
     #[test]
     fn test_expect_statement_empty() {
-        let mut parser = Parser::new("", &[]);
+        let mut parser = Parser::new("", &[], Pos::start());
         assert!(expect_statement(&mut parser).is_err());
         assert_eq!(parser.index, 0);
     }
@@ -55,7 +56,7 @@ mod tests {
     #[test]
     fn test_expect_statement_semicolon() {
         let tokens = make_tokens(vec![TokenValue::Semicolon]);
-        let mut parser = Parser::new(";", &tokens);
+        let mut parser = Parser::new(";", &tokens, Pos::start());
         let statement = expect_statement(&mut parser).unwrap();
         assert_eq!(parser.index, 1);
         assert_eq!(statement, Statement::Empty);

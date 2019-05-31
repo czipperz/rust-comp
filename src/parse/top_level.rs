@@ -3,9 +3,10 @@ use super::parser::*;
 use super::Error;
 use crate::ast::*;
 use crate::lex::{Token, TokenValue};
+use crate::pos::Pos;
 
-pub fn parse(file_contents: &str, tokens: &[Token]) -> Result<Vec<TopLevel>, Error> {
-    Parser::new(file_contents, tokens).many(expect_top_level)
+pub fn parse(file_contents: &str, tokens: &[Token], eofpos: Pos) -> Result<Vec<TopLevel>, Error> {
+    Parser::new(file_contents, tokens, eofpos).many(expect_top_level)
 }
 
 fn expect_top_level(parser: &mut Parser) -> Result<TopLevel, Error> {
@@ -40,7 +41,7 @@ mod tests {
         let tokens = make_tokens(vec![Fn, Label, OpenParen, CloseParen, OpenCurly]);
         for i in 0..tokens.len() {
             dbg!(i);
-            let mut parser = Parser::new("fn f () {", &tokens[0..i]);
+            let mut parser = Parser::new("fn f () {", &tokens[0..i], Pos::start());
             assert!(expect_fn(&mut parser).is_err());
             assert_eq!(parser.index, i);
         }
@@ -71,7 +72,7 @@ mod tests {
             make_token(OpenCurly),
             make_token(CloseCurly),
         ];
-        let mut parser = Parser::new("fn f () {}", &tokens);
+        let mut parser = Parser::new("fn f () {}", &tokens, Pos::start());
         let f = expect_fn(&mut parser).unwrap();
         assert_eq!(parser.index, 6);
         assert_eq!(f.name, "f");

@@ -22,7 +22,7 @@ pub enum TokenValue {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum TokenizerError {}
 
-pub fn read_tokens(mut tagged_iter: TaggedIter) -> Result<Vec<Token>, TokenizerError> {
+pub fn read_tokens(mut tagged_iter: TaggedIter) -> Result<(Vec<Token>, Pos), TokenizerError> {
     let mut tokens = Vec::new();
 
     let mut start = tagged_iter.pos;
@@ -47,7 +47,7 @@ pub fn read_tokens(mut tagged_iter: TaggedIter) -> Result<Vec<Token>, TokenizerE
         }
     }
 
-    Ok(tokens)
+    Ok((tokens, tagged_iter.pos))
 }
 
 fn flush_temp(tokens: &mut Vec<Token>, file_contents: &str, span: Span) {
@@ -85,29 +85,56 @@ mod tests {
 
     #[test]
     fn test_read_tokens_empty_file() {
-        assert_eq!(read_tokens(TaggedIter::new("")), Ok(vec![]));
+        assert_eq!(
+            read_tokens(TaggedIter::new("")),
+            Ok((
+                vec![],
+                Pos {
+                    line: 0,
+                    column: 0,
+                    index: 0,
+                }
+            ))
+        );
     }
 
     #[test]
     fn test_read_tokens_whitespace_file() {
-        assert_eq!(read_tokens(TaggedIter::new("  ")), Ok(vec![]));
+        assert_eq!(
+            read_tokens(TaggedIter::new("  \n  ")),
+            Ok((
+                vec![],
+                Pos {
+                    line: 1,
+                    column: 2,
+                    index: 5,
+                }
+            ))
+        );
     }
 
     #[test]
     fn test_read_tokens_fn_eof() {
         assert_eq!(
             read_tokens(TaggedIter::new("fn")),
-            Ok(vec![Token {
-                value: TokenValue::Fn,
-                span: Span {
-                    start: Pos::start(),
-                    end: Pos {
-                        line: 0,
-                        column: 2,
-                        index: 2
+            Ok((
+                vec![Token {
+                    value: TokenValue::Fn,
+                    span: Span {
+                        start: Pos::start(),
+                        end: Pos {
+                            line: 0,
+                            column: 2,
+                            index: 2
+                        }
                     }
+                }],
+                Pos {
+                    line: 0,
+                    column: 2,
+                    index: 2,
                 }
-            }])
+            ))
         );
     }
 
@@ -115,17 +142,24 @@ mod tests {
     fn test_read_tokens_fn_space() {
         assert_eq!(
             read_tokens(TaggedIter::new("fn ")),
-            Ok(vec![Token {
-                value: TokenValue::Fn,
-                span: Span {
-                    start: Pos::start(),
-                    end: Pos {
-                        line: 0,
-                        column: 2,
-                        index: 2
+            Ok((
+                vec![Token {
+                    value: TokenValue::Fn,
+                    span: Span {
+                        start: Pos::start(),
+                        end: Pos {
+                            line: 0,
+                            column: 2,
+                            index: 2
+                        }
                     }
+                }],
+                Pos {
+                    line: 0,
+                    column: 3,
+                    index: 3,
                 }
-            }])
+            ))
         );
     }
 
@@ -133,17 +167,24 @@ mod tests {
     fn test_read_tokens_fnx() {
         assert_eq!(
             read_tokens(TaggedIter::new("fnx")),
-            Ok(vec![Token {
-                value: TokenValue::Label,
-                span: Span {
-                    start: Pos::start(),
-                    end: Pos {
-                        line: 0,
-                        column: 3,
-                        index: 3
+            Ok((
+                vec![Token {
+                    value: TokenValue::Label,
+                    span: Span {
+                        start: Pos::start(),
+                        end: Pos {
+                            line: 0,
+                            column: 3,
+                            index: 3
+                        }
                     }
+                }],
+                Pos {
+                    line: 0,
+                    column: 3,
+                    index: 3,
                 }
-            }])
+            ))
         );
     }
 
@@ -151,83 +192,90 @@ mod tests {
     fn test_read_tokens_symbols() {
         assert_eq!(
             read_tokens(TaggedIter::new("(){};")),
-            Ok(vec![
-                Token {
-                    value: TokenValue::OpenParen,
-                    span: Span {
-                        start: Pos {
-                            line: 0,
-                            column: 0,
-                            index: 0
-                        },
-                        end: Pos {
-                            line: 0,
-                            column: 1,
-                            index: 1
+            Ok((
+                vec![
+                    Token {
+                        value: TokenValue::OpenParen,
+                        span: Span {
+                            start: Pos {
+                                line: 0,
+                                column: 0,
+                                index: 0
+                            },
+                            end: Pos {
+                                line: 0,
+                                column: 1,
+                                index: 1
+                            }
                         }
-                    }
-                },
-                Token {
-                    value: TokenValue::CloseParen,
-                    span: Span {
-                        start: Pos {
-                            line: 0,
-                            column: 1,
-                            index: 1
-                        },
-                        end: Pos {
-                            line: 0,
-                            column: 2,
-                            index: 2
+                    },
+                    Token {
+                        value: TokenValue::CloseParen,
+                        span: Span {
+                            start: Pos {
+                                line: 0,
+                                column: 1,
+                                index: 1
+                            },
+                            end: Pos {
+                                line: 0,
+                                column: 2,
+                                index: 2
+                            }
                         }
-                    }
-                },
-                Token {
-                    value: TokenValue::OpenCurly,
-                    span: Span {
-                        start: Pos {
-                            line: 0,
-                            column: 2,
-                            index: 2
-                        },
-                        end: Pos {
-                            line: 0,
-                            column: 3,
-                            index: 3
+                    },
+                    Token {
+                        value: TokenValue::OpenCurly,
+                        span: Span {
+                            start: Pos {
+                                line: 0,
+                                column: 2,
+                                index: 2
+                            },
+                            end: Pos {
+                                line: 0,
+                                column: 3,
+                                index: 3
+                            }
                         }
-                    }
-                },
-                Token {
-                    value: TokenValue::CloseCurly,
-                    span: Span {
-                        start: Pos {
-                            line: 0,
-                            column: 3,
-                            index: 3
-                        },
-                        end: Pos {
-                            line: 0,
-                            column: 4,
-                            index: 4
+                    },
+                    Token {
+                        value: TokenValue::CloseCurly,
+                        span: Span {
+                            start: Pos {
+                                line: 0,
+                                column: 3,
+                                index: 3
+                            },
+                            end: Pos {
+                                line: 0,
+                                column: 4,
+                                index: 4
+                            }
                         }
-                    }
-                },
-                Token {
-                    value: TokenValue::Semicolon,
-                    span: Span {
-                        start: Pos {
-                            line: 0,
-                            column: 4,
-                            index: 4
-                        },
-                        end: Pos {
-                            line: 0,
-                            column: 5,
-                            index: 5
+                    },
+                    Token {
+                        value: TokenValue::Semicolon,
+                        span: Span {
+                            start: Pos {
+                                line: 0,
+                                column: 4,
+                                index: 4
+                            },
+                            end: Pos {
+                                line: 0,
+                                column: 5,
+                                index: 5
+                            }
                         }
-                    }
-                },
-            ])
+                    },
+                ],
+                Pos {
+                    line: 0,
+                    column: 5,
+                    index: 5,
+                }
+            ))
         );
     }
 }

@@ -1,18 +1,30 @@
 use super::Error;
 use crate::lex::*;
+use crate::pos::*;
 
 pub struct Parser<'a> {
     file_contents: &'a str,
     tokens: &'a [Token],
+    eofpos: Pos,
     pub index: usize,
 }
 
 impl<'a> Parser<'a> {
-    pub fn new(file_contents: &'a str, tokens: &'a [Token]) -> Self {
+    pub fn new(file_contents: &'a str, tokens: &'a [Token], eofpos: Pos) -> Self {
         Parser {
             file_contents,
             tokens,
+            eofpos,
             index: 0,
+        }
+    }
+
+    pub fn eof(&self) -> Span {
+        let mut end = self.eofpos;
+        end.increment(' ');
+        Span {
+            start: self.eofpos,
+            end,
         }
     }
 
@@ -73,8 +85,36 @@ mod tests {
     use super::*;
 
     #[test]
+    fn test_eof() {
+        let parser = Parser::new(
+            "",
+            &[],
+            Pos {
+                line: 1,
+                column: 1,
+                index: 2,
+            },
+        );
+        assert_eq!(
+            parser.eof(),
+            Span {
+                start: Pos {
+                    line: 1,
+                    column: 1,
+                    index: 2,
+                },
+                end: Pos {
+                    line: 1,
+                    column: 2,
+                    index: 3,
+                }
+            }
+        );
+    }
+
+    #[test]
     fn test_expect_label_out_of_bounds() {
-        let mut parser = Parser::new("", &[]);
+        let mut parser = Parser::new("", &[], Pos::start());
         assert!(parser.expect_label().is_err());
         assert_eq!(parser.index, 0);
     }
@@ -97,7 +137,7 @@ mod tests {
                 },
             },
         }];
-        let mut parser = Parser::new("abc", &tokens);
+        let mut parser = Parser::new("abc", &tokens, Pos::start());
         assert_eq!(parser.expect_label().unwrap(), "abc");
         assert_eq!(parser.index, 1);
     }
@@ -105,14 +145,14 @@ mod tests {
     #[test]
     fn test_expect_label_no_match() {
         let tokens = make_tokens(vec![TokenValue::Fn]);
-        let mut parser = Parser::new("fn", &tokens);
+        let mut parser = Parser::new("fn", &tokens, Pos::start());
         assert!(parser.expect_label().is_err());
         assert_eq!(parser.index, 0);
     }
 
     #[test]
     fn test_expect_token_out_of_bounds() {
-        let mut parser = Parser::new("", &[]);
+        let mut parser = Parser::new("", &[], Pos::start());
         assert!(parser.expect_token(TokenValue::Fn).is_err());
         assert_eq!(parser.index, 0);
     }
@@ -120,7 +160,7 @@ mod tests {
     #[test]
     fn test_expect_token_matches() {
         let tokens = make_tokens(vec![TokenValue::Fn]);
-        let mut parser = Parser::new("fn", &tokens);
+        let mut parser = Parser::new("fn", &tokens, Pos::start());
         assert!(parser.expect_token(TokenValue::Fn).is_ok());
         assert_eq!(parser.index, 1);
     }
@@ -128,7 +168,7 @@ mod tests {
     #[test]
     fn test_expect_token_no_match() {
         let tokens = make_tokens(vec![TokenValue::Fn]);
-        let mut parser = Parser::new("", &tokens);
+        let mut parser = Parser::new("", &tokens, Pos::start());
         assert!(parser.expect_token(TokenValue::OpenParen).is_err());
         assert_eq!(parser.index, 0);
     }
@@ -137,7 +177,7 @@ mod tests {
     fn test_many_ok_no_move_then_err_no_move() {
         let mut first = true;
         assert_eq!(
-            Parser::new("", &[]).many(|_| if first {
+            Parser::new("", &[], Pos::start()).many(|_| if first {
                 first = false;
                 Ok(())
             } else {
@@ -151,7 +191,7 @@ mod tests {
     fn test_many_ok_move_then_err_move() {
         let mut first = true;
         assert_eq!(
-            Parser::new("", &[]).many(|parser| {
+            Parser::new("", &[], Pos::start()).many(|parser| {
                 parser.index += 1;
                 if first {
                     first = false;
@@ -168,7 +208,7 @@ mod tests {
     fn test_many_ok_move_then_err_no_move() {
         let mut first = true;
         assert_eq!(
-            Parser::new("", &[]).many(|parser| {
+            Parser::new("", &[], Pos::start()).many(|parser| {
                 if first {
                     first = false;
                     parser.index += 1;
