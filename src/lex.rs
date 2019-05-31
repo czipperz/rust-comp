@@ -11,7 +11,7 @@ pub struct Token {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum TokenValue {
     Fn,
-    Label(String),
+    Label,
     OpenParen,
     CloseParen,
     OpenCurly,
@@ -25,34 +25,32 @@ pub enum TokenizerError {}
 pub fn read_tokens(mut tagged_iter: TaggedIter) -> Result<Vec<Token>, TokenizerError> {
     let mut tokens = Vec::new();
 
-    let mut start = tagged_iter.pos();
-    let mut temp = String::new();
+    let mut start = tagged_iter.pos;
 
     loop {
-        let pos = tagged_iter.pos();
+        let pos = tagged_iter.pos;
         let ch = tagged_iter.next();
 
         if ch.is_none() || ch.unwrap().is_whitespace() {
-            flush_temp(&mut tokens, &mut temp, Span { start, end: pos });
+            flush_temp(&mut tokens, tagged_iter.contents, Span { start, end: pos });
 
             if ch.is_none() {
                 break;
             }
-            start = tagged_iter.pos();
+            start = tagged_iter.pos;
         } else {
             let ch = ch.unwrap();
             if "(){};".contains(ch) {
-                flush_temp(&mut tokens, &mut temp, Span { start, end: pos });
+                flush_temp(&mut tokens, tagged_iter.contents, Span { start, end: pos });
                 start = pos;
             }
-            temp.push(ch);
         }
     }
 
     Ok(tokens)
 }
 
-fn flush_temp(tokens: &mut Vec<Token>, temp: &mut String, span: Span) {
+fn flush_temp(tokens: &mut Vec<Token>, file_contents: &str, span: Span) {
     const SYMBOLS: [(&str, TokenValue); 6] = [
         ("fn", TokenValue::Fn),
         ("(", TokenValue::OpenParen),
@@ -61,16 +59,15 @@ fn flush_temp(tokens: &mut Vec<Token>, temp: &mut String, span: Span) {
         ("}", TokenValue::CloseCurly),
         (";", TokenValue::Semicolon),
     ];
-    if !temp.is_empty() {
+    if span.start != span.end {
         tokens.push(Token {
-            value: if let Some(i) = SYMBOLS.iter().position(|(s, _)| *s == temp) {
+            value: if let Some(i) = SYMBOLS.iter().position(|(s, _)| **s == file_contents[span]) {
                 SYMBOLS[i].1.clone()
             } else {
-                TokenValue::Label(temp.clone())
+                TokenValue::Label
             },
             span,
         });
-        temp.clear();
     }
 }
 
@@ -88,18 +85,18 @@ mod tests {
 
     #[test]
     fn test_read_tokens_empty_file() {
-        assert_eq!(read_tokens(TaggedIter::new("".to_string())), Ok(vec![]));
+        assert_eq!(read_tokens(TaggedIter::new("")), Ok(vec![]));
     }
 
     #[test]
     fn test_read_tokens_whitespace_file() {
-        assert_eq!(read_tokens(TaggedIter::new("  ".to_string())), Ok(vec![]));
+        assert_eq!(read_tokens(TaggedIter::new("  ")), Ok(vec![]));
     }
 
     #[test]
     fn test_read_tokens_fn_eof() {
         assert_eq!(
-            read_tokens(TaggedIter::new("fn".to_string())),
+            read_tokens(TaggedIter::new("fn")),
             Ok(vec![Token {
                 value: TokenValue::Fn,
                 span: Span {
@@ -117,7 +114,7 @@ mod tests {
     #[test]
     fn test_read_tokens_fn_space() {
         assert_eq!(
-            read_tokens(TaggedIter::new("fn ".to_string())),
+            read_tokens(TaggedIter::new("fn ")),
             Ok(vec![Token {
                 value: TokenValue::Fn,
                 span: Span {
@@ -135,9 +132,9 @@ mod tests {
     #[test]
     fn test_read_tokens_fnx() {
         assert_eq!(
-            read_tokens(TaggedIter::new("fnx".to_string())),
+            read_tokens(TaggedIter::new("fnx")),
             Ok(vec![Token {
-                value: TokenValue::Label("fnx".to_string()),
+                value: TokenValue::Label,
                 span: Span {
                     start: Pos::start(),
                     end: Pos {
@@ -153,7 +150,7 @@ mod tests {
     #[test]
     fn test_read_tokens_symbols() {
         assert_eq!(
-            read_tokens(TaggedIter::new("(){};".to_string())),
+            read_tokens(TaggedIter::new("(){};")),
             Ok(vec![
                 Token {
                     value: TokenValue::OpenParen,

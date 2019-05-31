@@ -4,8 +4,8 @@ use super::Error;
 use crate::ast::*;
 use crate::lex::{Token, TokenValue};
 
-pub fn parse(tokens: &[Token]) -> Result<Vec<TopLevel>, Error> {
-    Parser::new(tokens).many(expect_top_level)
+pub fn parse(file_contents: &str, tokens: &[Token]) -> Result<Vec<TopLevel>, Error> {
+    Parser::new(file_contents, tokens).many(expect_top_level)
 }
 
 fn expect_top_level(parser: &mut Parser) -> Result<TopLevel, Error> {
@@ -37,17 +37,10 @@ mod tests {
 
     #[test]
     fn test_expect_fn_invalid() {
-        let tokens = make_tokens(vec![
-            Fn,
-            Label("f".to_string()),
-            OpenParen,
-            CloseParen,
-            OpenCurly,
-            CloseCurly,
-        ]);
-        for i in 0..tokens.len() - 1 {
+        let tokens = make_tokens(vec![Fn, Label, OpenParen, CloseParen, OpenCurly]);
+        for i in 0..tokens.len() {
             dbg!(i);
-            let mut parser = Parser::new(&tokens[0..i]);
+            let mut parser = Parser::new("fn f () {", &tokens[0..i]);
             assert!(expect_fn(&mut parser).is_err());
             assert_eq!(parser.index, i);
         }
@@ -55,15 +48,30 @@ mod tests {
 
     #[test]
     fn test_expect_fn_matching() {
-        let tokens = make_tokens(vec![
-            Fn,
-            Label("f".to_string()),
-            OpenParen,
-            CloseParen,
-            OpenCurly,
-            CloseCurly,
-        ]);
-        let mut parser = Parser::new(&tokens);
+        use crate::pos::*;
+        let tokens = [
+            make_token(Fn),
+            Token {
+                value: Label,
+                span: Span {
+                    start: Pos {
+                        line: 0,
+                        column: 3,
+                        index: 3,
+                    },
+                    end: Pos {
+                        line: 0,
+                        column: 4,
+                        index: 4,
+                    },
+                },
+            },
+            make_token(OpenParen),
+            make_token(CloseParen),
+            make_token(OpenCurly),
+            make_token(CloseCurly),
+        ];
+        let mut parser = Parser::new("fn f () {}", &tokens);
         let f = expect_fn(&mut parser).unwrap();
         assert_eq!(parser.index, 6);
         assert_eq!(f.name, "f");
