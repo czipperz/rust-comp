@@ -9,10 +9,12 @@ pub struct Token {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum TokenValue {
     Fn,
+    Let,
     Label,
     OpenParen,
     CloseParen,
     OpenCurly,
     CloseCurly,
+    Set,
     Semicolon,
 }

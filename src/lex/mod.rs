@@ -26,7 +26,7 @@ pub fn read_tokens(contents: &str) -> Result<(Vec<Token>, Pos), TokenizerError> 
             start = tagged_iter.pos;
         } else {
             let ch = ch.unwrap();
-            if "(){};".contains(ch) {
+            if "(){}=;".contains(ch) {
                 flush_temp(&mut tokens, tagged_iter.contents, Span { start, end: pos });
                 start = pos;
             }
@@ -37,12 +37,14 @@ pub fn read_tokens(contents: &str) -> Result<(Vec<Token>, Pos), TokenizerError> 
 }
 
 fn flush_temp(tokens: &mut Vec<Token>, file_contents: &str, span: Span) {
-    const SYMBOLS: [(&str, TokenValue); 6] = [
+    const SYMBOLS: [(&str, TokenValue); 8] = [
         ("fn", TokenValue::Fn),
+        ("let", TokenValue::Let),
         ("(", TokenValue::OpenParen),
         (")", TokenValue::CloseParen),
         ("{", TokenValue::OpenCurly),
         ("}", TokenValue::CloseCurly),
+        ("=", TokenValue::Set),
         (";", TokenValue::Semicolon),
     ];
     if span.start != span.end {
@@ -154,9 +156,27 @@ mod tests {
     }
 
     #[test]
+    fn test_read_tokens_let() {
+        assert_eq!(
+            read_tokens("let"),
+            Ok((
+                vec![Token {
+                    value: TokenValue::Let,
+                    span: Span::range(Pos::start(), "let"),
+                }],
+                Pos {
+                    line: 0,
+                    column: 3,
+                    index: 3,
+                }
+            ))
+        );
+    }
+
+    #[test]
     fn test_read_tokens_symbols() {
         assert_eq!(
-            read_tokens("(){};"),
+            read_tokens("(){}=;"),
             Ok((
                 vec![
                     Token {
@@ -197,12 +217,23 @@ mod tests {
                         ),
                     },
                     Token {
-                        value: TokenValue::Semicolon,
+                        value: TokenValue::Set,
                         span: Span::range(
                             Pos {
                                 line: 0,
                                 column: 4,
                                 index: 4
+                            },
+                            "="
+                        )
+                    },
+                    Token {
+                        value: TokenValue::Semicolon,
+                        span: Span::range(
+                            Pos {
+                                line: 0,
+                                column: 5,
+                                index: 5
                             },
                             ";"
                         )
@@ -210,8 +241,8 @@ mod tests {
                 ],
                 Pos {
                     line: 0,
-                    column: 5,
-                    index: 5,
+                    column: 6,
+                    index: 6,
                 }
             ))
         );
