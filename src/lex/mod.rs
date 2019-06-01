@@ -14,15 +14,14 @@ pub fn read_tokens(contents: &str) -> Result<(Vec<Token>, Pos), TokenizerError> 
     let mut start = tagged_iter.pos;
 
     loop {
-        let mut pos = tagged_iter.pos;
-
+        let mut span = Span { start, end: tagged_iter.pos };
         match tagged_iter.next() {
             None => {
-                flush_temp(&mut tokens, tagged_iter.contents, Span { start, end: pos });
+                flush_temp(&mut tokens, tagged_iter.contents, span);
                 break;
             }
             Some(ch) if ch.is_whitespace() => {
-                flush_temp(&mut tokens, tagged_iter.contents, Span { start, end: pos });
+                flush_temp(&mut tokens, tagged_iter.contents, span);
                 start = tagged_iter.pos;
             }
             Some(ch) if "(){}:;-=>".contains(ch) => {
@@ -30,17 +29,17 @@ pub fn read_tokens(contents: &str) -> Result<(Vec<Token>, Pos), TokenizerError> 
                 // terminated by a symbol, or we are parsing a symbol.  If start
                 // == pos then the length before the symbol is 0 so we are
                 // parsing a symbol
-                if start == pos {
-                    pos = tagged_iter.pos;
+                if start == span.end {
+                    span.end = tagged_iter.pos;
                 }
                 if "-=".contains(ch) {
                     if tagged_iter.peek() == Some('>') {
                         tagged_iter.next();
-                        pos = tagged_iter.pos;
+                        span.end = tagged_iter.pos;
                     }
                 }
-                flush_temp(&mut tokens, tagged_iter.contents, Span { start, end: pos });
-                start = pos;
+                flush_temp(&mut tokens, tagged_iter.contents, span);
+                start = span.end;
             }
             Some(_) => (),
         }
