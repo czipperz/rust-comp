@@ -104,7 +104,7 @@ mod tests {
         let (tokens, eofpos) = read_tokens(contents).unwrap();
         let mut parser = Parser::new(contents, &tokens, eofpos);
         assert_eq!(parser.expect_label().unwrap(), "abc");
-        assert_eq!(parser.index, 1);
+        assert_eq!(parser.index, tokens.len());
     }
 
     #[test]
@@ -129,7 +129,7 @@ mod tests {
         let (tokens, eofpos) = read_tokens(contents).unwrap();
         let mut parser = Parser::new(contents, &tokens, eofpos);
         assert!(parser.expect_token(TokenValue::Fn).is_ok());
-        assert_eq!(parser.index, 1);
+        assert_eq!(parser.index, tokens.len());
     }
 
     #[test]

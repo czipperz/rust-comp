@@ -58,7 +58,7 @@ mod tests {
         let (tokens, eofpos) = read_tokens(contents).unwrap();
         let mut parser = Parser::new(contents, &tokens, eofpos);
         let f = expect_fn(&mut parser).unwrap();
-        assert_eq!(parser.index, 6);
+        assert_eq!(parser.index, tokens.len());
         assert_eq!(f.name, "f");
         assert_eq!(f.parameters.len(), 0);
         assert_eq!(f.body.statements.len(), 0);
