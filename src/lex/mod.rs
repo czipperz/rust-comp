@@ -1,5 +1,7 @@
+mod tagged_iter;
+use self::tagged_iter::TaggedIter;
+
 use crate::pos::*;
-use crate::tagged_iter::TaggedIter;
 use crate::token::*;
 use std::fmt;
 
