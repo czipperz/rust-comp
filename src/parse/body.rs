@@ -26,7 +26,9 @@ fn expect_empty_statement(parser: &mut Parser) -> Result<Statement, Error> {
 }
 
 fn expect_expression_statement(parser: &mut Parser) -> Result<Statement, Error> {
-    expect_expression(parser).map(Statement::Expression)
+    let expression = expect_expression(parser)?;
+    parser.expect_token(TokenValue::Semicolon)?;
+    Ok(Statement::Expression(expression))
 }
 
 fn expect_expression(parser: &mut Parser) -> Result<Expression, Error> {
@@ -76,6 +78,31 @@ mod tests {
         let statement = expect_statement(&mut parser).unwrap();
         assert_eq!(parser.index, 1);
         assert_eq!(statement, Statement::Empty);
+    }
+
+    #[test]
+    fn test_expect_expression_statement_variable_no_semicolon_should_error() {
+        let contents = "ab";
+        let (tokens, eofpos) = read_tokens(contents).unwrap();
+        let mut parser = Parser::new(contents, &tokens, eofpos);
+        let expression = expect_expression_statement(&mut parser);
+        assert_eq!(parser.index, 1);
+        assert!(expression.is_err());
+    }
+
+    #[test]
+    fn test_expect_expression_statement_variable_semicolon() {
+        let contents = "ab;";
+        let (tokens, eofpos) = read_tokens(contents).unwrap();
+        let mut parser = Parser::new(contents, &tokens, eofpos);
+        let expression = expect_expression_statement(&mut parser);
+        assert_eq!(parser.index, 2);
+        assert_eq!(
+            expression,
+            Ok(Statement::Expression(Expression::Variable(
+                "ab".to_string()
+            )))
+        );
     }
 
     #[test]
