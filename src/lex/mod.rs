@@ -15,18 +15,17 @@ pub fn read_tokens(contents: &str) -> Result<(Vec<Token>, Pos), TokenizerError> 
 
     loop {
         let mut pos = tagged_iter.pos;
-        let ch = tagged_iter.next();
 
-        if ch.is_none() || ch.unwrap().is_whitespace() {
-            flush_temp(&mut tokens, tagged_iter.contents, Span { start, end: pos });
-
-            if ch.is_none() {
+        match tagged_iter.next() {
+            None => {
+                flush_temp(&mut tokens, tagged_iter.contents, Span { start, end: pos });
                 break;
             }
-            start = tagged_iter.pos;
-        } else {
-            let ch = ch.unwrap();
-            if "(){}:;-=>".contains(ch) {
+            Some(ch) if ch.is_whitespace() => {
+                flush_temp(&mut tokens, tagged_iter.contents, Span { start, end: pos });
+                start = tagged_iter.pos;
+            }
+            Some(ch) if "(){}:;-=>".contains(ch) => {
                 // There are two cases here: we are parsing a label that is
                 // terminated by a symbol, or we are parsing a symbol.  If start
                 // == pos then the length before the symbol is 0 so we are
@@ -43,6 +42,7 @@ pub fn read_tokens(contents: &str) -> Result<(Vec<Token>, Pos), TokenizerError> 
                 flush_temp(&mut tokens, tagged_iter.contents, Span { start, end: pos });
                 start = pos;
             }
+            Some(_) => (),
         }
     }
 
