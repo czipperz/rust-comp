@@ -1,4 +1,4 @@
-use super::combinator::many;
+use super::combinator::*;
 use super::parser::Parser;
 use super::Error;
 use crate::ast::*;
@@ -12,13 +12,17 @@ pub fn expect_block(parser: &mut Parser) -> Result<Vec<Statement>, Error> {
 }
 
 fn expect_statement(parser: &mut Parser) -> Result<Statement, Error> {
-    if parser.expect_token(TokenValue::Semicolon).is_ok() {
-        Ok(Statement::Empty)
-    // } else if let Ok(expression) = expect_expression(parser) {
-    //     Ok(expression)
-    } else {
-        Err(Error::Expected("statement", parser.span()))
-    }
+    one_of(
+        parser,
+        &mut [expect_empty_statement][..],
+        Error::Expected("statement", parser.span()),
+    )
+}
+
+fn expect_empty_statement(parser: &mut Parser) -> Result<Statement, Error> {
+    parser
+        .expect_token(TokenValue::Semicolon)
+        .map(|_| Statement::Empty)
 }
 
 #[cfg(test)]

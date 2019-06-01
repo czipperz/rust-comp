@@ -15,6 +15,21 @@ where
     }
 }
 
+pub fn one_of<T, E, F>(parser: &mut Parser, fs: &mut [F], none_match: E) -> Result<T, E>
+where
+    F: FnMut(&mut Parser) -> Result<T, E>,
+{
+    let old_index = parser.index;
+    for f in fs {
+        match f(parser) {
+            Ok(x) => return Ok(x),
+            Err(_) if old_index == parser.index => (),
+            Err(e) => return Err(e),
+        }
+    }
+    Err(none_match)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -66,5 +81,29 @@ mod tests {
             }),
             Ok(vec![()])
         );
+    }
+
+    #[test]
+    fn test_one_of_no_functions_should_return_error() {
+        assert_eq!(
+            one_of::<(), i32, fn(&mut Parser) -> Result<(), i32>>(
+                &mut Parser::new("", &[], Pos::start()),
+                &mut [],
+                1
+            ),
+            Err(1)
+        )
+    }
+
+    #[test]
+    fn test_one_of_two_functions_first_ok() {
+        assert_eq!(
+            one_of::<i32, i32, fn(&mut Parser) -> Result<i32, i32>>(
+                &mut Parser::new("", &[], Pos::start()),
+                &mut [|_| Ok(1), |_| panic!()],
+                2
+            ),
+            Ok(1)
+        )
     }
 }
