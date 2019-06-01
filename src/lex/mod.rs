@@ -11,10 +11,13 @@ pub enum TokenizerError {}
 pub fn read_tokens(contents: &str) -> Result<(Vec<Token>, Pos), TokenizerError> {
     let mut tagged_iter = TaggedIter::new(contents);
     let mut tokens = Vec::new();
-    let mut start = tagged_iter.pos;
+    let mut span = Span {
+        start: tagged_iter.pos,
+        end: tagged_iter.pos,
+    };
 
     loop {
-        let mut span = Span { start, end: tagged_iter.pos };
+        span.end = tagged_iter.pos;
         match tagged_iter.next() {
             None => {
                 flush_temp(&mut tokens, tagged_iter.contents, span);
@@ -22,14 +25,14 @@ pub fn read_tokens(contents: &str) -> Result<(Vec<Token>, Pos), TokenizerError> 
             }
             Some(ch) if ch.is_whitespace() => {
                 flush_temp(&mut tokens, tagged_iter.contents, span);
-                start = tagged_iter.pos;
+                span.start = tagged_iter.pos;
             }
             Some(ch) if "(){}:;-=>".contains(ch) => {
                 // There are two cases here: we are parsing a label that is
                 // terminated by a symbol, or we are parsing a symbol.  If start
                 // == pos then the length before the symbol is 0 so we are
                 // parsing a symbol
-                if start == span.end {
+                if span.start == span.end {
                     span.end = tagged_iter.pos;
                 }
                 if "-=".contains(ch) {
@@ -39,7 +42,7 @@ pub fn read_tokens(contents: &str) -> Result<(Vec<Token>, Pos), TokenizerError> 
                     }
                 }
                 flush_temp(&mut tokens, tagged_iter.contents, span);
-                start = span.end;
+                span.start = span.end;
             }
             Some(_) => (),
         }
