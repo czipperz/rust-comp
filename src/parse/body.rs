@@ -52,7 +52,7 @@ mod tests {
     }
 
     #[test]
-    fn test_expect_block_with_statements() {
+    fn test_expect_block_with_empty_statements() {
         let contents = "{;;}";
         let (tokens, eofpos) = read_tokens(contents).unwrap();
         let mut parser = Parser::new(contents, &tokens, eofpos);
