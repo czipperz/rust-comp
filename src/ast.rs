@@ -7,7 +7,7 @@ pub enum TopLevel {
 pub struct Function {
     pub name: String,
     pub parameters: Vec<Parameter>,
-    pub body: Vec<Statement>,
+    pub body: Block,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -23,6 +23,12 @@ pub enum Statement {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Expression {
     Variable(String),
+    Block(Block),
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Block {
+    pub statements: Vec<Statement>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

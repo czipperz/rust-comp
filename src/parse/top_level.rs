@@ -61,6 +61,6 @@ mod tests {
         assert_eq!(parser.index, 6);
         assert_eq!(f.name, "f");
         assert_eq!(f.parameters.len(), 0);
-        assert_eq!(f.body.len(), 0);
+        assert_eq!(f.body.statements.len(), 0);
     }
 }

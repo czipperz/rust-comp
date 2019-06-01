@@ -5,11 +5,11 @@ use super::Error;
 use crate::ast::*;
 use crate::token::*;
 
-pub fn expect_block(parser: &mut Parser) -> Result<Vec<Statement>, Error> {
+pub fn expect_block(parser: &mut Parser) -> Result<Block, Error> {
     parser.expect_token(TokenValue::OpenCurly)?;
     let statements = many(parser, expect_statement)?;
     parser.expect_token(TokenValue::CloseCurly)?;
-    Ok(statements)
+    Ok(Block { statements })
 }
 
 fn expect_statement(parser: &mut Parser) -> Result<Statement, Error> {
@@ -54,9 +54,21 @@ fn expect_expression_statement(parser: &mut Parser) -> Result<Statement, Error> 
 }
 
 fn expect_expression(parser: &mut Parser) -> Result<Expression, Error> {
+    one_of(
+        parser,
+        &mut [expect_variable_expression, expect_block_expression][..],
+        Error::Expected("expression", parser.span()),
+    )
+}
+
+fn expect_variable_expression(parser: &mut Parser) -> Result<Expression, Error> {
     parser
         .expect_label()
         .map(|label| Expression::Variable(label.to_string()))
+}
+
+fn expect_block_expression(parser: &mut Parser) -> Result<Expression, Error> {
+    expect_block(parser).map(Expression::Block)
 }
 
 #[cfg(test)]
@@ -70,9 +82,9 @@ mod tests {
         let contents = "{}";
         let (tokens, eofpos) = read_tokens(contents).unwrap();
         let mut parser = Parser::new(contents, &tokens, eofpos);
-        let statements = expect_block(&mut parser).unwrap();
+        let block = expect_block(&mut parser).unwrap();
         assert_eq!(parser.index, 2);
-        assert_eq!(statements.len(), 0);
+        assert_eq!(block.statements.len(), 0);
     }
 
     #[test]
@@ -80,9 +92,9 @@ mod tests {
         let contents = "{;;}";
         let (tokens, eofpos) = read_tokens(contents).unwrap();
         let mut parser = Parser::new(contents, &tokens, eofpos);
-        let statements = expect_block(&mut parser).unwrap();
+        let block = expect_block(&mut parser).unwrap();
         assert_eq!(parser.index, 4);
-        assert_eq!(statements, [Statement::Empty, Statement::Empty]);
+        assert_eq!(block.statements, [Statement::Empty, Statement::Empty]);
     }
 
     #[test]
@@ -172,21 +184,21 @@ mod tests {
     }
 
     #[test]
-    fn test_expect_expression_variable() {
+    fn test_expect_variable_expression() {
         let contents = "ab";
         let (tokens, eofpos) = read_tokens(contents).unwrap();
         let mut parser = Parser::new(contents, &tokens, eofpos);
-        let expression = expect_expression(&mut parser).unwrap();
+        let expression = expect_variable_expression(&mut parser).unwrap();
         assert_eq!(parser.index, 1);
         assert_eq!(expression, Expression::Variable("ab".to_string()));
     }
 
     #[test]
-    fn test_expect_expression_fn_should_error() {
+    fn test_expect_variable_expression_fn_should_error() {
         let contents = "fn";
         let (tokens, eofpos) = read_tokens(contents).unwrap();
         let mut parser = Parser::new(contents, &tokens, eofpos);
-        let expression = expect_expression(&mut parser);
+        let expression = expect_variable_expression(&mut parser);
         assert_eq!(parser.index, 0);
         assert_eq!(
             expression,
@@ -195,5 +207,15 @@ mod tests {
                 Span::range(Pos::start(), "fn"),
             ))
         );
+    }
+
+    #[test]
+    fn test_expect_block_expression() {
+        let contents = "{}";
+        let (tokens, eofpos) = read_tokens(contents).unwrap();
+        let mut parser = Parser::new(contents, &tokens, eofpos);
+        let expression = expect_block_expression(&mut parser).unwrap();
+        assert_eq!(parser.index, 2);
+        assert_eq!(expression, Expression::Block(Block { statements: vec![] }));
     }
 }
