@@ -12,6 +12,10 @@ impl<'a> TaggedIter<'a> {
             pos: Pos::start(),
         }
     }
+
+    pub fn peek(&self) -> Option<char> {
+        self.contents[self.pos.index..].chars().next()
+    }
 }
 
 impl<'a> Iterator for TaggedIter<'a> {
@@ -33,6 +37,16 @@ mod tests {
         let x = TaggedIter::new("contents");
         assert_eq!(x.contents, "contents");
         assert_eq!(x.pos, Pos::start());
+    }
+
+    #[test]
+    fn test_peek() {
+        let mut x = TaggedIter::new("μσ");
+        assert_eq!(x.peek(), Some('μ'));
+        x.next();
+        assert_eq!(x.peek(), Some('σ'));
+        x.next();
+        assert_eq!(x.peek(), None);
     }
 
     #[test]

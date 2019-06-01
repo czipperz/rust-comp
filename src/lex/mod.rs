@@ -14,7 +14,7 @@ pub fn read_tokens(contents: &str) -> Result<(Vec<Token>, Pos), TokenizerError> 
     let mut start = tagged_iter.pos;
 
     loop {
-        let pos = tagged_iter.pos;
+        let mut pos = tagged_iter.pos;
         let ch = tagged_iter.next();
 
         if ch.is_none() || ch.unwrap().is_whitespace() {
@@ -26,7 +26,20 @@ pub fn read_tokens(contents: &str) -> Result<(Vec<Token>, Pos), TokenizerError> 
             start = tagged_iter.pos;
         } else {
             let ch = ch.unwrap();
-            if "(){}=;".contains(ch) {
+            if "(){}:;-=>".contains(ch) {
+                // There are two cases here: we are parsing a label that is
+                // terminated by a symbol, or we are parsing a symbol.  If start
+                // == pos then the length before the symbol is 0 so we are
+                // parsing a symbol
+                if start == pos {
+                    pos = tagged_iter.pos;
+                }
+                if "-=".contains(ch) {
+                    if tagged_iter.peek() == Some('>') {
+                        tagged_iter.next();
+                        pos = tagged_iter.pos;
+                    }
+                }
                 flush_temp(&mut tokens, tagged_iter.contents, Span { start, end: pos });
                 start = pos;
             }
@@ -37,13 +50,16 @@ pub fn read_tokens(contents: &str) -> Result<(Vec<Token>, Pos), TokenizerError> 
 }
 
 fn flush_temp(tokens: &mut Vec<Token>, file_contents: &str, span: Span) {
-    const SYMBOLS: [(&str, TokenValue); 8] = [
+    const SYMBOLS: [(&str, TokenValue); 11] = [
         ("fn", TokenValue::Fn),
         ("let", TokenValue::Let),
         ("(", TokenValue::OpenParen),
         (")", TokenValue::CloseParen),
         ("{", TokenValue::OpenCurly),
         ("}", TokenValue::CloseCurly),
+        (":", TokenValue::Colon),
+        ("->", TokenValue::ThinArrow),
+        ("=>", TokenValue::FatArrow),
         ("=", TokenValue::Set),
         (";", TokenValue::Semicolon),
     ];
@@ -174,9 +190,9 @@ mod tests {
     }
 
     #[test]
-    fn test_read_tokens_symbols() {
+    fn test_read_tokens_individual_symbols() {
         assert_eq!(
-            read_tokens("(){}=;"),
+            read_tokens("(){};"),
             Ok((
                 vec![
                     Token {
@@ -217,23 +233,12 @@ mod tests {
                         ),
                     },
                     Token {
-                        value: TokenValue::Set,
+                        value: TokenValue::Semicolon,
                         span: Span::range(
                             Pos {
                                 line: 0,
                                 column: 4,
                                 index: 4
-                            },
-                            "="
-                        )
-                    },
-                    Token {
-                        value: TokenValue::Semicolon,
-                        span: Span::range(
-                            Pos {
-                                line: 0,
-                                column: 5,
-                                index: 5
                             },
                             ";"
                         )
@@ -241,8 +246,108 @@ mod tests {
                 ],
                 Pos {
                     line: 0,
+                    column: 5,
+                    index: 5,
+                }
+            ))
+        );
+    }
+
+    #[test]
+    fn test_read_tokens_set() {
+        assert_eq!(
+            read_tokens("a =(b)"),
+            Ok((
+                vec![
+                    Token {
+                        value: TokenValue::Label,
+                        span: Span::range(Pos::start(), "a"),
+                    },
+                    Token {
+                        value: TokenValue::Set,
+                        span: Span::range(
+                            Pos {
+                                line: 0,
+                                column: 2,
+                                index: 2
+                            },
+                            "="
+                        ),
+                    },
+                    Token {
+                        value: TokenValue::OpenParen,
+                        span: Span::range(
+                            Pos {
+                                line: 0,
+                                column: 3,
+                                index: 3
+                            },
+                            "("
+                        ),
+                    },
+                    Token {
+                        value: TokenValue::Label,
+                        span: Span::range(
+                            Pos {
+                                line: 0,
+                                column: 4,
+                                index: 4
+                            },
+                            "b"
+                        ),
+                    },
+                    Token {
+                        value: TokenValue::CloseParen,
+                        span: Span::range(
+                            Pos {
+                                line: 0,
+                                column: 5,
+                                index: 5
+                            },
+                            ")"
+                        ),
+                    },
+                ],
+                Pos {
+                    line: 0,
                     column: 6,
                     index: 6,
+                }
+            ))
+        );
+    }
+
+    #[test]
+    fn test_read_tokens_fat_arrow() {
+        assert_eq!(
+            read_tokens("=>"),
+            Ok((
+                vec![Token {
+                    value: TokenValue::FatArrow,
+                    span: Span::range(Pos::start(), "=>"),
+                }],
+                Pos {
+                    line: 0,
+                    column: 2,
+                    index: 2,
+                }
+            ))
+        );
+    }
+
+    #[test]
+    fn test_read_tokens_thin_arrow() {
+        assert_eq!(
+            read_tokens("->"),
+            Ok((
+                vec![Token {
+                    value: TokenValue::ThinArrow,
+                    span: Span::range(Pos::start(), "->"),
+                }],
+                Pos {
+                    line: 0,
+                    column: 2,
+                    index: 2,
                 }
             ))
         );

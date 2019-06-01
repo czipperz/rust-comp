@@ -15,6 +15,9 @@ pub enum TokenValue {
     CloseParen,
     OpenCurly,
     CloseCurly,
+    Colon,
+    ThinArrow,
+    FatArrow,
     Set,
     Semicolon,
 }
