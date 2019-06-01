@@ -26,8 +26,11 @@ fn expect_statement(parser: &mut Parser) -> Result<Statement, Error> {
 fn expect_let_statement(parser: &mut Parser) -> Result<Statement, Error> {
     parser.expect_token(TokenValue::Let)?;
     let name = parser.expect_label()?.to_string();
-    parser.expect_token(TokenValue::Set)?;
-    let value = expect_expression(parser)?;
+    let value = if parser.expect_token(TokenValue::Set).is_ok() {
+        Some(expect_expression(parser)?)
+    } else {
+        None
+    };
     parser.expect_token(TokenValue::Semicolon)?;
     Ok(Statement::Let(name, value))
 }
@@ -104,9 +107,19 @@ mod tests {
             expression,
             Ok(Statement::Let(
                 "x".to_string(),
-                Expression::Variable("y".to_string())
+                Some(Expression::Variable("y".to_string()))
             ))
         );
+    }
+
+    #[test]
+    fn test_let_statement_without_value() {
+        let contents = "let x;";
+        let (tokens, eofpos) = read_tokens(contents).unwrap();
+        let mut parser = Parser::new(contents, &tokens, eofpos);
+        let expression = expect_let_statement(&mut parser);
+        assert_eq!(parser.index, tokens.len());
+        assert_eq!(expression, Ok(Statement::Let("x".to_string(), None,)));
     }
 
     #[test]
