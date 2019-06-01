@@ -17,6 +17,7 @@ pub struct Parameter {}
 pub enum Statement {
     Empty,
     Expression(Expression),
+    Let(String, Expression),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

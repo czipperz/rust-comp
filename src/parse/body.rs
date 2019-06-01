@@ -14,9 +14,22 @@ pub fn expect_block(parser: &mut Parser) -> Result<Vec<Statement>, Error> {
 fn expect_statement(parser: &mut Parser) -> Result<Statement, Error> {
     one_of(
         parser,
-        &mut [expect_empty_statement, expect_expression_statement][..],
+        &mut [
+            expect_let_statement,
+            expect_empty_statement,
+            expect_expression_statement,
+        ][..],
         Error::Expected("statement", parser.span()),
     )
+}
+
+fn expect_let_statement(parser: &mut Parser) -> Result<Statement, Error> {
+    parser.expect_token(TokenValue::Let)?;
+    let name = parser.expect_label()?.to_string();
+    parser.expect_token(TokenValue::Set)?;
+    let value = expect_expression(parser)?;
+    parser.expect_token(TokenValue::Semicolon)?;
+    Ok(Statement::Let(name, value))
 }
 
 fn expect_empty_statement(parser: &mut Parser) -> Result<Statement, Error> {
@@ -78,6 +91,22 @@ mod tests {
         let statement = expect_statement(&mut parser).unwrap();
         assert_eq!(parser.index, 1);
         assert_eq!(statement, Statement::Empty);
+    }
+
+    #[test]
+    fn test_let_statement_with_value() {
+        let contents = "let x = y;";
+        let (tokens, eofpos) = read_tokens(contents).unwrap();
+        let mut parser = Parser::new(contents, &tokens, eofpos);
+        let expression = expect_let_statement(&mut parser);
+        assert_eq!(parser.index, tokens.len());
+        assert_eq!(
+            expression,
+            Ok(Statement::Let(
+                "x".to_string(),
+                Expression::Variable("y".to_string())
+            ))
+        );
     }
 
     #[test]
