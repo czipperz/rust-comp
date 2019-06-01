@@ -38,12 +38,14 @@ fn expect_expression(parser: &mut Parser) -> Result<Expression, Error> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::lex::read_tokens;
     use crate::pos::*;
 
     #[test]
     fn test_expect_block_no_statements() {
-        let tokens = make_tokens(vec![TokenValue::OpenCurly, TokenValue::CloseCurly]);
-        let mut parser = Parser::new("{}", &tokens, Pos::start());
+        let contents = "{}";
+        let (tokens, eofpos) = read_tokens(contents).unwrap();
+        let mut parser = Parser::new(contents, &tokens, eofpos);
         let statements = expect_block(&mut parser).unwrap();
         assert_eq!(parser.index, 2);
         assert_eq!(statements.len(), 0);
@@ -51,13 +53,9 @@ mod tests {
 
     #[test]
     fn test_expect_block_with_statements() {
-        let tokens = make_tokens(vec![
-            TokenValue::OpenCurly,
-            TokenValue::Semicolon,
-            TokenValue::Semicolon,
-            TokenValue::CloseCurly,
-        ]);
-        let mut parser = Parser::new("{;;}", &tokens, Pos::start());
+        let contents = "{;;}";
+        let (tokens, eofpos) = read_tokens(contents).unwrap();
+        let mut parser = Parser::new(contents, &tokens, eofpos);
         let statements = expect_block(&mut parser).unwrap();
         assert_eq!(parser.index, 4);
         assert_eq!(statements, [Statement::Empty, Statement::Empty]);
@@ -72,8 +70,9 @@ mod tests {
 
     #[test]
     fn test_expect_statement_semicolon() {
-        let tokens = make_tokens(vec![TokenValue::Semicolon]);
-        let mut parser = Parser::new(";", &tokens, Pos::start());
+        let contents = ";";
+        let (tokens, eofpos) = read_tokens(contents).unwrap();
+        let mut parser = Parser::new(contents, &tokens, eofpos);
         let statement = expect_statement(&mut parser).unwrap();
         assert_eq!(parser.index, 1);
         assert_eq!(statement, Statement::Empty);
@@ -81,11 +80,9 @@ mod tests {
 
     #[test]
     fn test_expect_expression_variable() {
-        let tokens = [Token {
-            value: TokenValue::Label,
-            span: Span::range(Pos::start(), "ab"),
-        }];
-        let mut parser = Parser::new("ab", &tokens, Pos::start());
+        let contents = "ab";
+        let (tokens, eofpos) = read_tokens(contents).unwrap();
+        let mut parser = Parser::new(contents, &tokens, eofpos);
         let expression = expect_expression(&mut parser).unwrap();
         assert_eq!(parser.index, 1);
         assert_eq!(expression, Expression::Variable("ab".to_string()));
@@ -93,18 +90,16 @@ mod tests {
 
     #[test]
     fn test_expect_expression_fn_should_error() {
-        let tokens = [make_token(TokenValue::Fn)];
-        let mut parser = Parser::new("ab", &tokens, Pos::start());
+        let contents = "fn";
+        let (tokens, eofpos) = read_tokens(contents).unwrap();
+        let mut parser = Parser::new(contents, &tokens, eofpos);
         let expression = expect_expression(&mut parser);
         assert_eq!(parser.index, 0);
         assert_eq!(
             expression,
             Err(Error::ExpectedToken(
                 TokenValue::Label,
-                Span {
-                    start: Pos::start(),
-                    end: Pos::start()
-                }
+                Span::range(Pos::start(), "fn"),
             ))
         );
     }

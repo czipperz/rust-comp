@@ -38,14 +38,15 @@ fn expect_parameters(parser: &mut Parser) -> Result<Vec<Parameter>, Error> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use TokenValue::*;
+    use crate::lex::read_tokens;
 
     #[test]
     fn test_expect_fn_invalid() {
-        let tokens = make_tokens(vec![Fn, Label, OpenParen, CloseParen, OpenCurly]);
+        let contents = "fn f () {";
+        let (tokens, eofpos) = read_tokens(contents).unwrap();
         for i in 0..tokens.len() {
             dbg!(i);
-            let mut parser = Parser::new("fn f () {", &tokens[0..i], Pos::start());
+            let mut parser = Parser::new(contents, &tokens[..i], eofpos);
             assert!(expect_fn(&mut parser).is_err());
             assert_eq!(parser.index, i);
         }
@@ -53,30 +54,9 @@ mod tests {
 
     #[test]
     fn test_expect_fn_matching() {
-        use crate::pos::*;
-        let tokens = [
-            make_token(Fn),
-            Token {
-                value: Label,
-                span: Span {
-                    start: Pos {
-                        line: 0,
-                        column: 3,
-                        index: 3,
-                    },
-                    end: Pos {
-                        line: 0,
-                        column: 4,
-                        index: 4,
-                    },
-                },
-            },
-            make_token(OpenParen),
-            make_token(CloseParen),
-            make_token(OpenCurly),
-            make_token(CloseCurly),
-        ];
-        let mut parser = Parser::new("fn f () {}", &tokens, Pos::start());
+        let contents = "fn f () {}";
+        let (tokens, eofpos) = read_tokens(contents).unwrap();
+        let mut parser = Parser::new(contents, &tokens, eofpos);
         let f = expect_fn(&mut parser).unwrap();
         assert_eq!(parser.index, 6);
         assert_eq!(f.name, "f");

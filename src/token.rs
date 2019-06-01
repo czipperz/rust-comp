@@ -16,20 +16,3 @@ pub enum TokenValue {
     CloseCurly,
     Semicolon,
 }
-
-#[cfg(test)]
-pub fn make_tokens(values: Vec<TokenValue>) -> Vec<Token> {
-    values.into_iter().map(make_token).collect()
-}
-
-#[cfg(test)]
-pub fn make_token(value: TokenValue) -> Token {
-    use crate::pos::*;
-    Token {
-        value,
-        span: Span {
-            start: Pos::start(),
-            end: Pos::start(),
-        },
-    }
-}

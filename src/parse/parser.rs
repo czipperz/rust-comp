@@ -56,24 +56,14 @@ impl<'a> Parser<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::lex::read_tokens;
 
     #[test]
     fn test_span_in_bounds() {
-        let span = Span::range(Pos::start(), "fn");
-        let tokens = [Token {
-            value: TokenValue::Fn,
-            span,
-        }];
-        let parser = Parser::new(
-            "fn",
-            &tokens,
-            Pos {
-                line: 0,
-                column: 2,
-                index: 2,
-            },
-        );
-        assert_eq!(parser.span(), span);
+        let contents = "fn";
+        let (tokens, eofpos) = read_tokens(contents).unwrap();
+        let parser = Parser::new(contents, &tokens, eofpos);
+        assert_eq!(parser.span(), Span::range(Pos::start(), "fn"));
     }
 
     #[test]
@@ -110,20 +100,18 @@ mod tests {
 
     #[test]
     fn test_expect_label_matches() {
-        use crate::pos::*;
-        let tokens = [Token {
-            value: TokenValue::Label,
-            span: Span::range(Pos::start(), "abc"),
-        }];
-        let mut parser = Parser::new("abc", &tokens, Pos::start());
+        let contents = "abc";
+        let (tokens, eofpos) = read_tokens(contents).unwrap();
+        let mut parser = Parser::new(contents, &tokens, eofpos);
         assert_eq!(parser.expect_label().unwrap(), "abc");
         assert_eq!(parser.index, 1);
     }
 
     #[test]
     fn test_expect_label_no_match() {
-        let tokens = make_tokens(vec![TokenValue::Fn]);
-        let mut parser = Parser::new("fn", &tokens, Pos::start());
+        let contents = "fn";
+        let (tokens, eofpos) = read_tokens(contents).unwrap();
+        let mut parser = Parser::new(contents, &tokens, eofpos);
         assert!(parser.expect_label().is_err());
         assert_eq!(parser.index, 0);
     }
@@ -137,16 +125,18 @@ mod tests {
 
     #[test]
     fn test_expect_token_matches() {
-        let tokens = make_tokens(vec![TokenValue::Fn]);
-        let mut parser = Parser::new("fn", &tokens, Pos::start());
+        let contents = "fn";
+        let (tokens, eofpos) = read_tokens(contents).unwrap();
+        let mut parser = Parser::new(contents, &tokens, eofpos);
         assert!(parser.expect_token(TokenValue::Fn).is_ok());
         assert_eq!(parser.index, 1);
     }
 
     #[test]
     fn test_expect_token_no_match() {
-        let tokens = make_tokens(vec![TokenValue::Fn]);
-        let mut parser = Parser::new("", &tokens, Pos::start());
+        let contents = "fn";
+        let (tokens, eofpos) = read_tokens(contents).unwrap();
+        let mut parser = Parser::new(contents, &tokens, eofpos);
         assert!(parser.expect_token(TokenValue::OpenParen).is_err());
         assert_eq!(parser.index, 0);
     }
