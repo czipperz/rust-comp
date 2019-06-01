@@ -19,6 +19,16 @@ pub struct Pos {
     pub index: usize,
 }
 
+impl Span {
+    pub fn range(start: Pos, s: &str) -> Self {
+        let mut end = start;
+        for c in s.chars() {
+            end.increment(c)
+        }
+        Span { start, end }
+    }
+}
+
 impl Index<Span> for str {
     type Output = str;
     fn index(&self, span: Span) -> &str {
@@ -70,6 +80,26 @@ impl Pos {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_range() {
+        let start = Pos {
+            line: 1,
+            column: 1,
+            index: 4,
+        };
+        assert_eq!(
+            Span::range(start, "abc\ndef"),
+            Span {
+                start,
+                end: Pos {
+                    line: 2,
+                    column: 3,
+                    index: 11
+                }
+            }
+        );
+    }
 
     #[test]
     fn test_pos_start() {
