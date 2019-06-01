@@ -6,9 +6,9 @@ use std::fmt;
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum TokenizerError {}
 
-pub fn read_tokens(mut tagged_iter: TaggedIter) -> Result<(Vec<Token>, Pos), TokenizerError> {
+pub fn read_tokens(contents: &str) -> Result<(Vec<Token>, Pos), TokenizerError> {
+    let mut tagged_iter = TaggedIter::new(contents);
     let mut tokens = Vec::new();
-
     let mut start = tagged_iter.pos;
 
     loop {
@@ -70,7 +70,7 @@ mod tests {
     #[test]
     fn test_read_tokens_empty_file() {
         assert_eq!(
-            read_tokens(TaggedIter::new("")),
+            read_tokens(""),
             Ok((
                 vec![],
                 Pos {
@@ -85,7 +85,7 @@ mod tests {
     #[test]
     fn test_read_tokens_whitespace_file() {
         assert_eq!(
-            read_tokens(TaggedIter::new("  \n  ")),
+            read_tokens("  \n  "),
             Ok((
                 vec![],
                 Pos {
@@ -100,7 +100,7 @@ mod tests {
     #[test]
     fn test_read_tokens_fn_eof() {
         assert_eq!(
-            read_tokens(TaggedIter::new("fn")),
+            read_tokens("fn"),
             Ok((
                 vec![Token {
                     value: TokenValue::Fn,
@@ -125,7 +125,7 @@ mod tests {
     #[test]
     fn test_read_tokens_fn_space() {
         assert_eq!(
-            read_tokens(TaggedIter::new("fn ")),
+            read_tokens("fn "),
             Ok((
                 vec![Token {
                     value: TokenValue::Fn,
@@ -150,7 +150,7 @@ mod tests {
     #[test]
     fn test_read_tokens_fnx() {
         assert_eq!(
-            read_tokens(TaggedIter::new("fnx")),
+            read_tokens("fnx"),
             Ok((
                 vec![Token {
                     value: TokenValue::Label,
@@ -175,7 +175,7 @@ mod tests {
     #[test]
     fn test_read_tokens_symbols() {
         assert_eq!(
-            read_tokens(TaggedIter::new("(){};")),
+            read_tokens("(){};"),
             Ok((
                 vec![
                     Token {
