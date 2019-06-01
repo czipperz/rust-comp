@@ -10,7 +10,7 @@ where
         match f(parser) {
             Ok(x) => xs.push(x),
             Err(_) if old_index == parser.index => return Ok(xs),
-            Err(e) => Err(e)?,
+            Err(e) => return Err(e),
         }
     }
 }
