@@ -16,4 +16,10 @@ pub struct Parameter {}
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Statement {
     Empty,
+    Expression(Expression),
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Expression {
+    Variable(String),
 }
