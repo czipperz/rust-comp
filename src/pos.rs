@@ -1,4 +1,4 @@
-use std::ops::{Deref, DerefMut, Index};
+use std::ops::{Deref, DerefMut};
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub struct Span {
@@ -16,7 +16,6 @@ pub struct FilePos<'a> {
 pub struct Pos {
     pub line: usize,
     pub column: usize,
-    pub index: usize,
 }
 
 impl Span {
@@ -26,20 +25,6 @@ impl Span {
             end.increment(c)
         }
         Span { start, end }
-    }
-}
-
-impl Index<Span> for str {
-    type Output = str;
-    fn index(&self, span: Span) -> &str {
-        &self[span.start.index..span.end.index]
-    }
-}
-
-impl Index<Span> for String {
-    type Output = str;
-    fn index(&self, span: Span) -> &str {
-        &self.as_str()[span]
     }
 }
 
@@ -62,7 +47,6 @@ impl Pos {
         Pos {
             line: 0,
             column: 0,
-            index: 0,
         }
     }
 
@@ -71,9 +55,8 @@ impl Pos {
             self.line += 1;
             self.column = 0;
         } else {
-            self.column += 1;
+            self.column += c.len_utf8();
         }
-        self.index += c.len_utf8();
     }
 }
 
@@ -86,7 +69,6 @@ mod tests {
         let start = Pos {
             line: 1,
             column: 1,
-            index: 4,
         };
         assert_eq!(
             Span::range(start, "abc\ndef"),
@@ -95,7 +77,6 @@ mod tests {
                 end: Pos {
                     line: 2,
                     column: 3,
-                    index: 11
                 }
             }
         );
@@ -106,7 +87,6 @@ mod tests {
         let pos = Pos::start();
         assert_eq!(pos.line, 0);
         assert_eq!(pos.column, 0);
-        assert_eq!(pos.index, 0);
     }
 
     #[test]
@@ -139,9 +119,9 @@ mod tests {
         // It appears that rustfmt will change this to ' ' instead of
         // 'greekletter'.  This causes this test to fail instead of pass.
         pos.increment('μ');
-        assert_eq!(pos.index, 2);
+        assert_eq!(pos.column, 2);
 
         pos.increment('m');
-        assert_eq!(pos.index, 3);
+        assert_eq!(pos.column, 3);
     }
 }

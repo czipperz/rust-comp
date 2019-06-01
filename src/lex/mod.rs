@@ -1,4 +1,5 @@
 mod tagged_iter;
+pub use self::tagged_iter::lines;
 use self::tagged_iter::TaggedIter;
 
 use crate::pos::*;
@@ -8,7 +9,7 @@ use std::fmt;
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum TokenizerError {}
 
-pub fn read_tokens(contents: &str) -> Result<(Vec<Token>, Pos), TokenizerError> {
+pub fn read_tokens<'a>(contents: &[String]) -> Result<(Vec<Token>, Pos), TokenizerError> {
     let mut tagged_iter = TaggedIter::new(contents);
     let mut tokens = Vec::new();
     let mut span = Span {
@@ -51,7 +52,7 @@ pub fn read_tokens(contents: &str) -> Result<(Vec<Token>, Pos), TokenizerError> 
     Ok((tokens, tagged_iter.pos))
 }
 
-fn flush_temp(tokens: &mut Vec<Token>, file_contents: &str, span: Span) {
+fn flush_temp(tokens: &mut Vec<Token>, file_contents: &[String], span: Span) {
     const SYMBOLS: [(&str, TokenValue); 11] = [
         ("fn", TokenValue::Fn),
         ("let", TokenValue::Let),
@@ -65,9 +66,12 @@ fn flush_temp(tokens: &mut Vec<Token>, file_contents: &str, span: Span) {
         ("=", TokenValue::Set),
         (";", TokenValue::Semicolon),
     ];
+
     if span.start != span.end {
         tokens.push(Token {
-            value: if let Some(i) = SYMBOLS.iter().position(|(s, _)| **s == file_contents[span]) {
+            value: if let Some(i) = SYMBOLS.iter().position(|(s, _)| {
+                **s == file_contents[span.start.line][span.start.column..span.end.column]
+            }) {
                 SYMBOLS[i].1.clone()
             } else {
                 TokenValue::Label
@@ -91,48 +95,27 @@ mod tests {
 
     #[test]
     fn test_read_tokens_empty_file() {
-        assert_eq!(
-            read_tokens(""),
-            Ok((
-                vec![],
-                Pos {
-                    line: 0,
-                    column: 0,
-                    index: 0,
-                }
-            ))
-        );
+        assert_eq!(read_tokens(&[]), Ok((vec![], Pos { line: 0, column: 0 })));
     }
 
     #[test]
     fn test_read_tokens_whitespace_file() {
         assert_eq!(
-            read_tokens("  \n  "),
-            Ok((
-                vec![],
-                Pos {
-                    line: 1,
-                    column: 2,
-                    index: 5,
-                }
-            ))
+            read_tokens(&lines("  \n  ")),
+            Ok((vec![], Pos { line: 1, column: 2 }))
         );
     }
 
     #[test]
     fn test_read_tokens_fn_eof() {
         assert_eq!(
-            read_tokens("fn"),
+            read_tokens(&lines("fn")),
             Ok((
                 vec![Token {
                     value: TokenValue::Fn,
                     span: Span::range(Pos::start(), "fn"),
                 }],
-                Pos {
-                    line: 0,
-                    column: 2,
-                    index: 2,
-                }
+                Pos { line: 0, column: 2 }
             ))
         );
     }
@@ -140,17 +123,13 @@ mod tests {
     #[test]
     fn test_read_tokens_fn_space() {
         assert_eq!(
-            read_tokens("fn "),
+            read_tokens(&lines("fn ")),
             Ok((
                 vec![Token {
                     value: TokenValue::Fn,
                     span: Span::range(Pos::start(), "fn"),
                 }],
-                Pos {
-                    line: 0,
-                    column: 3,
-                    index: 3,
-                }
+                Pos { line: 0, column: 3 }
             ))
         );
     }
@@ -158,17 +137,13 @@ mod tests {
     #[test]
     fn test_read_tokens_fnx() {
         assert_eq!(
-            read_tokens("fnx"),
+            read_tokens(&lines("fnx")),
             Ok((
                 vec![Token {
                     value: TokenValue::Label,
                     span: Span::range(Pos::start(), "fnx"),
                 }],
-                Pos {
-                    line: 0,
-                    column: 3,
-                    index: 3,
-                }
+                Pos { line: 0, column: 3 }
             ))
         );
     }
@@ -176,17 +151,13 @@ mod tests {
     #[test]
     fn test_read_tokens_let() {
         assert_eq!(
-            read_tokens("let"),
+            read_tokens(&lines("let")),
             Ok((
                 vec![Token {
                     value: TokenValue::Let,
                     span: Span::range(Pos::start(), "let"),
                 }],
-                Pos {
-                    line: 0,
-                    column: 3,
-                    index: 3,
-                }
+                Pos { line: 0, column: 3 }
             ))
         );
     }
@@ -194,7 +165,7 @@ mod tests {
     #[test]
     fn test_read_tokens_individual_symbols() {
         assert_eq!(
-            read_tokens("(){};"),
+            read_tokens(&lines("(){};")),
             Ok((
                 vec![
                     Token {
@@ -203,54 +174,22 @@ mod tests {
                     },
                     Token {
                         value: TokenValue::CloseParen,
-                        span: Span::range(
-                            Pos {
-                                line: 0,
-                                column: 1,
-                                index: 1
-                            },
-                            ")"
-                        ),
+                        span: Span::range(Pos { line: 0, column: 1 }, ")"),
                     },
                     Token {
                         value: TokenValue::OpenCurly,
-                        span: Span::range(
-                            Pos {
-                                line: 0,
-                                column: 2,
-                                index: 2
-                            },
-                            "{"
-                        ),
+                        span: Span::range(Pos { line: 0, column: 2 }, "{"),
                     },
                     Token {
                         value: TokenValue::CloseCurly,
-                        span: Span::range(
-                            Pos {
-                                line: 0,
-                                column: 3,
-                                index: 3
-                            },
-                            "}",
-                        ),
+                        span: Span::range(Pos { line: 0, column: 3 }, "}",),
                     },
                     Token {
                         value: TokenValue::Semicolon,
-                        span: Span::range(
-                            Pos {
-                                line: 0,
-                                column: 4,
-                                index: 4
-                            },
-                            ";"
-                        )
+                        span: Span::range(Pos { line: 0, column: 4 }, ";")
                     },
                 ],
-                Pos {
-                    line: 0,
-                    column: 5,
-                    index: 5,
-                }
+                Pos { line: 0, column: 5 }
             ))
         );
     }
@@ -258,7 +197,7 @@ mod tests {
     #[test]
     fn test_read_tokens_set() {
         assert_eq!(
-            read_tokens("a =(b)"),
+            read_tokens(&lines("a =(b)")),
             Ok((
                 vec![
                     Token {
@@ -267,54 +206,22 @@ mod tests {
                     },
                     Token {
                         value: TokenValue::Set,
-                        span: Span::range(
-                            Pos {
-                                line: 0,
-                                column: 2,
-                                index: 2
-                            },
-                            "="
-                        ),
+                        span: Span::range(Pos { line: 0, column: 2 }, "="),
                     },
                     Token {
                         value: TokenValue::OpenParen,
-                        span: Span::range(
-                            Pos {
-                                line: 0,
-                                column: 3,
-                                index: 3
-                            },
-                            "("
-                        ),
+                        span: Span::range(Pos { line: 0, column: 3 }, "("),
                     },
                     Token {
                         value: TokenValue::Label,
-                        span: Span::range(
-                            Pos {
-                                line: 0,
-                                column: 4,
-                                index: 4
-                            },
-                            "b"
-                        ),
+                        span: Span::range(Pos { line: 0, column: 4 }, "b"),
                     },
                     Token {
                         value: TokenValue::CloseParen,
-                        span: Span::range(
-                            Pos {
-                                line: 0,
-                                column: 5,
-                                index: 5
-                            },
-                            ")"
-                        ),
+                        span: Span::range(Pos { line: 0, column: 5 }, ")"),
                     },
                 ],
-                Pos {
-                    line: 0,
-                    column: 6,
-                    index: 6,
-                }
+                Pos { line: 0, column: 6 }
             ))
         );
     }
@@ -322,17 +229,13 @@ mod tests {
     #[test]
     fn test_read_tokens_fat_arrow() {
         assert_eq!(
-            read_tokens("=>"),
+            read_tokens(&lines("=>")),
             Ok((
                 vec![Token {
                     value: TokenValue::FatArrow,
                     span: Span::range(Pos::start(), "=>"),
                 }],
-                Pos {
-                    line: 0,
-                    column: 2,
-                    index: 2,
-                }
+                Pos { line: 0, column: 2 }
             ))
         );
     }
@@ -340,17 +243,13 @@ mod tests {
     #[test]
     fn test_read_tokens_thin_arrow() {
         assert_eq!(
-            read_tokens("->"),
+            read_tokens(&lines("->")),
             Ok((
                 vec![Token {
                     value: TokenValue::ThinArrow,
                     span: Span::range(Pos::start(), "->"),
                 }],
-                Pos {
-                    line: 0,
-                    column: 2,
-                    index: 2,
-                }
+                Pos { line: 0, column: 2 }
             ))
         );
     }

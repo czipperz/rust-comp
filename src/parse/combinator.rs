@@ -33,17 +33,20 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::lex::lines;
     use crate::pos::Pos;
 
     #[test]
     fn test_many_ok_no_move_then_err_no_move() {
         let mut first = true;
         assert_eq!(
-            many(&mut Parser::new("", &[], Pos::start()), |_| if first {
-                first = false;
-                Ok(())
-            } else {
-                Err(())
+            many(&mut Parser::new(&lines(""), &[], Pos::start()), |_| {
+                if first {
+                    first = false;
+                    Ok(())
+                } else {
+                    Err(())
+                }
             }),
             Ok(vec![()])
         );
@@ -53,7 +56,7 @@ mod tests {
     fn test_many_ok_move_then_err_move() {
         let mut first = true;
         assert_eq!(
-            many(&mut Parser::new("", &[], Pos::start()), |parser| {
+            many(&mut Parser::new(&lines(""), &[], Pos::start()), |parser| {
                 parser.index += 1;
                 if first {
                     first = false;
@@ -70,7 +73,7 @@ mod tests {
     fn test_many_ok_move_then_err_no_move() {
         let mut first = true;
         assert_eq!(
-            many(&mut Parser::new("", &[], Pos::start()), |parser| {
+            many(&mut Parser::new(&lines(""), &[], Pos::start()), |parser| {
                 if first {
                     first = false;
                     parser.index += 1;
@@ -87,7 +90,7 @@ mod tests {
     fn test_one_of_no_functions_should_return_error() {
         assert_eq!(
             one_of::<(), i32, fn(&mut Parser) -> Result<(), i32>>(
-                &mut Parser::new("", &[], Pos::start()),
+                &mut Parser::new(&lines(""), &[], Pos::start()),
                 &mut [],
                 1
             ),
@@ -99,7 +102,7 @@ mod tests {
     fn test_one_of_two_functions_first_ok() {
         assert_eq!(
             one_of::<i32, i32, fn(&mut Parser) -> Result<i32, i32>>(
-                &mut Parser::new("", &[], Pos::start()),
+                &mut Parser::new(&lines(""), &[], Pos::start()),
                 &mut [|_| Ok(1), |_| panic!()],
                 2
             ),

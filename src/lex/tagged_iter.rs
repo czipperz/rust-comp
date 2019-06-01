@@ -1,12 +1,22 @@
 use crate::pos::*;
 
+pub fn lines(contents: &str) -> Vec<String> {
+    contents.lines().map(|s| s.to_string()).collect::<Vec<_>>()
+}
+
 pub struct TaggedIter<'a> {
-    pub contents: &'a str,
+    pub contents: &'a [String],
     pub pos: Pos,
 }
 
 impl<'a> TaggedIter<'a> {
-    pub fn new(contents: &'a str) -> Self {
+    pub fn new(contents: &'a [String]) -> Self {
+        debug_assert!({
+            for line in contents {
+                assert!(!line.contains('\n'))
+            }
+            true
+        });
         TaggedIter {
             contents,
             pos: Pos::start(),
@@ -14,7 +24,19 @@ impl<'a> TaggedIter<'a> {
     }
 
     pub fn peek(&self) -> Option<char> {
-        self.contents[self.pos.index..].chars().next()
+        if self.pos.line == self.contents.len()
+            || self.pos.line == self.contents.len() - 1
+                && self.pos.column == self.contents[self.pos.line].len()
+        {
+            None
+        } else {
+            Some(
+                self.contents[self.pos.line][self.pos.column..]
+                    .chars()
+                    .next()
+                    .unwrap_or('\n'),
+            )
+        }
     }
 }
 
@@ -22,7 +44,7 @@ impl<'a> Iterator for TaggedIter<'a> {
     type Item = char;
 
     fn next(&mut self) -> Option<char> {
-        let c = self.contents[self.pos.index..].chars().next()?;
+        let c = self.peek()?;
         self.pos.increment(c);
         Some(c)
     }
@@ -34,24 +56,27 @@ mod tests {
 
     #[test]
     fn test_new() {
-        let x = TaggedIter::new("contents");
-        assert_eq!(x.contents, "contents");
+        let contents = lines("contents");
+        let x = TaggedIter::new(&contents);
+        assert_eq!(x.contents, &contents[..]);
         assert_eq!(x.pos, Pos::start());
     }
 
     #[test]
     fn test_peek() {
-        let mut x = TaggedIter::new("μσ");
-        assert_eq!(x.peek(), Some('μ'));
+        let contents = lines("  ");
+        let mut x = TaggedIter::new(&contents);
+        assert_eq!(x.peek(), Some(' '));
         x.next();
-        assert_eq!(x.peek(), Some('σ'));
+        assert_eq!(x.peek(), Some(' '));
         x.next();
         assert_eq!(x.peek(), None);
     }
 
     #[test]
     fn test_next() {
-        let mut x = TaggedIter::new("cont");
+        let contents = lines("cont");
+        let mut x = TaggedIter::new(&contents);
         assert_eq!(x.next(), Some('c'));
         assert_eq!(x.next(), Some('o'));
         assert_eq!(x.next(), Some('n'));
@@ -61,7 +86,8 @@ mod tests {
 
     #[test]
     fn test_next_greek_letters() {
-        let mut x = TaggedIter::new("    ");
+        let contents = lines("    ");
+        let mut x = TaggedIter::new(&contents);
         assert_eq!(x.next(), Some(' '));
         assert_eq!(x.next(), Some(' '));
         assert_eq!(x.next(), Some(' '));
@@ -71,7 +97,8 @@ mod tests {
 
     #[test]
     fn test_next_handles_new_lines() {
-        let mut x = TaggedIter::new("a\nb");
+        let contents = lines("a\nb");
+        let mut x = TaggedIter::new(&contents);
         assert_eq!(x.pos.line, 0);
         assert_eq!(x.pos.column, 0);
 

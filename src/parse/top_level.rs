@@ -6,7 +6,11 @@ use crate::ast::*;
 use crate::pos::Pos;
 use crate::token::*;
 
-pub fn parse(file_contents: &str, tokens: &[Token], eofpos: Pos) -> Result<Vec<TopLevel>, Error> {
+pub fn parse(
+    file_contents: &[String],
+    tokens: &[Token],
+    eofpos: Pos,
+) -> Result<Vec<TopLevel>, Error> {
     many(
         &mut Parser::new(file_contents, tokens, eofpos),
         expect_top_level,
@@ -38,15 +42,15 @@ fn expect_parameters(parser: &mut Parser) -> Result<Vec<Parameter>, Error> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::lex::read_tokens;
+    use crate::lex::{read_tokens, lines};
 
     #[test]
     fn test_expect_fn_invalid() {
-        let contents = "fn f () {";
-        let (tokens, eofpos) = read_tokens(contents).unwrap();
+        let contents = lines("fn f () {");
+        let (tokens, eofpos) = read_tokens(&contents).unwrap();
         for i in 0..tokens.len() {
             dbg!(i);
-            let mut parser = Parser::new(contents, &tokens[..i], eofpos);
+            let mut parser = Parser::new(&contents, &tokens[..i], eofpos);
             assert!(expect_fn(&mut parser).is_err());
             assert_eq!(parser.index, i);
         }
@@ -54,9 +58,9 @@ mod tests {
 
     #[test]
     fn test_expect_fn_matching() {
-        let contents = "fn f () {}";
-        let (tokens, eofpos) = read_tokens(contents).unwrap();
-        let mut parser = Parser::new(contents, &tokens, eofpos);
+        let contents = lines("fn f () {}");
+        let (tokens, eofpos) = read_tokens(&contents).unwrap();
+        let mut parser = Parser::new(&contents, &tokens, eofpos);
         let f = expect_fn(&mut parser).unwrap();
         assert_eq!(parser.index, tokens.len());
         assert_eq!(f.name, "f");

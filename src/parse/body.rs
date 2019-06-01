@@ -74,14 +74,14 @@ fn expect_block_expression(parser: &mut Parser) -> Result<Expression, Error> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::lex::read_tokens;
+    use crate::lex::{lines, read_tokens};
     use crate::pos::*;
 
     #[test]
     fn test_expect_block_no_statements() {
-        let contents = "{}";
-        let (tokens, eofpos) = read_tokens(contents).unwrap();
-        let mut parser = Parser::new(contents, &tokens, eofpos);
+        let contents = lines("{}");
+        let (tokens, eofpos) = read_tokens(&contents).unwrap();
+        let mut parser = Parser::new(&contents, &tokens, eofpos);
         let block = expect_block(&mut parser).unwrap();
         assert_eq!(parser.index, tokens.len());
         assert_eq!(block.statements.len(), 0);
@@ -89,9 +89,9 @@ mod tests {
 
     #[test]
     fn test_expect_block_with_empty_statements() {
-        let contents = "{;;}";
-        let (tokens, eofpos) = read_tokens(contents).unwrap();
-        let mut parser = Parser::new(contents, &tokens, eofpos);
+        let contents = lines("{;;}");
+        let (tokens, eofpos) = read_tokens(&contents).unwrap();
+        let mut parser = Parser::new(&contents, &tokens, eofpos);
         let block = expect_block(&mut parser).unwrap();
         assert_eq!(parser.index, tokens.len());
         assert_eq!(block.statements, [Statement::Empty, Statement::Empty]);
@@ -99,16 +99,17 @@ mod tests {
 
     #[test]
     fn test_expect_statement_empty() {
-        let mut parser = Parser::new("", &[], Pos::start());
+        let contents = lines("");
+        let mut parser = Parser::new(&contents, &[], Pos::start());
         assert!(expect_statement(&mut parser).is_err());
         assert_eq!(parser.index, 0);
     }
 
     #[test]
     fn test_expect_statement_semicolon() {
-        let contents = ";";
-        let (tokens, eofpos) = read_tokens(contents).unwrap();
-        let mut parser = Parser::new(contents, &tokens, eofpos);
+        let contents = &lines(";");
+        let (tokens, eofpos) = read_tokens(&contents).unwrap();
+        let mut parser = Parser::new(&contents, &tokens, eofpos);
         let statement = expect_statement(&mut parser).unwrap();
         assert_eq!(parser.index, tokens.len());
         assert_eq!(statement, Statement::Empty);
@@ -116,9 +117,9 @@ mod tests {
 
     #[test]
     fn test_let_statement_with_type_and_value() {
-        let contents = "let x: i32 = y;";
-        let (tokens, eofpos) = read_tokens(contents).unwrap();
-        let mut parser = Parser::new(contents, &tokens, eofpos);
+        let contents = lines("let x: i32 = y;");
+        let (tokens, eofpos) = read_tokens(&contents).unwrap();
+        let mut parser = Parser::new(&contents, &tokens, eofpos);
         let expression = expect_let_statement(&mut parser);
         assert_eq!(parser.index, tokens.len());
         assert_eq!(
@@ -133,9 +134,9 @@ mod tests {
 
     #[test]
     fn test_let_statement_with_value() {
-        let contents = "let x = y;";
-        let (tokens, eofpos) = read_tokens(contents).unwrap();
-        let mut parser = Parser::new(contents, &tokens, eofpos);
+        let contents = lines("let x = y;");
+        let (tokens, eofpos) = read_tokens(&contents).unwrap();
+        let mut parser = Parser::new(&contents, &tokens, eofpos);
         let expression = expect_let_statement(&mut parser);
         assert_eq!(parser.index, tokens.len());
         assert_eq!(
@@ -150,9 +151,9 @@ mod tests {
 
     #[test]
     fn test_let_statement_without_value() {
-        let contents = "let x;";
-        let (tokens, eofpos) = read_tokens(contents).unwrap();
-        let mut parser = Parser::new(contents, &tokens, eofpos);
+        let contents = lines("let x;");
+        let (tokens, eofpos) = read_tokens(&contents).unwrap();
+        let mut parser = Parser::new(&contents, &tokens, eofpos);
         let expression = expect_let_statement(&mut parser);
         assert_eq!(parser.index, tokens.len());
         assert_eq!(expression, Ok(Statement::Let("x".to_string(), None, None)));
@@ -160,9 +161,9 @@ mod tests {
 
     #[test]
     fn test_expect_expression_statement_variable_no_semicolon_should_error() {
-        let contents = "ab";
-        let (tokens, eofpos) = read_tokens(contents).unwrap();
-        let mut parser = Parser::new(contents, &tokens, eofpos);
+        let contents = lines("ab");
+        let (tokens, eofpos) = read_tokens(&contents).unwrap();
+        let mut parser = Parser::new(&contents, &tokens, eofpos);
         let expression = expect_expression_statement(&mut parser);
         assert_eq!(parser.index, tokens.len());
         assert!(expression.is_err());
@@ -170,9 +171,9 @@ mod tests {
 
     #[test]
     fn test_expect_expression_statement_variable_semicolon() {
-        let contents = "ab;";
-        let (tokens, eofpos) = read_tokens(contents).unwrap();
-        let mut parser = Parser::new(contents, &tokens, eofpos);
+        let contents = lines("ab;");
+        let (tokens, eofpos) = read_tokens(&contents).unwrap();
+        let mut parser = Parser::new(&contents, &tokens, eofpos);
         let expression = expect_expression_statement(&mut parser);
         assert_eq!(parser.index, tokens.len());
         assert_eq!(
@@ -185,9 +186,9 @@ mod tests {
 
     #[test]
     fn test_expect_variable_expression() {
-        let contents = "ab";
-        let (tokens, eofpos) = read_tokens(contents).unwrap();
-        let mut parser = Parser::new(contents, &tokens, eofpos);
+        let contents = lines("ab");
+        let (tokens, eofpos) = read_tokens(&contents).unwrap();
+        let mut parser = Parser::new(&contents, &tokens, eofpos);
         let expression = expect_variable_expression(&mut parser).unwrap();
         assert_eq!(parser.index, tokens.len());
         assert_eq!(expression, Expression::Variable("ab".to_string()));
@@ -195,9 +196,9 @@ mod tests {
 
     #[test]
     fn test_expect_variable_expression_fn_should_error() {
-        let contents = "fn";
-        let (tokens, eofpos) = read_tokens(contents).unwrap();
-        let mut parser = Parser::new(contents, &tokens, eofpos);
+        let contents = lines("fn");
+        let (tokens, eofpos) = read_tokens(&contents).unwrap();
+        let mut parser = Parser::new(&contents, &tokens, eofpos);
         let expression = expect_variable_expression(&mut parser);
         assert_eq!(parser.index, 0);
         assert_eq!(
@@ -211,9 +212,9 @@ mod tests {
 
     #[test]
     fn test_expect_block_expression() {
-        let contents = "{}";
-        let (tokens, eofpos) = read_tokens(contents).unwrap();
-        let mut parser = Parser::new(contents, &tokens, eofpos);
+        let contents = lines("{}");
+        let (tokens, eofpos) = read_tokens(&contents).unwrap();
+        let mut parser = Parser::new(&contents, &tokens, eofpos);
         let expression = expect_block_expression(&mut parser).unwrap();
         assert_eq!(parser.index, tokens.len());
         assert_eq!(expression, Expression::Block(Block { statements: vec![] }));
