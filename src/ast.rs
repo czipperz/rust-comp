@@ -17,10 +17,15 @@ pub struct Parameter {}
 pub enum Statement {
     Empty,
     Expression(Expression),
-    Let(String, Option<Expression>),
+    Let(String, Option<Type>, Option<Expression>),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Expression {
     Variable(String),
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Type {
+    Named(String),
 }

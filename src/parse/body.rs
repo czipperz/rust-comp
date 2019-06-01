@@ -1,5 +1,6 @@
 use super::combinator::*;
 use super::parser::Parser;
+use super::type_::expect_type;
 use super::Error;
 use crate::ast::*;
 use crate::token::*;
@@ -26,13 +27,18 @@ fn expect_statement(parser: &mut Parser) -> Result<Statement, Error> {
 fn expect_let_statement(parser: &mut Parser) -> Result<Statement, Error> {
     parser.expect_token(TokenValue::Let)?;
     let name = parser.expect_label()?.to_string();
+    let type_ = if parser.expect_token(TokenValue::Colon).is_ok() {
+        Some(expect_type(parser)?)
+    } else {
+        None
+    };
     let value = if parser.expect_token(TokenValue::Set).is_ok() {
         Some(expect_expression(parser)?)
     } else {
         None
     };
     parser.expect_token(TokenValue::Semicolon)?;
-    Ok(Statement::Let(name, value))
+    Ok(Statement::Let(name, type_, value))
 }
 
 fn expect_empty_statement(parser: &mut Parser) -> Result<Statement, Error> {
@@ -97,6 +103,23 @@ mod tests {
     }
 
     #[test]
+    fn test_let_statement_with_type_and_value() {
+        let contents = "let x: i32 = y;";
+        let (tokens, eofpos) = read_tokens(contents).unwrap();
+        let mut parser = Parser::new(contents, &tokens, eofpos);
+        let expression = expect_let_statement(&mut parser);
+        assert_eq!(parser.index, tokens.len());
+        assert_eq!(
+            expression,
+            Ok(Statement::Let(
+                "x".to_string(),
+                Some(Type::Named("i32".to_string())),
+                Some(Expression::Variable("y".to_string()))
+            ))
+        );
+    }
+
+    #[test]
     fn test_let_statement_with_value() {
         let contents = "let x = y;";
         let (tokens, eofpos) = read_tokens(contents).unwrap();
@@ -107,6 +130,7 @@ mod tests {
             expression,
             Ok(Statement::Let(
                 "x".to_string(),
+                None,
                 Some(Expression::Variable("y".to_string()))
             ))
         );
@@ -119,7 +143,7 @@ mod tests {
         let mut parser = Parser::new(contents, &tokens, eofpos);
         let expression = expect_let_statement(&mut parser);
         assert_eq!(parser.index, tokens.len());
-        assert_eq!(expression, Ok(Statement::Let("x".to_string(), None,)));
+        assert_eq!(expression, Ok(Statement::Let("x".to_string(), None, None)));
     }
 
     #[test]
