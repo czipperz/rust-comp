@@ -1,6 +1,6 @@
 use super::Error;
-use crate::token::*;
 use crate::pos::*;
+use crate::token::*;
 
 pub struct Parser<'a> {
     file_contents: &'a str,

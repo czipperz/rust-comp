@@ -1,5 +1,5 @@
-use crate::token::TokenValue;
 use crate::pos::Span;
+use crate::token::TokenValue;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Error {
