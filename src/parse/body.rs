@@ -83,14 +83,7 @@ mod tests {
     fn test_expect_expression_variable() {
         let tokens = [Token {
             value: TokenValue::Label,
-            span: Span {
-                start: Pos::start(),
-                end: Pos {
-                    line: 0,
-                    column: 2,
-                    index: 2,
-                },
-            },
+            span: Span::range(Pos::start(), "ab"),
         }];
         let mut parser = Parser::new("ab", &tokens, Pos::start());
         let expression = expect_expression(&mut parser).unwrap();

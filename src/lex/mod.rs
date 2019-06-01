@@ -106,14 +106,7 @@ mod tests {
             Ok((
                 vec![Token {
                     value: TokenValue::Fn,
-                    span: Span {
-                        start: Pos::start(),
-                        end: Pos {
-                            line: 0,
-                            column: 2,
-                            index: 2
-                        }
-                    }
+                    span: Span::range(Pos::start(), "fn"),
                 }],
                 Pos {
                     line: 0,
@@ -131,14 +124,7 @@ mod tests {
             Ok((
                 vec![Token {
                     value: TokenValue::Fn,
-                    span: Span {
-                        start: Pos::start(),
-                        end: Pos {
-                            line: 0,
-                            column: 2,
-                            index: 2
-                        }
-                    }
+                    span: Span::range(Pos::start(), "fn"),
                 }],
                 Pos {
                     line: 0,
@@ -156,14 +142,7 @@ mod tests {
             Ok((
                 vec![Token {
                     value: TokenValue::Label,
-                    span: Span {
-                        start: Pos::start(),
-                        end: Pos {
-                            line: 0,
-                            column: 3,
-                            index: 3
-                        }
-                    }
+                    span: Span::range(Pos::start(), "fnx"),
                 }],
                 Pos {
                     line: 0,
@@ -182,78 +161,51 @@ mod tests {
                 vec![
                     Token {
                         value: TokenValue::OpenParen,
-                        span: Span {
-                            start: Pos {
-                                line: 0,
-                                column: 0,
-                                index: 0
-                            },
-                            end: Pos {
-                                line: 0,
-                                column: 1,
-                                index: 1
-                            }
-                        }
+                        span: Span::range(Pos::start(), "("),
                     },
                     Token {
                         value: TokenValue::CloseParen,
-                        span: Span {
-                            start: Pos {
+                        span: Span::range(
+                            Pos {
                                 line: 0,
                                 column: 1,
                                 index: 1
                             },
-                            end: Pos {
-                                line: 0,
-                                column: 2,
-                                index: 2
-                            }
-                        }
+                            ")"
+                        ),
                     },
                     Token {
                         value: TokenValue::OpenCurly,
-                        span: Span {
-                            start: Pos {
+                        span: Span::range(
+                            Pos {
                                 line: 0,
                                 column: 2,
                                 index: 2
                             },
-                            end: Pos {
-                                line: 0,
-                                column: 3,
-                                index: 3
-                            }
-                        }
+                            "{"
+                        ),
                     },
                     Token {
                         value: TokenValue::CloseCurly,
-                        span: Span {
-                            start: Pos {
+                        span: Span::range(
+                            Pos {
                                 line: 0,
                                 column: 3,
                                 index: 3
                             },
-                            end: Pos {
-                                line: 0,
-                                column: 4,
-                                index: 4
-                            }
-                        }
+                            "}",
+                        ),
                     },
                     Token {
                         value: TokenValue::Semicolon,
-                        span: Span {
-                            start: Pos {
+                        span: Span::range(
+                            Pos {
                                 line: 0,
                                 column: 4,
                                 index: 4
                             },
-                            end: Pos {
-                                line: 0,
-                                column: 5,
-                                index: 5
-                            }
-                        }
+                            ";"
+                        )
                     },
                 ],
                 Pos {

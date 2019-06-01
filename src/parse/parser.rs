@@ -28,12 +28,7 @@ impl<'a> Parser<'a> {
     }
 
     pub fn eof(&self) -> Span {
-        let mut end = self.eofpos;
-        end.increment(' ');
-        Span {
-            start: self.eofpos,
-            end,
-        }
+        Span::range(self.eofpos, " ")
     }
 
     pub fn expect_label(&mut self) -> Result<&'a str, Error> {
@@ -64,16 +59,10 @@ mod tests {
 
     #[test]
     fn test_span_in_bounds() {
+        let span = Span::range(Pos::start(), "fn");
         let tokens = [Token {
             value: TokenValue::Fn,
-            span: Span {
-                start: Pos::start(),
-                end: Pos {
-                    line: 0,
-                    column: 2,
-                    index: 2,
-                },
-            },
+            span,
         }];
         let parser = Parser::new(
             "fn",
@@ -84,21 +73,7 @@ mod tests {
                 index: 2,
             },
         );
-        assert_eq!(
-            parser.span(),
-            Span {
-                start: Pos {
-                    line: 0,
-                    column: 0,
-                    index: 0,
-                },
-                end: Pos {
-                    line: 0,
-                    column: 2,
-                    index: 2,
-                }
-            }
-        );
+        assert_eq!(parser.span(), span);
     }
 
     #[test]
@@ -117,30 +92,13 @@ mod tests {
 
     #[test]
     fn test_eof() {
-        let parser = Parser::new(
-            "",
-            &[],
-            Pos {
-                line: 1,
-                column: 1,
-                index: 2,
-            },
-        );
-        assert_eq!(
-            parser.eof(),
-            Span {
-                start: Pos {
-                    line: 1,
-                    column: 1,
-                    index: 2,
-                },
-                end: Pos {
-                    line: 1,
-                    column: 2,
-                    index: 3,
-                }
-            }
-        );
+        let eofpos = Pos {
+            line: 1,
+            column: 1,
+            index: 2,
+        };
+        let parser = Parser::new("", &[], eofpos);
+        assert_eq!(parser.eof(), Span::range(eofpos, " "));
     }
 
     #[test]
@@ -155,18 +113,7 @@ mod tests {
         use crate::pos::*;
         let tokens = [Token {
             value: TokenValue::Label,
-            span: Span {
-                start: Pos {
-                    line: 0,
-                    column: 0,
-                    index: 0,
-                },
-                end: Pos {
-                    line: 0,
-                    column: 3,
-                    index: 3,
-                },
-            },
+            span: Span::range(Pos::start(), "abc"),
         }];
         let mut parser = Parser::new("abc", &tokens, Pos::start());
         assert_eq!(parser.expect_label().unwrap(), "abc");
