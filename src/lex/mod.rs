@@ -1,4 +1,5 @@
 mod tagged_iter;
+#[cfg(test)]
 pub use self::tagged_iter::lines;
 use self::tagged_iter::TaggedIter;
 

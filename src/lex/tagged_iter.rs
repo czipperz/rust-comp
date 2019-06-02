@@ -1,5 +1,6 @@
 use crate::pos::*;
 
+#[cfg(test)]
 pub fn lines(contents: &str) -> Vec<String> {
     contents.lines().map(|s| s.to_string()).collect::<Vec<_>>()
 }
