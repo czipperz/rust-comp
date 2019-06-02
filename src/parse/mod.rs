@@ -1,6 +1,8 @@
-mod body;
+mod block;
 mod combinator;
+mod expression;
 mod parser;
+mod statement;
 mod type_;
 
 mod error;

@@ -68,9 +68,7 @@ fn flush_temp(tokens: &mut Vec<Token>, file_contents: &str, span: Span) {
 
     if span.start != span.end {
         tokens.push(Token {
-            value: if let Some(i) = SYMBOLS.iter().position(|(s, _)| {
-                **s == file_contents[span]
-            }) {
+            value: if let Some(i) = SYMBOLS.iter().position(|(s, _)| **s == file_contents[span]) {
                 SYMBOLS[i].1.clone()
             } else {
                 TokenValue::Label
@@ -99,10 +97,7 @@ mod tests {
 
     #[test]
     fn test_read_tokens_whitespace_file() {
-        assert_eq!(
-            read_tokens("  \n  "),
-            Ok((vec![], Pos { index: 5 }))
-        );
+        assert_eq!(read_tokens("  \n  "), Ok((vec![], Pos { index: 5 })));
     }
 
     #[test]

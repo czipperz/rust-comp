@@ -1,4 +1,4 @@
-use super::body::expect_block;
+use super::block::expect_block;
 use super::combinator::many;
 use super::parser::Parser;
 use super::Error;
