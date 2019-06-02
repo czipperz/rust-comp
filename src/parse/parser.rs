@@ -3,14 +3,14 @@ use crate::pos::*;
 use crate::token::*;
 
 pub struct Parser<'a> {
-    file_contents: &'a [String],
+    file_contents: &'a str,
     tokens: &'a [Token],
     eofpos: Pos,
     pub index: usize,
 }
 
 impl<'a> Parser<'a> {
-    pub fn new(file_contents: &'a [String], tokens: &'a [Token], eofpos: Pos) -> Self {
+    pub fn new(file_contents: &'a str, tokens: &'a [Token], eofpos: Pos) -> Self {
         Parser {
             file_contents,
             tokens,
@@ -34,8 +34,7 @@ impl<'a> Parser<'a> {
     pub fn expect_label(&mut self) -> Result<&'a str, Error> {
         self.expect_token(TokenValue::Label)?;
         let span = self.tokens[self.index - 1].span;
-        debug_assert!(span.start.line == span.end.line);
-        Ok(&self.file_contents[span.start.line][span.start.column..span.end.column])
+        Ok(&self.file_contents[span])
     }
 
     pub fn expect_token(&mut self, expected: TokenValue) -> Result<(), Error> {
@@ -58,11 +57,11 @@ impl<'a> Parser<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::lex::{lines, read_tokens};
+    use crate::lex::read_tokens;
 
     #[test]
     fn test_span_in_bounds() {
-        let contents = lines("fn");
+        let contents = "fn";
         let (tokens, eofpos) = read_tokens(&contents).unwrap();
         let parser = Parser::new(&contents, &tokens, eofpos);
         assert_eq!(parser.span(), Span::range(Pos::start(), "fn"));
@@ -70,22 +69,22 @@ mod tests {
 
     #[test]
     fn test_span_out_of_bounds() {
-        let contents = lines("  ");
-        let parser = Parser::new(&contents, &[], Pos { line: 0, column: 2 });
+        let contents = "  ";
+        let parser = Parser::new(&contents, &[], Pos { index: 2 });
         assert_eq!(parser.span(), parser.eof());
     }
 
     #[test]
     fn test_eof() {
-        let eofpos = Pos { line: 1, column: 1 };
-        let contents = lines("");
+        let eofpos = Pos { index: 3 };
+        let contents = " \n ";
         let parser = Parser::new(&contents, &[], eofpos);
         assert_eq!(parser.eof(), Span::range(eofpos, " "));
     }
 
     #[test]
     fn test_expect_label_out_of_bounds() {
-        let contents = lines("");
+        let contents = "";
         let mut parser = Parser::new(&contents, &[], Pos::start());
         assert!(parser.expect_label().is_err());
         assert_eq!(parser.index, 0);
@@ -93,7 +92,7 @@ mod tests {
 
     #[test]
     fn test_expect_label_matches() {
-        let contents = lines("abc");
+        let contents = "abc";
         let (tokens, eofpos) = read_tokens(&contents).unwrap();
         let mut parser = Parser::new(&contents, &tokens, eofpos);
         assert_eq!(parser.expect_label().unwrap(), "abc");
@@ -102,7 +101,7 @@ mod tests {
 
     #[test]
     fn test_expect_label_no_match() {
-        let contents = lines("fn");
+        let contents = "fn";
         let (tokens, eofpos) = read_tokens(&contents).unwrap();
         let mut parser = Parser::new(&contents, &tokens, eofpos);
         assert!(parser.expect_label().is_err());
@@ -111,7 +110,7 @@ mod tests {
 
     #[test]
     fn test_expect_token_out_of_bounds() {
-        let contents = lines("");
+        let contents = "";
         let mut parser = Parser::new(&contents, &[], Pos::start());
         assert!(parser.expect_token(TokenValue::Fn).is_err());
         assert_eq!(parser.index, 0);
@@ -119,7 +118,7 @@ mod tests {
 
     #[test]
     fn test_expect_token_matches() {
-        let contents = lines("fn");
+        let contents = "fn";
         let (tokens, eofpos) = read_tokens(&contents).unwrap();
         let mut parser = Parser::new(&contents, &tokens, eofpos);
         assert!(parser.expect_token(TokenValue::Fn).is_ok());
@@ -128,7 +127,7 @@ mod tests {
 
     #[test]
     fn test_expect_token_no_match() {
-        let contents = lines("fn");
+        let contents = "fn";
         let (tokens, eofpos) = read_tokens(&contents).unwrap();
         let mut parser = Parser::new(&contents, &tokens, eofpos);
         assert!(parser.expect_token(TokenValue::OpenParen).is_err());

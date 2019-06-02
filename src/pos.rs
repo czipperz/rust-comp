@@ -1,4 +1,4 @@
-use std::ops::{Deref, DerefMut};
+use std::ops::{Deref, DerefMut, Index};
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub struct Span {
@@ -14,8 +14,7 @@ pub struct FilePos<'a> {
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub struct Pos {
-    pub line: usize,
-    pub column: usize,
+    pub index: usize,
 }
 
 impl Span {
@@ -25,6 +24,14 @@ impl Span {
             end.increment(c)
         }
         Span { start, end }
+    }
+}
+
+impl Index<Span> for str {
+    type Output = str;
+
+    fn index(&self, span: Span) -> &str {
+        &self[span.start.index..span.end.index]
     }
 }
 
@@ -44,19 +51,11 @@ impl<'a> DerefMut for FilePos<'a> {
 
 impl Pos {
     pub fn start() -> Self {
-        Pos {
-            line: 0,
-            column: 0,
-        }
+        Pos { index: 0 }
     }
 
     pub fn increment(&mut self, c: char) {
-        if c == '\n' {
-            self.line += 1;
-            self.column = 0;
-        } else {
-            self.column += c.len_utf8();
-        }
+        self.index += c.len_utf8();
     }
 }
 
@@ -66,18 +65,12 @@ mod tests {
 
     #[test]
     fn test_range() {
-        let start = Pos {
-            line: 1,
-            column: 1,
-        };
+        let start = Pos { index: 3 };
         assert_eq!(
             Span::range(start, "abc\ndef"),
             Span {
                 start,
-                end: Pos {
-                    line: 2,
-                    column: 3,
-                }
+                end: Pos { index: 10 }
             }
         );
     }
@@ -85,8 +78,7 @@ mod tests {
     #[test]
     fn test_pos_start() {
         let pos = Pos::start();
-        assert_eq!(pos.line, 0);
-        assert_eq!(pos.column, 0);
+        assert_eq!(pos.index, 0);
     }
 
     #[test]
@@ -94,12 +86,10 @@ mod tests {
         let mut pos = Pos::start();
 
         pos.increment('a');
-        assert_eq!(pos.line, 0);
-        assert_eq!(pos.column, 1);
+        assert_eq!(pos, Pos { index: 1 });
 
         pos.increment('b');
-        assert_eq!(pos.line, 0);
-        assert_eq!(pos.column, 2);
+        assert_eq!(pos, Pos { index: 2 });
     }
 
     #[test]
@@ -108,8 +98,7 @@ mod tests {
 
         pos.increment('a');
         pos.increment('\n');
-        assert_eq!(pos.line, 1);
-        assert_eq!(pos.column, 0);
+        assert_eq!(pos, Pos { index: 2 });
     }
 
     #[test]
@@ -119,9 +108,9 @@ mod tests {
         // It appears that rustfmt will change this to ' ' instead of
         // 'greekletter'.  This causes this test to fail instead of pass.
         pos.increment('μ');
-        assert_eq!(pos.column, 2);
+        assert_eq!(pos.index, 2);
 
         pos.increment('m');
-        assert_eq!(pos.column, 3);
+        assert_eq!(pos.index, 3);
     }
 }
