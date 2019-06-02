@@ -86,10 +86,10 @@ mod tests {
         let mut pos = Pos::start();
 
         pos.increment('a');
-        assert_eq!(pos, Pos { index: 1 });
+        assert_eq!(pos.index, 1);
 
         pos.increment('b');
-        assert_eq!(pos, Pos { index: 2 });
+        assert_eq!(pos.index, 2);
     }
 
     #[test]
@@ -98,7 +98,7 @@ mod tests {
 
         pos.increment('a');
         pos.increment('\n');
-        assert_eq!(pos, Pos { index: 2 });
+        assert_eq!(pos.index, 2);
     }
 
     #[test]
