@@ -43,7 +43,11 @@ fn expect_empty_statement(parser: &mut Parser) -> Result<Statement, Error> {
 
 fn expect_expression_statement(parser: &mut Parser) -> Result<Statement, Error> {
     let expression = expect_expression(parser)?;
-    parser.expect_token(TokenValue::Semicolon)?;
+    match expression {
+        Expression::Variable(_) => parser.expect_token(TokenValue::Semicolon)?,
+        Expression::Block(_) => (),
+        Expression::If(_) => (),
+    }
     Ok(Statement::Expression(expression))
 }
 
@@ -116,6 +120,16 @@ mod tests {
     }
 
     #[test]
+    fn test_let_statement_let_if_else_error_no_semicolon() {
+        let contents = "let x = if b {} else {}";
+        let (tokens, eofpos) = read_tokens(0, &contents).unwrap();
+        let mut parser = Parser::new(&contents, &tokens, eofpos);
+        let statement = expect_let_statement(&mut parser);
+        assert_eq!(parser.index, tokens.len());
+        assert!(statement.is_err());
+    }
+
+    #[test]
     fn test_expect_expression_statement_variable_no_semicolon_should_error() {
         let contents = "ab";
         let (tokens, eofpos) = read_tokens(0, &contents).unwrap();
@@ -140,4 +154,23 @@ mod tests {
         );
     }
 
+    #[test]
+    fn test_expect_expression_statement_if_doesnt_consume_semicolon() {
+        let contents = "if b {};";
+        let (tokens, eofpos) = read_tokens(0, &contents).unwrap();
+        let mut parser = Parser::new(&contents, &tokens, eofpos);
+        let statement = expect_expression_statement(&mut parser);
+        assert_eq!(parser.index, tokens.len() - 1);
+        assert!(statement.is_ok());
+    }
+
+    #[test]
+    fn test_expect_expression_statement_block_doesnt_consume_semicolon() {
+        let contents = "{ b; };";
+        let (tokens, eofpos) = read_tokens(0, &contents).unwrap();
+        let mut parser = Parser::new(&contents, &tokens, eofpos);
+        let statement = expect_expression_statement(&mut parser);
+        assert_eq!(parser.index, tokens.len() - 1);
+        assert!(statement.is_ok());
+    }
 }
