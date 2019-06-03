@@ -11,7 +11,10 @@ pub struct Function {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Parameter {}
+pub struct Parameter {
+    pub name: String,
+    pub type_: Type,
+}
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Statement {

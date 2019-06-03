@@ -28,7 +28,7 @@ pub fn read_tokens<'a>(file: usize, contents: &str) -> Result<(Vec<Token>, Pos),
                 flush_temp(&mut tokens, tagged_iter.contents, span);
                 span.start = tagged_iter.pos.index;
             }
-            Some(ch) if "(){}:;-=>".contains(ch) => {
+            Some(ch) if "(){}:,-=>;".contains(ch) => {
                 // There are two cases here: we are parsing a label that is
                 // terminated by a symbol, or we are parsing a symbol.  If start
                 // == pos then the length before the symbol is 0 so we are
@@ -53,7 +53,7 @@ pub fn read_tokens<'a>(file: usize, contents: &str) -> Result<(Vec<Token>, Pos),
 }
 
 fn flush_temp(tokens: &mut Vec<Token>, file_contents: &str, span: Span) {
-    const SYMBOLS: [(&str, TokenValue); 13] = [
+    const SYMBOLS: [(&str, TokenValue); 14] = [
         ("else", TokenValue::Else),
         ("fn", TokenValue::Fn),
         ("if", TokenValue::If),
@@ -63,6 +63,7 @@ fn flush_temp(tokens: &mut Vec<Token>, file_contents: &str, span: Span) {
         ("{", TokenValue::OpenCurly),
         ("}", TokenValue::CloseCurly),
         (":", TokenValue::Colon),
+        (",", TokenValue::Comma),
         ("->", TokenValue::ThinArrow),
         ("=>", TokenValue::FatArrow),
         ("=", TokenValue::Set),
@@ -217,7 +218,7 @@ mod tests {
     #[test]
     fn test_read_tokens_individual_symbols() {
         assert_eq!(
-            read_tokens(0, "(){};"),
+            read_tokens(0, "(){}:,;"),
             Ok((
                 vec![
                     Token {
@@ -253,15 +254,31 @@ mod tests {
                         },
                     },
                     Token {
-                        value: TokenValue::Semicolon,
+                        value: TokenValue::Colon,
                         span: Span {
                             file: 0,
                             start: 4,
                             end: 5
                         },
                     },
+                    Token {
+                        value: TokenValue::Comma,
+                        span: Span {
+                            file: 0,
+                            start: 5,
+                            end: 6
+                        },
+                    },
+                    Token {
+                        value: TokenValue::Semicolon,
+                        span: Span {
+                            file: 0,
+                            start: 6,
+                            end: 7
+                        },
+                    },
                 ],
-                Pos { file: 0, index: 5 }
+                Pos { file: 0, index: 7 }
             ))
         );
     }

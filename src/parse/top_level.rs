@@ -1,6 +1,7 @@
 use super::block::expect_block;
-use super::combinator::many;
+use super::combinator::*;
 use super::parser::Parser;
+use super::type_::expect_type;
 use super::Error;
 use crate::ast::*;
 use crate::pos::Pos;
@@ -31,8 +32,21 @@ fn expect_fn(parser: &mut Parser) -> Result<Function, Error> {
 
 fn expect_parameters(parser: &mut Parser) -> Result<Vec<Parameter>, Error> {
     parser.expect_token(TokenValue::OpenParen)?;
+    let parameters = many_separator(parser, expect_parameter, |parser| {
+        parser.expect_token(TokenValue::Comma)
+    })?;
     parser.expect_token(TokenValue::CloseParen)?;
-    Ok(Vec::new())
+    Ok(parameters)
+}
+
+fn expect_parameter(parser: &mut Parser) -> Result<Parameter, Error> {
+    let name = parser.expect_label()?;
+    parser.expect_token(TokenValue::Colon)?;
+    let type_ = expect_type(parser)?;
+    Ok(Parameter {
+        name: name.to_string(),
+        type_,
+    })
 }
 
 #[cfg(test)]
@@ -62,5 +76,59 @@ mod tests {
         assert_eq!(f.name, "f");
         assert_eq!(f.parameters.len(), 0);
         assert_eq!(f.body.statements.len(), 0);
+    }
+
+    #[test]
+    fn test_expect_parameters_1_parameter() {
+        let contents = "(x: i32)";
+        let (tokens, eofpos) = read_tokens(0, &contents).unwrap();
+        let mut parser = Parser::new(&contents, &tokens, eofpos);
+        let parameters = expect_parameters(&mut parser).unwrap();
+        assert_eq!(parser.index, tokens.len());
+        assert_eq!(
+            parameters,
+            vec![Parameter {
+                name: "x".to_string(),
+                type_: Type::Named("i32".to_string())
+            }]
+        );
+    }
+
+    #[test]
+    fn test_expect_parameters_2_parameters() {
+        let contents = "(x: i32, y: i32)";
+        let (tokens, eofpos) = read_tokens(0, &contents).unwrap();
+        let mut parser = Parser::new(&contents, &tokens, eofpos);
+        let parameters = expect_parameters(&mut parser).unwrap();
+        assert_eq!(parser.index, tokens.len());
+        assert_eq!(
+            parameters,
+            vec![
+                Parameter {
+                    name: "x".to_string(),
+                    type_: Type::Named("i32".to_string())
+                },
+                Parameter {
+                    name: "y".to_string(),
+                    type_: Type::Named("i32".to_string())
+                }
+            ]
+        );
+    }
+
+    #[test]
+    fn test_expect_parameter() {
+        let contents = "x: i32";
+        let (tokens, eofpos) = read_tokens(0, &contents).unwrap();
+        let mut parser = Parser::new(&contents, &tokens, eofpos);
+        let parameter = expect_parameter(&mut parser).unwrap();
+        assert_eq!(parser.index, tokens.len());
+        assert_eq!(
+            parameter,
+            Parameter {
+                name: "x".to_string(),
+                type_: Type::Named("i32".to_string())
+            }
+        );
     }
 }

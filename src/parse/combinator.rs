@@ -1,14 +1,33 @@
 use super::parser::Parser;
 
-pub fn many<T, E, F>(parser: &mut Parser, mut f: F) -> Result<Vec<T>, E>
+pub fn many<T, E, F>(parser: &mut Parser, f: F) -> Result<Vec<T>, E>
 where
     F: FnMut(&mut Parser) -> Result<T, E>,
+{
+    many_separator(parser, f, |_| Ok(()))
+}
+
+pub fn many_separator<T, E, F, S>(
+    parser: &mut Parser,
+    mut f: F,
+    mut separator: S,
+) -> Result<Vec<T>, E>
+where
+    F: FnMut(&mut Parser) -> Result<T, E>,
+    S: FnMut(&mut Parser) -> Result<(), E>,
 {
     let mut xs = Vec::new();
     loop {
         let old_index = parser.index;
         match f(parser) {
             Ok(x) => xs.push(x),
+            Err(_) if old_index == parser.index => return Ok(xs),
+            Err(e) => return Err(e),
+        }
+
+        let old_index = parser.index;
+        match separator(parser) {
+            Ok(_) => (),
             Err(_) if old_index == parser.index => return Ok(xs),
             Err(e) => return Err(e),
         }
