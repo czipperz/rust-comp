@@ -24,6 +24,20 @@ pub enum Statement {
 pub enum Expression {
     Variable(String),
     Block(Block),
+    If(IfExpression),
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct IfExpression {
+    pub condition: Box<Expression>,
+    pub then: Block,
+    pub else_: Option<Box<ElseExpression>>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum ElseExpression {
+    If(IfExpression),
+    Block(Block),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

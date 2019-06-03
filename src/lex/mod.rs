@@ -53,8 +53,10 @@ pub fn read_tokens<'a>(file: usize, contents: &str) -> Result<(Vec<Token>, Pos),
 }
 
 fn flush_temp(tokens: &mut Vec<Token>, file_contents: &str, span: Span) {
-    const SYMBOLS: [(&str, TokenValue); 11] = [
+    const SYMBOLS: [(&str, TokenValue); 13] = [
+        ("else", TokenValue::Else),
         ("fn", TokenValue::Fn),
+        ("if", TokenValue::If),
         ("let", TokenValue::Let),
         ("(", TokenValue::OpenParen),
         (")", TokenValue::CloseParen),
@@ -101,6 +103,24 @@ mod tests {
         assert_eq!(
             read_tokens(0, "  \n  "),
             Ok((vec![], Pos { file: 0, index: 5 }))
+        );
+    }
+
+    #[test]
+    fn test_read_tokens_else() {
+        assert_eq!(
+            read_tokens(0, "else"),
+            Ok((
+                vec![Token {
+                    value: TokenValue::Else,
+                    span: Span {
+                        file: 0,
+                        start: 0,
+                        end: 4
+                    },
+                }],
+                Pos { file: 0, index: 4 }
+            ))
         );
     }
 
@@ -154,6 +174,24 @@ mod tests {
                     },
                 }],
                 Pos { file: 0, index: 3 }
+            ))
+        );
+    }
+
+    #[test]
+    fn test_read_tokens_if() {
+        assert_eq!(
+            read_tokens(0, "if"),
+            Ok((
+                vec![Token {
+                    value: TokenValue::If,
+                    span: Span {
+                        file: 0,
+                        start: 0,
+                        end: 2
+                    },
+                }],
+                Pos { file: 0, index: 2 }
             ))
         );
     }

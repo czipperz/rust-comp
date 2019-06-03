@@ -8,7 +8,9 @@ pub struct Token {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum TokenValue {
+    Else,
     Fn,
+    If,
     Let,
     Label,
     OpenParen,
