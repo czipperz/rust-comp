@@ -28,7 +28,11 @@ impl<'a> Parser<'a> {
     }
 
     pub fn eof(&self) -> Span {
-        Span::range(self.eofpos, " ")
+        Span {
+            file: self.eofpos.file,
+            start: self.eofpos.index,
+            end: self.eofpos.index + 1,
+        }
     }
 
     pub fn expect_label(&mut self) -> Result<&'a str, Error> {
@@ -64,7 +68,14 @@ mod tests {
         let contents = "fn";
         let (tokens, eofpos) = read_tokens(0, &contents).unwrap();
         let parser = Parser::new(&contents, &tokens, eofpos);
-        assert_eq!(parser.span(), Span::range(Pos { file: 0, index: 0 }, "fn"));
+        assert_eq!(
+            parser.span(),
+            Span {
+                file: 0,
+                start: 0,
+                end: 2
+            }
+        );
     }
 
     #[test]
@@ -79,7 +90,14 @@ mod tests {
         let eofpos = Pos { file: 0, index: 3 };
         let contents = " \n ";
         let parser = Parser::new(&contents, &[], eofpos);
-        assert_eq!(parser.eof(), Span::range(eofpos, " "));
+        assert_eq!(
+            parser.eof(),
+            Span {
+                file: eofpos.file,
+                start: eofpos.index,
+                end: eofpos.index + 1
+            }
+        );
     }
 
     #[test]

@@ -12,12 +12,13 @@ pub fn read_tokens<'a>(file: usize, contents: &str) -> Result<(Vec<Token>, Pos),
     let mut tagged_iter = TaggedIter::new(file, contents);
     let mut tokens = Vec::new();
     let mut span = Span {
-        start: tagged_iter.pos,
-        end: tagged_iter.pos,
+        file: tagged_iter.pos.file,
+        start: tagged_iter.pos.index,
+        end: tagged_iter.pos.index,
     };
 
     loop {
-        span.end = tagged_iter.pos;
+        span.end = tagged_iter.pos.index;
         match tagged_iter.next() {
             None => {
                 flush_temp(&mut tokens, tagged_iter.contents, span);
@@ -25,7 +26,7 @@ pub fn read_tokens<'a>(file: usize, contents: &str) -> Result<(Vec<Token>, Pos),
             }
             Some(ch) if ch.is_whitespace() => {
                 flush_temp(&mut tokens, tagged_iter.contents, span);
-                span.start = tagged_iter.pos;
+                span.start = tagged_iter.pos.index;
             }
             Some(ch) if "(){}:;-=>".contains(ch) => {
                 // There are two cases here: we are parsing a label that is
@@ -33,12 +34,12 @@ pub fn read_tokens<'a>(file: usize, contents: &str) -> Result<(Vec<Token>, Pos),
                 // == pos then the length before the symbol is 0 so we are
                 // parsing a symbol
                 if span.start == span.end {
-                    span.end = tagged_iter.pos;
+                    span.end = tagged_iter.pos.index;
                 }
                 if "-=".contains(ch) {
                     if tagged_iter.peek() == Some('>') {
                         tagged_iter.next();
-                        span.end = tagged_iter.pos;
+                        span.end = tagged_iter.pos.index;
                     }
                 }
                 flush_temp(&mut tokens, tagged_iter.contents, span);
@@ -97,7 +98,10 @@ mod tests {
 
     #[test]
     fn test_read_tokens_whitespace_file() {
-        assert_eq!(read_tokens(0, "  \n  "), Ok((vec![], Pos { file: 0, index: 5 })));
+        assert_eq!(
+            read_tokens(0, "  \n  "),
+            Ok((vec![], Pos { file: 0, index: 5 }))
+        );
     }
 
     #[test]
@@ -107,7 +111,11 @@ mod tests {
             Ok((
                 vec![Token {
                     value: TokenValue::Fn,
-                    span: Span::range(Pos { file: 0, index: 0 }, "fn"),
+                    span: Span {
+                        file: 0,
+                        start: 0,
+                        end: 2
+                    },
                 }],
                 Pos { file: 0, index: 2 }
             ))
@@ -121,7 +129,11 @@ mod tests {
             Ok((
                 vec![Token {
                     value: TokenValue::Fn,
-                    span: Span::range(Pos { file: 0, index: 0 }, "fn"),
+                    span: Span {
+                        file: 0,
+                        start: 0,
+                        end: 2
+                    },
                 }],
                 Pos { file: 0, index: 3 }
             ))
@@ -135,7 +147,11 @@ mod tests {
             Ok((
                 vec![Token {
                     value: TokenValue::Label,
-                    span: Span::range(Pos { file: 0, index: 0 }, "fnx"),
+                    span: Span {
+                        file: 0,
+                        start: 0,
+                        end: 3
+                    },
                 }],
                 Pos { file: 0, index: 3 }
             ))
@@ -149,7 +165,11 @@ mod tests {
             Ok((
                 vec![Token {
                     value: TokenValue::Let,
-                    span: Span::range(Pos { file: 0, index: 0 }, "let"),
+                    span: Span {
+                        file: 0,
+                        start: 0,
+                        end: 3
+                    },
                 }],
                 Pos { file: 0, index: 3 }
             ))
@@ -164,23 +184,43 @@ mod tests {
                 vec![
                     Token {
                         value: TokenValue::OpenParen,
-                        span: Span::range(Pos { file: 0, index: 0 }, "("),
+                        span: Span {
+                            file: 0,
+                            start: 0,
+                            end: 1
+                        },
                     },
                     Token {
                         value: TokenValue::CloseParen,
-                        span: Span::range(Pos { file: 0, index: 1 }, ")"),
+                        span: Span {
+                            file: 0,
+                            start: 1,
+                            end: 2
+                        },
                     },
                     Token {
                         value: TokenValue::OpenCurly,
-                        span: Span::range(Pos { file: 0, index: 2 }, "{"),
+                        span: Span {
+                            file: 0,
+                            start: 2,
+                            end: 3
+                        },
                     },
                     Token {
                         value: TokenValue::CloseCurly,
-                        span: Span::range(Pos { file: 0, index: 3 }, "}",),
+                        span: Span {
+                            file: 0,
+                            start: 3,
+                            end: 4
+                        },
                     },
                     Token {
                         value: TokenValue::Semicolon,
-                        span: Span::range(Pos { file: 0, index: 4 }, ";")
+                        span: Span {
+                            file: 0,
+                            start: 4,
+                            end: 5
+                        },
                     },
                 ],
                 Pos { file: 0, index: 5 }
@@ -189,33 +229,29 @@ mod tests {
     }
 
     #[test]
-    fn test_read_tokens_set() {
+    fn test_read_tokens_set_paren() {
         assert_eq!(
-            read_tokens(0, "a =(b)"),
+            read_tokens(0, "=("),
             Ok((
                 vec![
                     Token {
-                        value: TokenValue::Label,
-                        span: Span::range(Pos { file: 0, index: 0 }, "a"),
-                    },
-                    Token {
                         value: TokenValue::Set,
-                        span: Span::range(Pos { file: 0, index: 2 }, "="),
+                        span: Span {
+                            file: 0,
+                            start: 0,
+                            end: 1
+                        },
                     },
                     Token {
                         value: TokenValue::OpenParen,
-                        span: Span::range(Pos { file: 0, index: 3 }, "("),
-                    },
-                    Token {
-                        value: TokenValue::Label,
-                        span: Span::range(Pos { file: 0, index: 4 }, "b"),
-                    },
-                    Token {
-                        value: TokenValue::CloseParen,
-                        span: Span::range(Pos { file: 0, index: 5 }, ")"),
+                        span: Span {
+                            file: 0,
+                            start: 1,
+                            end: 2
+                        },
                     },
                 ],
-                Pos { file: 0, index: 6 }
+                Pos { file: 0, index: 2 }
             ))
         );
     }
@@ -227,7 +263,11 @@ mod tests {
             Ok((
                 vec![Token {
                     value: TokenValue::FatArrow,
-                    span: Span::range(Pos { file: 0, index: 0 }, "=>"),
+                    span: Span {
+                        file: 0,
+                        start: 0,
+                        end: 2
+                    },
                 }],
                 Pos { file: 0, index: 2 }
             ))
@@ -241,7 +281,11 @@ mod tests {
             Ok((
                 vec![Token {
                     value: TokenValue::ThinArrow,
-                    span: Span::range(Pos { file: 0, index: 0 }, "->"),
+                    span: Span {
+                        file: 0,
+                        start: 0,
+                        end: 2
+                    },
                 }],
                 Pos { file: 0, index: 2 }
             ))

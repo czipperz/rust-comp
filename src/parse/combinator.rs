@@ -55,15 +55,18 @@ mod tests {
     fn test_many_ok_move_then_err_move() {
         let mut first = true;
         assert_eq!(
-            many(&mut Parser::new("", &[], Pos { file: 0, index: 0 }), |parser| {
-                parser.index += 1;
-                if first {
-                    first = false;
-                    Ok(())
-                } else {
-                    Err(())
+            many(
+                &mut Parser::new("", &[], Pos { file: 0, index: 0 }),
+                |parser| {
+                    parser.index += 1;
+                    if first {
+                        first = false;
+                        Ok(())
+                    } else {
+                        Err(())
+                    }
                 }
-            }),
+            ),
             Err(())
         );
     }
@@ -72,15 +75,18 @@ mod tests {
     fn test_many_ok_move_then_err_no_move() {
         let mut first = true;
         assert_eq!(
-            many(&mut Parser::new("", &[], Pos { file: 0, index: 0 }), |parser| {
-                if first {
-                    first = false;
-                    parser.index += 1;
-                    Ok(())
-                } else {
-                    Err(())
+            many(
+                &mut Parser::new("", &[], Pos { file: 0, index: 0 }),
+                |parser| {
+                    if first {
+                        first = false;
+                        parser.index += 1;
+                        Ok(())
+                    } else {
+                        Err(())
+                    }
                 }
-            }),
+            ),
             Ok(vec![()])
         );
     }

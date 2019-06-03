@@ -50,7 +50,11 @@ mod tests {
             expression,
             Err(Error::ExpectedToken(
                 TokenValue::Label,
-                Span::range(Pos { file: 0, index: 0 }, "fn"),
+                Span {
+                    file: 0,
+                    start: 0,
+                    end: 2
+                },
             ))
         );
     }
