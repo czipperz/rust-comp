@@ -32,7 +32,7 @@ mod tests {
     #[test]
     fn test_expect_variable_expression() {
         let contents = "ab";
-        let (tokens, eofpos) = read_tokens(&contents).unwrap();
+        let (tokens, eofpos) = read_tokens(0, &contents).unwrap();
         let mut parser = Parser::new(&contents, &tokens, eofpos);
         let expression = expect_variable_expression(&mut parser).unwrap();
         assert_eq!(parser.index, tokens.len());
@@ -42,7 +42,7 @@ mod tests {
     #[test]
     fn test_expect_variable_expression_fn_should_error() {
         let contents = "fn";
-        let (tokens, eofpos) = read_tokens(&contents).unwrap();
+        let (tokens, eofpos) = read_tokens(0, &contents).unwrap();
         let mut parser = Parser::new(&contents, &tokens, eofpos);
         let expression = expect_variable_expression(&mut parser);
         assert_eq!(parser.index, 0);
@@ -50,7 +50,7 @@ mod tests {
             expression,
             Err(Error::ExpectedToken(
                 TokenValue::Label,
-                Span::range(Pos::start(), "fn"),
+                Span::range(Pos { file: 0, index: 0 }, "fn"),
             ))
         );
     }
@@ -58,7 +58,7 @@ mod tests {
     #[test]
     fn test_expect_block_expression() {
         let contents = "{}";
-        let (tokens, eofpos) = read_tokens(&contents).unwrap();
+        let (tokens, eofpos) = read_tokens(0, &contents).unwrap();
         let mut parser = Parser::new(&contents, &tokens, eofpos);
         let expression = expect_block_expression(&mut parser).unwrap();
         assert_eq!(parser.index, tokens.len());

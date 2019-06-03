@@ -14,6 +14,7 @@ pub struct FilePos<'a> {
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub struct Pos {
+    pub file: usize,
     pub index: usize,
 }
 
@@ -31,6 +32,7 @@ impl Index<Span> for str {
     type Output = str;
 
     fn index(&self, span: Span) -> &str {
+        debug_assert!(span.start.file == span.end.file);
         &self[span.start.index..span.end.index]
     }
 }
@@ -50,10 +52,6 @@ impl<'a> DerefMut for FilePos<'a> {
 }
 
 impl Pos {
-    pub fn start() -> Self {
-        Pos { index: 0 }
-    }
-
     pub fn increment(&mut self, c: char) {
         self.index += c.len_utf8();
     }
@@ -65,25 +63,19 @@ mod tests {
 
     #[test]
     fn test_range() {
-        let start = Pos { index: 3 };
+        let start = Pos { file: 0, index: 3 };
         assert_eq!(
             Span::range(start, "abc\ndef"),
             Span {
                 start,
-                end: Pos { index: 10 }
+                end: Pos { file: 0, index: 10 }
             }
         );
     }
 
     #[test]
-    fn test_pos_start() {
-        let pos = Pos::start();
-        assert_eq!(pos.index, 0);
-    }
-
-    #[test]
     fn test_increment_same_line() {
-        let mut pos = Pos::start();
+        let mut pos = Pos { file: 0, index: 0 };
 
         pos.increment('a');
         assert_eq!(pos.index, 1);
@@ -94,7 +86,7 @@ mod tests {
 
     #[test]
     fn test_increment_new_line() {
-        let mut pos = Pos::start();
+        let mut pos = Pos { file: 0, index: 0 };
 
         pos.increment('a');
         pos.increment('\n');
@@ -103,7 +95,7 @@ mod tests {
 
     #[test]
     fn test_increment_index() {
-        let mut pos = Pos::start();
+        let mut pos = Pos { file: 0, index: 0 };
 
         // It appears that rustfmt will change this to ' ' instead of
         // 'greekletter'.  This causes this test to fail instead of pass.

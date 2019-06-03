@@ -39,7 +39,7 @@ mod tests {
     fn test_many_ok_no_move_then_err_no_move() {
         let mut first = true;
         assert_eq!(
-            many(&mut Parser::new("", &[], Pos::start()), |_| {
+            many(&mut Parser::new("", &[], Pos { file: 0, index: 0 }), |_| {
                 if first {
                     first = false;
                     Ok(())
@@ -55,7 +55,7 @@ mod tests {
     fn test_many_ok_move_then_err_move() {
         let mut first = true;
         assert_eq!(
-            many(&mut Parser::new("", &[], Pos::start()), |parser| {
+            many(&mut Parser::new("", &[], Pos { file: 0, index: 0 }), |parser| {
                 parser.index += 1;
                 if first {
                     first = false;
@@ -72,7 +72,7 @@ mod tests {
     fn test_many_ok_move_then_err_no_move() {
         let mut first = true;
         assert_eq!(
-            many(&mut Parser::new("", &[], Pos::start()), |parser| {
+            many(&mut Parser::new("", &[], Pos { file: 0, index: 0 }), |parser| {
                 if first {
                     first = false;
                     parser.index += 1;
@@ -89,7 +89,7 @@ mod tests {
     fn test_one_of_no_functions_should_return_error() {
         assert_eq!(
             one_of::<(), i32, fn(&mut Parser) -> Result<(), i32>>(
-                &mut Parser::new("", &[], Pos::start()),
+                &mut Parser::new("", &[], Pos { file: 0, index: 0 }),
                 &mut [],
                 1
             ),
@@ -101,7 +101,7 @@ mod tests {
     fn test_one_of_two_functions_first_ok() {
         assert_eq!(
             one_of::<i32, i32, fn(&mut Parser) -> Result<i32, i32>>(
-                &mut Parser::new("", &[], Pos::start()),
+                &mut Parser::new("", &[], Pos { file: 0, index: 0 }),
                 &mut [|_| Ok(1), |_| panic!()],
                 2
             ),

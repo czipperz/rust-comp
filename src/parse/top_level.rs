@@ -43,7 +43,7 @@ mod tests {
     #[test]
     fn test_expect_fn_invalid() {
         let contents = "fn f () {";
-        let (tokens, eofpos) = read_tokens(&contents).unwrap();
+        let (tokens, eofpos) = read_tokens(0, &contents).unwrap();
         for i in 0..tokens.len() {
             dbg!(i);
             let mut parser = Parser::new(&contents, &tokens[..i], eofpos);
@@ -55,7 +55,7 @@ mod tests {
     #[test]
     fn test_expect_fn_matching() {
         let contents = "fn f () {}";
-        let (tokens, eofpos) = read_tokens(&contents).unwrap();
+        let (tokens, eofpos) = read_tokens(0, &contents).unwrap();
         let mut parser = Parser::new(&contents, &tokens, eofpos);
         let f = expect_fn(&mut parser).unwrap();
         assert_eq!(parser.index, tokens.len());

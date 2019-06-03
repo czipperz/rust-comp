@@ -20,7 +20,7 @@ mod tests {
     #[test]
     fn test_expect_block_no_statements() {
         let contents = "{}";
-        let (tokens, eofpos) = read_tokens(&contents).unwrap();
+        let (tokens, eofpos) = read_tokens(0, &contents).unwrap();
         let mut parser = Parser::new(&contents, &tokens, eofpos);
         let block = expect_block(&mut parser).unwrap();
         assert_eq!(parser.index, tokens.len());
@@ -30,7 +30,7 @@ mod tests {
     #[test]
     fn test_expect_block_with_empty_statements() {
         let contents = "{;;}";
-        let (tokens, eofpos) = read_tokens(&contents).unwrap();
+        let (tokens, eofpos) = read_tokens(0, &contents).unwrap();
         let mut parser = Parser::new(&contents, &tokens, eofpos);
         let block = expect_block(&mut parser).unwrap();
         assert_eq!(parser.index, tokens.len());

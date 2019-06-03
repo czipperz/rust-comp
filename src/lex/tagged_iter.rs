@@ -6,10 +6,10 @@ pub struct TaggedIter<'a> {
 }
 
 impl<'a> TaggedIter<'a> {
-    pub fn new(contents: &'a str) -> Self {
+    pub fn new(file: usize, contents: &'a str) -> Self {
         TaggedIter {
             contents,
-            pos: Pos::start(),
+            pos: Pos { file, index: 0 },
         }
     }
 
@@ -33,17 +33,17 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_new() {
+    fn test_new_file_1() {
         let contents = "contents";
-        let x = TaggedIter::new(&contents);
+        let x = TaggedIter::new(1, &contents);
         assert_eq!(x.contents, &contents[..]);
-        assert_eq!(x.pos, Pos::start());
+        assert_eq!(x.pos, Pos { file: 1, index: 0 });
     }
 
     #[test]
     fn test_peek() {
         let contents = "  ";
-        let mut x = TaggedIter::new(&contents);
+        let mut x = TaggedIter::new(0, &contents);
         assert_eq!(x.peek(), Some(' '));
         x.next();
         assert_eq!(x.peek(), Some(' '));
@@ -54,7 +54,7 @@ mod tests {
     #[test]
     fn test_next() {
         let contents = "cont";
-        let mut x = TaggedIter::new(&contents);
+        let mut x = TaggedIter::new(0, &contents);
         assert_eq!(x.next(), Some('c'));
         assert_eq!(x.next(), Some('o'));
         assert_eq!(x.next(), Some('n'));
@@ -65,7 +65,7 @@ mod tests {
     #[test]
     fn test_next_greek_letters() {
         let contents = "    ";
-        let mut x = TaggedIter::new(&contents);
+        let mut x = TaggedIter::new(0, &contents);
         assert_eq!(x.next(), Some(' '));
         assert_eq!(x.next(), Some(' '));
         assert_eq!(x.next(), Some(' '));
@@ -76,7 +76,7 @@ mod tests {
     #[test]
     fn test_next_handles_new_lines() {
         let contents = "a\nb";
-        let mut x = TaggedIter::new(&contents);
+        let mut x = TaggedIter::new(0, &contents);
         assert_eq!(x.pos.index, 0);
 
         assert_eq!(x.next(), Some('a'));
