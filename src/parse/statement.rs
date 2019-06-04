@@ -60,7 +60,7 @@ mod tests {
     #[test]
     fn test_expect_statement_empty() {
         let contents = "";
-        let mut parser = Parser::new(&contents, &[], Pos { file: 0, index: 0 });
+        let mut parser = Parser::new(contents, &[], Pos { file: 0, index: 0 });
         assert!(expect_statement(&mut parser).is_err());
         assert_eq!(parser.index, 0);
     }
@@ -68,8 +68,8 @@ mod tests {
     #[test]
     fn test_expect_statement_semicolon() {
         let contents = &";";
-        let (tokens, eofpos) = read_tokens(0, &contents).unwrap();
-        let mut parser = Parser::new(&contents, &tokens, eofpos);
+        let (tokens, eofpos) = read_tokens(0, contents).unwrap();
+        let mut parser = Parser::new(contents, &tokens, eofpos);
         let statement = expect_statement(&mut parser).unwrap();
         assert_eq!(parser.index, tokens.len());
         assert_eq!(statement, Statement::Empty);
@@ -78,8 +78,8 @@ mod tests {
     #[test]
     fn test_let_statement_with_type_and_value() {
         let contents = "let x: i32 = y;";
-        let (tokens, eofpos) = read_tokens(0, &contents).unwrap();
-        let mut parser = Parser::new(&contents, &tokens, eofpos);
+        let (tokens, eofpos) = read_tokens(0, contents).unwrap();
+        let mut parser = Parser::new(contents, &tokens, eofpos);
         let statement = expect_let_statement(&mut parser);
         assert_eq!(parser.index, tokens.len());
         assert_eq!(
@@ -95,8 +95,8 @@ mod tests {
     #[test]
     fn test_let_statement_with_value() {
         let contents = "let x = y;";
-        let (tokens, eofpos) = read_tokens(0, &contents).unwrap();
-        let mut parser = Parser::new(&contents, &tokens, eofpos);
+        let (tokens, eofpos) = read_tokens(0, contents).unwrap();
+        let mut parser = Parser::new(contents, &tokens, eofpos);
         let statement = expect_let_statement(&mut parser);
         assert_eq!(parser.index, tokens.len());
         assert_eq!(
@@ -112,8 +112,8 @@ mod tests {
     #[test]
     fn test_let_statement_without_value() {
         let contents = "let x;";
-        let (tokens, eofpos) = read_tokens(0, &contents).unwrap();
-        let mut parser = Parser::new(&contents, &tokens, eofpos);
+        let (tokens, eofpos) = read_tokens(0, contents).unwrap();
+        let mut parser = Parser::new(contents, &tokens, eofpos);
         let statement = expect_let_statement(&mut parser);
         assert_eq!(parser.index, tokens.len());
         assert_eq!(statement, Ok(Statement::Let("x".to_string(), None, None)));
@@ -122,8 +122,8 @@ mod tests {
     #[test]
     fn test_let_statement_let_if_else_error_no_semicolon() {
         let contents = "let x = if b {} else {}";
-        let (tokens, eofpos) = read_tokens(0, &contents).unwrap();
-        let mut parser = Parser::new(&contents, &tokens, eofpos);
+        let (tokens, eofpos) = read_tokens(0, contents).unwrap();
+        let mut parser = Parser::new(contents, &tokens, eofpos);
         let statement = expect_let_statement(&mut parser);
         assert_eq!(parser.index, tokens.len());
         assert!(statement.is_err());
@@ -132,8 +132,8 @@ mod tests {
     #[test]
     fn test_expect_expression_statement_variable_no_semicolon_should_error() {
         let contents = "ab";
-        let (tokens, eofpos) = read_tokens(0, &contents).unwrap();
-        let mut parser = Parser::new(&contents, &tokens, eofpos);
+        let (tokens, eofpos) = read_tokens(0, contents).unwrap();
+        let mut parser = Parser::new(contents, &tokens, eofpos);
         let statement = expect_expression_statement(&mut parser);
         assert_eq!(parser.index, tokens.len());
         assert!(statement.is_err());
@@ -142,8 +142,8 @@ mod tests {
     #[test]
     fn test_expect_expression_statement_variable_semicolon() {
         let contents = "ab;";
-        let (tokens, eofpos) = read_tokens(0, &contents).unwrap();
-        let mut parser = Parser::new(&contents, &tokens, eofpos);
+        let (tokens, eofpos) = read_tokens(0, contents).unwrap();
+        let mut parser = Parser::new(contents, &tokens, eofpos);
         let statement = expect_expression_statement(&mut parser);
         assert_eq!(parser.index, tokens.len());
         assert_eq!(
@@ -157,8 +157,8 @@ mod tests {
     #[test]
     fn test_expect_expression_statement_if_doesnt_consume_semicolon() {
         let contents = "if b {};";
-        let (tokens, eofpos) = read_tokens(0, &contents).unwrap();
-        let mut parser = Parser::new(&contents, &tokens, eofpos);
+        let (tokens, eofpos) = read_tokens(0, contents).unwrap();
+        let mut parser = Parser::new(contents, &tokens, eofpos);
         let statement = expect_expression_statement(&mut parser);
         assert_eq!(parser.index, tokens.len() - 1);
         assert!(statement.is_ok());
@@ -167,8 +167,8 @@ mod tests {
     #[test]
     fn test_expect_expression_statement_block_doesnt_consume_semicolon() {
         let contents = "{ b; };";
-        let (tokens, eofpos) = read_tokens(0, &contents).unwrap();
-        let mut parser = Parser::new(&contents, &tokens, eofpos);
+        let (tokens, eofpos) = read_tokens(0, contents).unwrap();
+        let mut parser = Parser::new(contents, &tokens, eofpos);
         let statement = expect_expression_statement(&mut parser);
         assert_eq!(parser.index, tokens.len() - 1);
         assert!(statement.is_ok());

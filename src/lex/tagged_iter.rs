@@ -37,15 +37,15 @@ mod tests {
     #[test]
     fn test_new_file_1() {
         let contents = "contents";
-        let x = TaggedIter::new(1, &contents);
-        assert_eq!(x.contents, &contents[..]);
+        let x = TaggedIter::new(1, contents);
+        assert_eq!(x.contents, contents);
         assert_eq!(x.pos, Pos { file: 1, index: 0 });
     }
 
     #[test]
     fn test_peek() {
         let contents = "  ";
-        let mut x = TaggedIter::new(0, &contents);
+        let mut x = TaggedIter::new(0, contents);
         assert_eq!(x.peek(), Some(' '));
         x.advance();
         assert_eq!(x.peek(), Some(' '));
@@ -56,7 +56,7 @@ mod tests {
     #[test]
     fn test_peek2() {
         let contents = " μa";
-        let mut x = TaggedIter::new(0, &contents);
+        let mut x = TaggedIter::new(0, contents);
         assert_eq!(x.peek(), Some(' '));
         assert_eq!(x.peek2(), Some('μ'));
         x.advance();
@@ -70,7 +70,7 @@ mod tests {
     #[test]
     fn test_next_greek_letters() {
         let contents = "αβγδ";
-        let mut x = TaggedIter::new(0, &contents);
+        let mut x = TaggedIter::new(0, contents);
         assert_eq!(x.peek(), Some('α'));
         x.advance();
         assert_eq!(x.peek(), Some('β'));

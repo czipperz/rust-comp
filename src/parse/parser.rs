@@ -66,8 +66,8 @@ mod tests {
     #[test]
     fn test_span_in_bounds() {
         let contents = "fn";
-        let (tokens, eofpos) = read_tokens(0, &contents).unwrap();
-        let parser = Parser::new(&contents, &tokens, eofpos);
+        let (tokens, eofpos) = read_tokens(0, contents).unwrap();
+        let parser = Parser::new(contents, &tokens, eofpos);
         assert_eq!(
             parser.span(),
             Span {
@@ -81,7 +81,7 @@ mod tests {
     #[test]
     fn test_span_out_of_bounds() {
         let contents = "  ";
-        let parser = Parser::new(&contents, &[], Pos { file: 0, index: 2 });
+        let parser = Parser::new(contents, &[], Pos { file: 0, index: 2 });
         assert_eq!(parser.span(), parser.eof());
     }
 
@@ -89,7 +89,7 @@ mod tests {
     fn test_eof() {
         let eofpos = Pos { file: 0, index: 3 };
         let contents = " \n ";
-        let parser = Parser::new(&contents, &[], eofpos);
+        let parser = Parser::new(contents, &[], eofpos);
         assert_eq!(
             parser.eof(),
             Span {
@@ -103,7 +103,7 @@ mod tests {
     #[test]
     fn test_expect_label_out_of_bounds() {
         let contents = "";
-        let mut parser = Parser::new(&contents, &[], Pos { file: 0, index: 0 });
+        let mut parser = Parser::new(contents, &[], Pos { file: 0, index: 0 });
         assert!(parser.expect_label().is_err());
         assert_eq!(parser.index, 0);
     }
@@ -111,8 +111,8 @@ mod tests {
     #[test]
     fn test_expect_label_matches() {
         let contents = "abc";
-        let (tokens, eofpos) = read_tokens(0, &contents).unwrap();
-        let mut parser = Parser::new(&contents, &tokens, eofpos);
+        let (tokens, eofpos) = read_tokens(0, contents).unwrap();
+        let mut parser = Parser::new(contents, &tokens, eofpos);
         assert_eq!(parser.expect_label().unwrap(), "abc");
         assert_eq!(parser.index, tokens.len());
     }
@@ -120,8 +120,8 @@ mod tests {
     #[test]
     fn test_expect_label_no_match() {
         let contents = "fn";
-        let (tokens, eofpos) = read_tokens(0, &contents).unwrap();
-        let mut parser = Parser::new(&contents, &tokens, eofpos);
+        let (tokens, eofpos) = read_tokens(0, contents).unwrap();
+        let mut parser = Parser::new(contents, &tokens, eofpos);
         assert!(parser.expect_label().is_err());
         assert_eq!(parser.index, 0);
     }
@@ -129,7 +129,7 @@ mod tests {
     #[test]
     fn test_expect_token_out_of_bounds() {
         let contents = "";
-        let mut parser = Parser::new(&contents, &[], Pos { file: 0, index: 0 });
+        let mut parser = Parser::new(contents, &[], Pos { file: 0, index: 0 });
         assert!(parser.expect_token(TokenValue::Fn).is_err());
         assert_eq!(parser.index, 0);
     }
@@ -137,8 +137,8 @@ mod tests {
     #[test]
     fn test_expect_token_matches() {
         let contents = "fn";
-        let (tokens, eofpos) = read_tokens(0, &contents).unwrap();
-        let mut parser = Parser::new(&contents, &tokens, eofpos);
+        let (tokens, eofpos) = read_tokens(0, contents).unwrap();
+        let mut parser = Parser::new(contents, &tokens, eofpos);
         assert!(parser.expect_token(TokenValue::Fn).is_ok());
         assert_eq!(parser.index, tokens.len());
     }
@@ -146,8 +146,8 @@ mod tests {
     #[test]
     fn test_expect_token_no_match() {
         let contents = "fn";
-        let (tokens, eofpos) = read_tokens(0, &contents).unwrap();
-        let mut parser = Parser::new(&contents, &tokens, eofpos);
+        let (tokens, eofpos) = read_tokens(0, contents).unwrap();
+        let mut parser = Parser::new(contents, &tokens, eofpos);
         assert!(parser.expect_token(TokenValue::OpenParen).is_err());
         assert_eq!(parser.index, 0);
     }
