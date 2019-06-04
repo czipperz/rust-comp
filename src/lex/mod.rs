@@ -6,9 +6,9 @@ use crate::token::*;
 use std::fmt;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum TokenizerError {}
+pub enum Error {}
 
-pub fn read_tokens<'a>(file: usize, contents: &str) -> Result<(Vec<Token>, Pos), TokenizerError> {
+pub fn read_tokens<'a>(file: usize, contents: &str) -> Result<(Vec<Token>, Pos), Error> {
     let mut tagged_iter = TaggedIter::new(file, contents);
     let mut tokens = Vec::new();
     let mut span = Span {
@@ -86,7 +86,7 @@ fn flush_temp(tokens: &mut Vec<Token>, file_contents: &str, span: Span) {
     }
 }
 
-impl fmt::Display for TokenizerError {
+impl fmt::Display for Error {
     fn fmt(&self, _f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             _ => Ok(()),
