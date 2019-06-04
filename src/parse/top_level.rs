@@ -22,6 +22,17 @@ pub fn parse(file_contents: &str, tokens: &[Token], eofpos: Pos) -> Result<Vec<T
 }
 
 fn expect_top_level(parser: &mut Parser) -> Result<TopLevel, Error> {
+    one_of(
+        parser,
+        &mut [
+            expect_toplevel_fn,
+            expect_mod,
+        ][..],
+        Error::Expected("expression", parser.span()),
+    )
+}
+
+fn expect_toplevel_fn(parser: &mut Parser) -> Result<TopLevel, Error> {
     expect_fn(parser).map(TopLevel::Function)
 }
 
@@ -54,6 +65,13 @@ fn expect_parameter(parser: &mut Parser) -> Result<Parameter, Error> {
         name: name.to_string(),
         type_,
     })
+}
+
+fn expect_mod(parser: &mut Parser) -> Result<TopLevel, Error> {
+    parser.expect_token(TokenValue::Mod)?;
+    let name = parser.expect_label()?;
+    parser.expect_token(TokenValue::Semicolon)?;
+    Ok(TopLevel::ModFile(name.to_string()))
 }
 
 #[cfg(test)]
@@ -144,6 +162,19 @@ mod tests {
                 name: "x".to_string(),
                 type_: Type::Named("i32".to_string())
             }
+        );
+    }
+
+    #[test]
+    fn test_expect_mod() {
+        let contents = "mod x;";
+        let (tokens, eofpos) = read_tokens(0, &contents).unwrap();
+        let mut parser = Parser::new(&contents, &tokens, eofpos);
+        let mod_ = expect_mod(&mut parser).unwrap();
+        assert_eq!(parser.index, tokens.len());
+        assert_eq!(
+            mod_,
+            TopLevel::ModFile("x".to_string())
         );
     }
 }

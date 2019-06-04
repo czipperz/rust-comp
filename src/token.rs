@@ -13,6 +13,7 @@ pub enum TokenValue {
     If,
     Let,
     Label,
+    Mod,
     OpenParen,
     CloseParen,
     OpenCurly,

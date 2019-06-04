@@ -126,11 +126,12 @@ fn skip_block_comment(tagged_iter: &mut TaggedIter) -> Result<(), Error> {
 }
 
 fn flush_temp(tokens: &mut Vec<Token>, file_contents: &str, span: Span) {
-    const SYMBOLS: [(&str, TokenValue); 14] = [
+    const SYMBOLS: [(&str, TokenValue); 15] = [
         ("else", TokenValue::Else),
         ("fn", TokenValue::Fn),
         ("if", TokenValue::If),
         ("let", TokenValue::Let),
+        ("mod", TokenValue::Mod),
         ("(", TokenValue::OpenParen),
         (")", TokenValue::CloseParen),
         ("{", TokenValue::OpenCurly),
@@ -277,6 +278,24 @@ mod tests {
             Ok((
                 vec![Token {
                     value: TokenValue::Let,
+                    span: Span {
+                        file: 0,
+                        start: 0,
+                        end: 3
+                    },
+                }],
+                Pos { file: 0, index: 3 }
+            ))
+        );
+    }
+
+    #[test]
+    fn test_read_tokens_mod() {
+        assert_eq!(
+            read_tokens(0, "mod"),
+            Ok((
+                vec![Token {
+                    value: TokenValue::Mod,
                     span: Span {
                         file: 0,
                         start: 0,

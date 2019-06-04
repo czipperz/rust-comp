@@ -1,6 +1,7 @@
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum TopLevel {
     Function(Function),
+    ModFile(String),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
