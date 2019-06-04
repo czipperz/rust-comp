@@ -8,10 +8,17 @@ use crate::pos::Pos;
 use crate::token::*;
 
 pub fn parse(file_contents: &str, tokens: &[Token], eofpos: Pos) -> Result<Vec<TopLevel>, Error> {
-    many(
-        &mut Parser::new(file_contents, tokens, eofpos),
+    let mut parser = Parser::new(file_contents, tokens, eofpos);
+    let top_levels = many(
+        &mut parser,
         expect_top_level,
-    )
+    )?;
+
+    if parser.index < tokens.len() {
+        Err(Error::Expected("top level item", parser.span()))
+    } else {
+        Ok(top_levels)
+    }
 }
 
 fn expect_top_level(parser: &mut Parser) -> Result<TopLevel, Error> {
@@ -53,6 +60,14 @@ fn expect_parameter(parser: &mut Parser) -> Result<Parameter, Error> {
 mod tests {
     use super::*;
     use crate::lex::read_tokens;
+
+    #[test]
+    fn test_parse_random_inputs_should_error() {
+        let contents = "a b c";
+        let (tokens, eofpos) = read_tokens(0, &contents).unwrap();
+        let top_levels = parse(&contents, &tokens, eofpos);
+        assert!(top_levels.is_err());
+    }
 
     #[test]
     fn test_expect_fn_invalid() {
