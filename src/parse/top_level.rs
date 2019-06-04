@@ -9,10 +9,7 @@ use crate::token::*;
 
 pub fn parse(file_contents: &str, tokens: &[Token], eofpos: Pos) -> Result<Vec<TopLevel>, Error> {
     let mut parser = Parser::new(file_contents, tokens, eofpos);
-    let top_levels = many(
-        &mut parser,
-        expect_top_level,
-    )?;
+    let top_levels = many(&mut parser, expect_top_level)?;
 
     if parser.index < tokens.len() {
         Err(Error::Expected("top level item", parser.span()))
@@ -24,10 +21,7 @@ pub fn parse(file_contents: &str, tokens: &[Token], eofpos: Pos) -> Result<Vec<T
 fn expect_top_level(parser: &mut Parser) -> Result<TopLevel, Error> {
     one_of(
         parser,
-        &mut [
-            expect_toplevel_fn,
-            expect_mod,
-        ][..],
+        &mut [expect_toplevel_fn, expect_mod][..],
         Error::Expected("expression", parser.span()),
     )
 }
@@ -172,9 +166,6 @@ mod tests {
         let mut parser = Parser::new(contents, &tokens, eofpos);
         let mod_ = expect_mod(&mut parser).unwrap();
         assert_eq!(parser.index, tokens.len());
-        assert_eq!(
-            mod_,
-            TopLevel::ModFile("x".to_string())
-        );
+        assert_eq!(mod_, TopLevel::ModFile("x".to_string()));
     }
 }

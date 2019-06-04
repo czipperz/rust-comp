@@ -1,5 +1,5 @@
-use std::io;
 use crate::*;
+use std::io;
 
 pub enum Error {
     Io(io::Error),

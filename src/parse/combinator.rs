@@ -143,7 +143,7 @@ mod tests {
         assert_eq!(
             many_separator(
                 &mut Parser::new("", &[], Pos { file: 0, index: 0 }),
-                |_|  {
+                |_| {
                     if first {
                         first = false;
                         Ok(())
