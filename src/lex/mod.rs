@@ -16,36 +16,41 @@ pub fn read_tokens<'a>(file: usize, contents: &str) -> Result<(Vec<Token>, Pos),
         start: tagged_iter.pos.index,
         end: tagged_iter.pos.index,
     };
+    let symbols = "(){}:,-=>;";
 
     loop {
         span.end = tagged_iter.pos.index;
-        match tagged_iter.next() {
+        match tagged_iter.peek() {
             None => {
                 flush_temp(&mut tokens, tagged_iter.contents, span);
                 break;
             }
             Some(ch) if ch.is_whitespace() => {
+                // end the current token
+                tagged_iter.advance();
                 flush_temp(&mut tokens, tagged_iter.contents, span);
                 span.start = tagged_iter.pos.index;
             }
-            Some(ch) if "(){}:,-=>;".contains(ch) => {
-                // There are two cases here: we are parsing a label that is
-                // terminated by a symbol, or we are parsing a symbol.  If start
-                // == pos then the length before the symbol is 0 so we are
-                // parsing a symbol
-                if span.start == span.end {
-                    span.end = tagged_iter.pos.index;
-                }
+            Some(ch) if symbols.contains(ch) && span.start != span.end => {
+                println!("snip ({:?}): {}", span, &contents[span]);
+                // end the current token
+                flush_temp(&mut tokens, tagged_iter.contents, span);
+                span.start = span.end;
+            }
+            Some(ch) if symbols.contains(ch) => {
+                // start a new symbol token
+                tagged_iter.advance();
+                span.end = tagged_iter.pos.index;
                 if "-=".contains(ch) {
                     if tagged_iter.peek() == Some('>') {
-                        tagged_iter.next();
+                        tagged_iter.advance();
                         span.end = tagged_iter.pos.index;
                     }
                 }
                 flush_temp(&mut tokens, tagged_iter.contents, span);
                 span.start = span.end;
             }
-            Some(_) => (),
+            Some(_) => tagged_iter.advance(),
         }
     }
 
@@ -307,6 +312,42 @@ mod tests {
                     },
                 ],
                 Pos { file: 0, index: 2 }
+            ))
+        );
+    }
+
+    #[test]
+    fn test_read_tokens_label_paren_label() {
+        assert_eq!(
+            read_tokens(0, "f(x"),
+            Ok((
+                vec![
+                    Token {
+                        value: TokenValue::Label,
+                        span: Span {
+                            file: 0,
+                            start: 0,
+                            end: 1
+                        },
+                    },
+                    Token {
+                        value: TokenValue::OpenParen,
+                        span: Span {
+                            file: 0,
+                            start: 1,
+                            end: 2
+                        },
+                    },
+                    Token {
+                        value: TokenValue::Label,
+                        span: Span {
+                            file: 0,
+                            start: 2,
+                            end: 3
+                        },
+                    },
+                ],
+                Pos { file: 0, index: 3 }
             ))
         );
     }

@@ -16,15 +16,13 @@ impl<'a> TaggedIter<'a> {
     pub fn peek(&self) -> Option<char> {
         self.contents[self.pos.index..].chars().next()
     }
-}
 
-impl<'a> Iterator for TaggedIter<'a> {
-    type Item = char;
-
-    fn next(&mut self) -> Option<char> {
-        let c = self.peek()?;
-        self.pos.increment(c);
-        Some(c)
+    pub fn advance(&mut self) {
+        if let Some(c) = self.peek() {
+            self.pos.increment(c);
+        } else {
+            panic!();
+        }
     }
 }
 
@@ -45,50 +43,24 @@ mod tests {
         let contents = "  ";
         let mut x = TaggedIter::new(0, &contents);
         assert_eq!(x.peek(), Some(' '));
-        x.next();
+        x.advance();
         assert_eq!(x.peek(), Some(' '));
-        x.next();
+        x.advance();
         assert_eq!(x.peek(), None);
     }
 
     #[test]
-    fn test_next() {
-        let contents = "cont";
-        let mut x = TaggedIter::new(0, &contents);
-        assert_eq!(x.next(), Some('c'));
-        assert_eq!(x.next(), Some('o'));
-        assert_eq!(x.next(), Some('n'));
-        assert_eq!(x.next(), Some('t'));
-        assert_eq!(x.next(), None);
-    }
-
-    #[test]
     fn test_next_greek_letters() {
-        let contents = "    ";
+        let contents = "αβγδ";
         let mut x = TaggedIter::new(0, &contents);
-        assert_eq!(x.next(), Some(' '));
-        assert_eq!(x.next(), Some(' '));
-        assert_eq!(x.next(), Some(' '));
-        assert_eq!(x.next(), Some(' '));
-        assert_eq!(x.next(), None);
-    }
-
-    #[test]
-    fn test_next_handles_new_lines() {
-        let contents = "a\nb";
-        let mut x = TaggedIter::new(0, &contents);
-        assert_eq!(x.pos.index, 0);
-
-        assert_eq!(x.next(), Some('a'));
-        assert_eq!(x.pos.index, 1);
-
-        assert_eq!(x.next(), Some('\n'));
-        assert_eq!(x.pos.index, 2);
-
-        assert_eq!(x.next(), Some('b'));
-        assert_eq!(x.pos.index, 3);
-
-        assert_eq!(x.next(), None);
-        assert_eq!(x.pos.index, 3);
+        assert_eq!(x.peek(), Some('α'));
+        x.advance();
+        assert_eq!(x.peek(), Some('β'));
+        x.advance();
+        assert_eq!(x.peek(), Some('γ'));
+        x.advance();
+        assert_eq!(x.peek(), Some('δ'));
+        x.advance();
+        assert_eq!(x.peek(), None);
     }
 }
