@@ -60,27 +60,32 @@ pub fn read_tokens<'a>(file: usize, contents: &str) -> Result<(Vec<Token>, Pos),
 }
 
 fn skip_comments(tokens: &mut Vec<Token>, tagged_iter: &mut TaggedIter, span: &mut Span) {
-    if tagged_iter.peek() == Some('/') && tagged_iter.peek2() == Some('/') {
-        span.end = tagged_iter.pos.index;
-        flush_temp(tokens, tagged_iter.contents, *span);
+    loop {
+        if tagged_iter.peek() == Some('/') && tagged_iter.peek2() == Some('/') {
+            span.end = tagged_iter.pos.index;
+            flush_temp(tokens, tagged_iter.contents, *span);
 
-        tagged_iter.advance();
-        tagged_iter.advance();
-        while tagged_iter.peek().is_some() && tagged_iter.peek() != Some('\n') {
             tagged_iter.advance();
+            tagged_iter.advance();
+            while tagged_iter.peek().is_some() && tagged_iter.peek() != Some('\n') {
+                tagged_iter.advance();
+            }
+            tagged_iter.advance();
+
+            span.start = tagged_iter.pos.index;
+            continue;
         }
-        tagged_iter.advance();
 
-        span.start = tagged_iter.pos.index;
-    }
+        if tagged_iter.peek() == Some('/') && tagged_iter.peek2() == Some('*') {
+            span.end = tagged_iter.pos.index;
+            flush_temp(tokens, tagged_iter.contents, *span);
 
-    if tagged_iter.peek() == Some('/') && tagged_iter.peek2() == Some('*') {
-        span.end = tagged_iter.pos.index;
-        flush_temp(tokens, tagged_iter.contents, *span);
+            skip_block_comment(tagged_iter);
 
-        skip_block_comment(tagged_iter);
-
-        span.start = tagged_iter.pos.index;
+            span.start = tagged_iter.pos.index;
+            continue;
+        }
+        break;
     }
 }
 
@@ -510,6 +515,34 @@ mod tests {
                     }
                 ],
                 Pos { file: 0, index: 19 }
+            ))
+        );
+    }
+
+    #[test]
+    fn test_read_tokens_sequential_line_comments() {
+        assert_eq!(
+            read_tokens(0, "let//abc\n//def\ndef"),
+            Ok((
+                vec![
+                    Token {
+                        value: TokenValue::Let,
+                        span: Span {
+                            file: 0,
+                            start: 0,
+                            end: 3
+                        },
+                    },
+                    Token {
+                        value: TokenValue::Label,
+                        span: Span {
+                            file: 0,
+                            start: 15,
+                            end: 18
+                        },
+                    }
+                ],
+                Pos { file: 0, index: 18 }
             ))
         );
     }
