@@ -6,7 +6,9 @@ use crate::token::*;
 use std::fmt;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum Error {}
+pub enum Error {
+    UnterminatedBlockComment(Pos),
+}
 
 pub fn read_tokens<'a>(file: usize, contents: &str) -> Result<(Vec<Token>, Pos), Error> {
     let mut tagged_iter = TaggedIter::new(file, contents);
@@ -19,7 +21,7 @@ pub fn read_tokens<'a>(file: usize, contents: &str) -> Result<(Vec<Token>, Pos),
     let symbols = "(){}:,-=>;";
 
     loop {
-        skip_comments(&mut tokens, &mut tagged_iter, &mut span);
+        skip_comments(&mut tokens, &mut tagged_iter, &mut span)?;
 
         span.end = tagged_iter.pos.index;
 
@@ -59,7 +61,11 @@ pub fn read_tokens<'a>(file: usize, contents: &str) -> Result<(Vec<Token>, Pos),
     Ok((tokens, tagged_iter.pos))
 }
 
-fn skip_comments(tokens: &mut Vec<Token>, tagged_iter: &mut TaggedIter, span: &mut Span) {
+fn skip_comments(
+    tokens: &mut Vec<Token>,
+    tagged_iter: &mut TaggedIter,
+    span: &mut Span,
+) -> Result<(), Error> {
     loop {
         if tagged_iter.peek() == Some('/') && tagged_iter.peek2() == Some('/') {
             span.end = tagged_iter.pos.index;
@@ -80,28 +86,43 @@ fn skip_comments(tokens: &mut Vec<Token>, tagged_iter: &mut TaggedIter, span: &m
             span.end = tagged_iter.pos.index;
             flush_temp(tokens, tagged_iter.contents, *span);
 
-            skip_block_comment(tagged_iter);
+            skip_block_comment(tagged_iter)?;
 
             span.start = tagged_iter.pos.index;
             continue;
         }
         break;
     }
+
+    Ok(())
 }
 
-fn skip_block_comment(tagged_iter: &mut TaggedIter) {
+fn skip_block_comment(tagged_iter: &mut TaggedIter) -> Result<(), Error> {
+    let pos = tagged_iter.pos;
     tagged_iter.advance();
     tagged_iter.advance();
+
     while tagged_iter.peek2().is_some()
         && !(tagged_iter.peek() == Some('*') && tagged_iter.peek2() == Some('/'))
     {
         if tagged_iter.peek() == Some('/') && tagged_iter.peek2() == Some('*') {
-            skip_block_comment(tagged_iter);
+            skip_block_comment(tagged_iter)?;
+
+            // if recursive comment is ends at eof this will trigger
+            if tagged_iter.peek() == None {
+                return Err(Error::UnterminatedBlockComment(pos));
+            }
         }
+
         tagged_iter.advance();
+    }
+
+    if tagged_iter.peek2() == None {
+        return Err(Error::UnterminatedBlockComment(pos));
     }
     tagged_iter.advance();
     tagged_iter.advance();
+    Ok(())
 }
 
 fn flush_temp(tokens: &mut Vec<Token>, file_contents: &str, span: Span) {
@@ -544,6 +565,22 @@ mod tests {
                 ],
                 Pos { file: 0, index: 18 }
             ))
+        );
+    }
+
+    #[test]
+    fn test_read_tokens_unterminated_block_comment_with_recursive_at_eof() {
+        assert_eq!(
+            read_tokens(0, "let /* abc \n def /* */"),
+            Err(Error::UnterminatedBlockComment(Pos { file: 0, index: 4 })),
+        );
+    }
+
+    #[test]
+    fn test_read_tokens_unterminated_block_comment_with_whitespace_eof() {
+        assert_eq!(
+            read_tokens(0, "let /* abc \n def /* */ "),
+            Err(Error::UnterminatedBlockComment(Pos { file: 0, index: 4 })),
         );
     }
 }
