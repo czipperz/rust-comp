@@ -32,7 +32,6 @@ pub fn read_tokens<'a>(file: usize, contents: &str) -> Result<(Vec<Token>, Pos),
                 span.start = tagged_iter.pos.index;
             }
             Some(ch) if symbols.contains(ch) && span.start != span.end => {
-                println!("snip ({:?}): {}", span, &contents[span]);
                 // end the current token
                 flush_temp(&mut tokens, tagged_iter.contents, span);
                 span.start = span.end;
