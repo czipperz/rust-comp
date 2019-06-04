@@ -29,6 +29,24 @@ pub fn read_tokens<'a>(file: usize, contents: &str) -> Result<(Vec<Token>, Pos),
                 tagged_iter.advance();
             }
             tagged_iter.advance();
+
+            span.start = tagged_iter.pos.index;
+        }
+
+        if tagged_iter.peek() == Some('/') && tagged_iter.peek2() == Some('*') {
+            span.end = tagged_iter.pos.index;
+            flush_temp(&mut tokens, tagged_iter.contents, span);
+
+            tagged_iter.advance();
+            tagged_iter.advance();
+            while tagged_iter.peek2().is_some()
+                && !(tagged_iter.peek() == Some('*') && tagged_iter.peek2() == Some('/'))
+            {
+                tagged_iter.advance();
+            }
+            tagged_iter.advance();
+            tagged_iter.advance();
+
             span.start = tagged_iter.pos.index;
         }
 
@@ -405,6 +423,34 @@ mod tests {
     fn test_read_tokens_ignore_line_comment() {
         assert_eq!(
             read_tokens(0, "let// abcd \nx"),
+            Ok((
+                vec![
+                    Token {
+                        value: TokenValue::Let,
+                        span: Span {
+                            file: 0,
+                            start: 0,
+                            end: 3
+                        },
+                    },
+                    Token {
+                        value: TokenValue::Label,
+                        span: Span {
+                            file: 0,
+                            start: 12,
+                            end: 13
+                        },
+                    }
+                ],
+                Pos { file: 0, index: 13 }
+            ))
+        );
+    }
+
+    #[test]
+    fn test_read_tokens_ignore_block_comment() {
+        assert_eq!(
+            read_tokens(0, "let/* abc */x"),
             Ok((
                 vec![
                     Token {
