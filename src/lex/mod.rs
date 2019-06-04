@@ -78,18 +78,25 @@ fn skip_comments(tokens: &mut Vec<Token>, tagged_iter: &mut TaggedIter, span: &m
         span.end = tagged_iter.pos.index;
         flush_temp(tokens, tagged_iter.contents, *span);
 
-        tagged_iter.advance();
-        tagged_iter.advance();
-        while tagged_iter.peek2().is_some()
-            && !(tagged_iter.peek() == Some('*') && tagged_iter.peek2() == Some('/'))
-        {
-            tagged_iter.advance();
-        }
-        tagged_iter.advance();
-        tagged_iter.advance();
+        skip_block_comment(tagged_iter);
 
         span.start = tagged_iter.pos.index;
     }
+}
+
+fn skip_block_comment(tagged_iter: &mut TaggedIter) {
+    tagged_iter.advance();
+    tagged_iter.advance();
+    while tagged_iter.peek2().is_some()
+        && !(tagged_iter.peek() == Some('*') && tagged_iter.peek2() == Some('/'))
+    {
+        if tagged_iter.peek() == Some('/') && tagged_iter.peek2() == Some('*') {
+            skip_block_comment(tagged_iter);
+        }
+        tagged_iter.advance();
+    }
+    tagged_iter.advance();
+    tagged_iter.advance();
 }
 
 fn flush_temp(tokens: &mut Vec<Token>, file_contents: &str, span: Span) {
@@ -475,6 +482,34 @@ mod tests {
                     }
                 ],
                 Pos { file: 0, index: 13 }
+            ))
+        );
+    }
+
+    #[test]
+    fn test_read_tokens_recursive_block_comment() {
+        assert_eq!(
+            read_tokens(0, "let/* /* abc */ */x"),
+            Ok((
+                vec![
+                    Token {
+                        value: TokenValue::Let,
+                        span: Span {
+                            file: 0,
+                            start: 0,
+                            end: 3
+                        },
+                    },
+                    Token {
+                        value: TokenValue::Label,
+                        span: Span {
+                            file: 0,
+                            start: 18,
+                            end: 19
+                        },
+                    }
+                ],
+                Pos { file: 0, index: 19 }
             ))
         );
     }
