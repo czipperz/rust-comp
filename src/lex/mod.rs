@@ -19,36 +19,7 @@ pub fn read_tokens<'a>(file: usize, contents: &str) -> Result<(Vec<Token>, Pos),
     let symbols = "(){}:,-=>;";
 
     loop {
-        if tagged_iter.peek() == Some('/') && tagged_iter.peek2() == Some('/') {
-            span.end = tagged_iter.pos.index;
-            flush_temp(&mut tokens, tagged_iter.contents, span);
-
-            tagged_iter.advance();
-            tagged_iter.advance();
-            while tagged_iter.peek().is_some() && tagged_iter.peek() != Some('\n') {
-                tagged_iter.advance();
-            }
-            tagged_iter.advance();
-
-            span.start = tagged_iter.pos.index;
-        }
-
-        if tagged_iter.peek() == Some('/') && tagged_iter.peek2() == Some('*') {
-            span.end = tagged_iter.pos.index;
-            flush_temp(&mut tokens, tagged_iter.contents, span);
-
-            tagged_iter.advance();
-            tagged_iter.advance();
-            while tagged_iter.peek2().is_some()
-                && !(tagged_iter.peek() == Some('*') && tagged_iter.peek2() == Some('/'))
-            {
-                tagged_iter.advance();
-            }
-            tagged_iter.advance();
-            tagged_iter.advance();
-
-            span.start = tagged_iter.pos.index;
-        }
+        skip_comments(&mut tokens, &mut tagged_iter, &mut span);
 
         span.end = tagged_iter.pos.index;
 
@@ -86,6 +57,39 @@ pub fn read_tokens<'a>(file: usize, contents: &str) -> Result<(Vec<Token>, Pos),
     }
 
     Ok((tokens, tagged_iter.pos))
+}
+
+fn skip_comments(tokens: &mut Vec<Token>, tagged_iter: &mut TaggedIter, span: &mut Span) {
+    if tagged_iter.peek() == Some('/') && tagged_iter.peek2() == Some('/') {
+        span.end = tagged_iter.pos.index;
+        flush_temp(tokens, tagged_iter.contents, *span);
+
+        tagged_iter.advance();
+        tagged_iter.advance();
+        while tagged_iter.peek().is_some() && tagged_iter.peek() != Some('\n') {
+            tagged_iter.advance();
+        }
+        tagged_iter.advance();
+
+        span.start = tagged_iter.pos.index;
+    }
+
+    if tagged_iter.peek() == Some('/') && tagged_iter.peek2() == Some('*') {
+        span.end = tagged_iter.pos.index;
+        flush_temp(tokens, tagged_iter.contents, *span);
+
+        tagged_iter.advance();
+        tagged_iter.advance();
+        while tagged_iter.peek2().is_some()
+            && !(tagged_iter.peek() == Some('*') && tagged_iter.peek2() == Some('/'))
+        {
+            tagged_iter.advance();
+        }
+        tagged_iter.advance();
+        tagged_iter.advance();
+
+        span.start = tagged_iter.pos.index;
+    }
 }
 
 fn flush_temp(tokens: &mut Vec<Token>, file_contents: &str, span: Span) {
