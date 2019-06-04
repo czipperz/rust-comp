@@ -17,6 +17,10 @@ impl<'a> TaggedIter<'a> {
         self.contents[self.pos.index..].chars().next()
     }
 
+    pub fn peek2(&self) -> Option<char> {
+        self.contents[self.pos.index..].chars().nth(1)
+    }
+
     pub fn advance(&mut self) {
         if let Some(c) = self.peek() {
             self.pos.increment(c);
@@ -47,6 +51,20 @@ mod tests {
         assert_eq!(x.peek(), Some(' '));
         x.advance();
         assert_eq!(x.peek(), None);
+    }
+
+    #[test]
+    fn test_peek2() {
+        let contents = " μa";
+        let mut x = TaggedIter::new(0, &contents);
+        assert_eq!(x.peek(), Some(' '));
+        assert_eq!(x.peek2(), Some('μ'));
+        x.advance();
+        assert_eq!(x.peek2(), Some('a'));
+        x.advance();
+        assert_eq!(x.peek2(), None);
+        x.advance();
+        assert_eq!(x.peek2(), None);
     }
 
     #[test]
