@@ -12,6 +12,7 @@ pub fn expect_expression(parser: &mut Parser) -> Result<Expression, Error> {
             expect_variable_expression,
             expect_block_expression,
             expect_if_expression,
+            expect_while_expression,
         ][..],
         Error::Expected("expression", parser.span()),
     )
@@ -60,6 +61,16 @@ fn expect_else_expression(parser: &mut Parser) -> Result<ElseExpression, Error> 
         &mut [else_expression_if, else_expression_block][..],
         Error::Expected("else expression", parser.span()),
     )
+}
+
+fn expect_while_expression(parser: &mut Parser) -> Result<Expression, Error> {
+    parser.expect_token(TokenValue::While)?;
+    let condition = expect_expression(parser)?;
+    let block = expect_block(parser)?;
+    Ok(Expression::While(WhileExpression {
+        condition: Box::new(condition),
+        block,
+    }))
 }
 
 #[cfg(test)]
@@ -162,6 +173,22 @@ mod tests {
                     then: Block { statements: vec![] },
                     else_: None,
                 }))),
+            })
+        );
+    }
+
+    #[test]
+    fn test_expect_while_expression() {
+        let contents = "while b {}";
+        let (tokens, eofpos) = read_tokens(0, contents).unwrap();
+        let mut parser = Parser::new(contents, &tokens, eofpos);
+        let expression = expect_while_expression(&mut parser).unwrap();
+        assert_eq!(parser.index, tokens.len());
+        assert_eq!(
+            expression,
+            Expression::While(WhileExpression {
+                condition: Box::new(Expression::Variable("b".to_string())),
+                block: Block { statements: vec![] },
             })
         );
     }

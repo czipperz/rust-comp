@@ -47,6 +47,7 @@ fn expect_expression_statement(parser: &mut Parser) -> Result<Statement, Error> 
         Expression::Variable(_) => parser.expect_token(TokenValue::Semicolon)?,
         Expression::Block(_) => (),
         Expression::If(_) => (),
+        Expression::While(_) => (),
     }
     Ok(Statement::Expression(expression))
 }

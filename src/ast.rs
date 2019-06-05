@@ -29,6 +29,7 @@ pub enum Expression {
     Variable(String),
     Block(Block),
     If(IfExpression),
+    While(WhileExpression),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -42,6 +43,12 @@ pub struct IfExpression {
 pub enum ElseExpression {
     If(IfExpression),
     Block(Block),
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct WhileExpression {
+    pub condition: Box<Expression>,
+    pub block: Block,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

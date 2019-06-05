@@ -14,6 +14,7 @@ pub enum TokenValue {
     Let,
     Label,
     Mod,
+    While,
     OpenParen,
     CloseParen,
     OpenCurly,
