@@ -26,9 +26,13 @@ impl From<parse::Error> for Error {
 }
 
 pub fn run(opt: opt::Opt) -> Result<(), Error> {
+    let mut files_contents = Vec::new();
     for i in 0..opt.files.len() {
         let file_name = &opt.files[i];
         let file_contents = read_file::read_file(file_name)?;
+        files_contents.push(file_contents);
+        let file_contents = &files_contents[i];
+
         let (tokens, eofpos) = lex::read_tokens(i, &file_contents)?;
         println!("{:?}", tokens);
         let top_levels = parse::parse(&file_contents, &tokens, eofpos)?;
