@@ -9,6 +9,7 @@ mod run;
 mod token;
 
 use run::Error;
+use std::time;
 
 fn main() {
     std::process::exit(match run_main() {
@@ -21,8 +22,15 @@ fn main() {
 }
 
 fn run_main() -> Result<(), Error> {
+    let start = time::Instant::now();
+
     let args = opt::parse();
-    run::run(diagnostic::Diagnostic::new(args.files), args.opt)
+    diagnostic::print_duration("Arguments", start.elapsed());
+
+    run::run(diagnostic::Diagnostic::new(args.files), args.opt)?;
+
+    diagnostic::print_duration("Total", start.elapsed());
+    Ok(())
 }
 
 fn handle_error(e: Error) {

@@ -51,3 +51,12 @@ impl Diagnostic {
         )
     }
 }
+
+pub fn print_duration(name: &str, duration: std::time::Duration) {
+    println!(
+        "{}: {}.{:06}",
+        name,
+        duration.as_secs(),
+        duration.subsec_micros()
+    );
+}
