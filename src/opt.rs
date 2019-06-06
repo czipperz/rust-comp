@@ -5,10 +5,15 @@ use structopt::StructOpt;
     name = "rust-comp",
     about = "A compiler for the Rust programming language focusing on correctness, compilation speed, and being embeddable."
 )]
-pub struct Opt {
+pub struct Args {
     pub files: Vec<String>,
+    #[structopt(flatten)]
+    pub opt: Opt,
 }
 
-pub fn parse() -> Opt {
-    Opt::from_args()
+#[derive(StructOpt, Debug)]
+pub struct Opt {}
+
+pub fn parse() -> Args {
+    Args::from_args()
 }

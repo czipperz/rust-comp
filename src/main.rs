@@ -1,4 +1,5 @@
 mod ast;
+mod diagnostic;
 mod lex;
 mod opt;
 mod parse;
@@ -20,14 +21,13 @@ fn main() {
 }
 
 fn run_main() -> Result<(), Error> {
-    let opt = opt::parse();
-    run::run(opt)
+    let args = opt::parse();
+    run::run(diagnostic::Diagnostic::new(args.files), args.opt)
 }
 
 fn handle_error(e: Error) {
     match e {
         Error::Io(e) => eprintln!("{}", e),
-        Error::Lex(e) => eprintln!("Lexing error: {}", e),
-        Error::Parse(e) => eprintln!("Parsing error: {:?}", e),
+        Error::Handled => (),
     }
 }
