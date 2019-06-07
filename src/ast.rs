@@ -1,7 +1,12 @@
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum TopLevel {
     Function(Function),
-    ModFile(String),
+    ModFile(ModFile),
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ModFile {
+    pub mod_: String,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -26,10 +31,15 @@ pub enum Statement {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Expression {
-    Variable(String),
+    Variable(Variable),
     Block(Block),
     If(If),
     While(While),
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Variable {
+    pub name: String,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -65,5 +75,10 @@ pub struct Block {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Type {
-    Named(String),
+    Named(NamedType),
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct NamedType {
+    pub name: String,
 }

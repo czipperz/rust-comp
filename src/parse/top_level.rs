@@ -65,7 +65,9 @@ fn expect_mod(parser: &mut Parser) -> Result<TopLevel, Error> {
     parser.expect_token(TokenValue::Mod)?;
     let name = parser.expect_label()?;
     parser.expect_token(TokenValue::Semicolon)?;
-    Ok(TopLevel::ModFile(name.to_string()))
+    Ok(TopLevel::ModFile(ModFile {
+        mod_: name.to_string(),
+    }))
 }
 
 #[cfg(test)]
@@ -116,7 +118,9 @@ mod tests {
             parameters,
             vec![Parameter {
                 name: "x".to_string(),
-                type_: Type::Named("i32".to_string())
+                type_: Type::Named(NamedType {
+                    name: "i32".to_string()
+                })
             }]
         );
     }
@@ -133,11 +137,15 @@ mod tests {
             vec![
                 Parameter {
                     name: "x".to_string(),
-                    type_: Type::Named("i32".to_string())
+                    type_: Type::Named(NamedType {
+                        name: "i32".to_string()
+                    })
                 },
                 Parameter {
                     name: "y".to_string(),
-                    type_: Type::Named("i32".to_string())
+                    type_: Type::Named(NamedType {
+                        name: "i32".to_string()
+                    })
                 }
             ]
         );
@@ -154,7 +162,9 @@ mod tests {
             parameter,
             Parameter {
                 name: "x".to_string(),
-                type_: Type::Named("i32".to_string())
+                type_: Type::Named(NamedType {
+                    name: "i32".to_string()
+                })
             }
         );
     }
@@ -166,6 +176,11 @@ mod tests {
         let mut parser = Parser::new(contents, &tokens, eofpos);
         let mod_ = expect_mod(&mut parser).unwrap();
         assert_eq!(parser.index, tokens.len());
-        assert_eq!(mod_, TopLevel::ModFile("x".to_string()));
+        assert_eq!(
+            mod_,
+            TopLevel::ModFile(ModFile {
+                mod_: "x".to_string()
+            })
+        );
     }
 }

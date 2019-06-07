@@ -87,8 +87,12 @@ mod tests {
             statement,
             Ok(Statement::Let(Let {
                 name: "x".to_string(),
-                type_: Some(Type::Named("i32".to_string())),
-                value: Some(Expression::Variable("y".to_string())),
+                type_: Some(Type::Named(NamedType {
+                    name: "i32".to_string()
+                })),
+                value: Some(Expression::Variable(Variable {
+                    name: "y".to_string()
+                })),
             }))
         );
     }
@@ -105,7 +109,9 @@ mod tests {
             Ok(Statement::Let(Let {
                 name: "x".to_string(),
                 type_: None,
-                value: Some(Expression::Variable("y".to_string())),
+                value: Some(Expression::Variable(Variable {
+                    name: "y".to_string()
+                })),
             }))
         );
     }
@@ -156,9 +162,9 @@ mod tests {
         assert_eq!(parser.index, tokens.len());
         assert_eq!(
             statement,
-            Ok(Statement::Expression(Expression::Variable(
-                "ab".to_string()
-            )))
+            Ok(Statement::Expression(Expression::Variable(Variable {
+                name: "ab".to_string()
+            })))
         );
     }
 

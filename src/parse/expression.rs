@@ -19,9 +19,11 @@ pub fn expect_expression(parser: &mut Parser) -> Result<Expression, Error> {
 }
 
 fn expect_variable_expression(parser: &mut Parser) -> Result<Expression, Error> {
-    parser
-        .expect_label()
-        .map(|label| Expression::Variable(label.to_string()))
+    parser.expect_label().map(|label| {
+        Expression::Variable(Variable {
+            name: label.to_string(),
+        })
+    })
 }
 
 fn expect_block_expression(parser: &mut Parser) -> Result<Expression, Error> {
@@ -87,7 +89,12 @@ mod tests {
         let mut parser = Parser::new(contents, &tokens, eofpos);
         let expression = expect_variable_expression(&mut parser).unwrap();
         assert_eq!(parser.index, tokens.len());
-        assert_eq!(expression, Expression::Variable("ab".to_string()));
+        assert_eq!(
+            expression,
+            Expression::Variable(Variable {
+                name: "ab".to_string()
+            })
+        );
     }
 
     #[test]
@@ -130,7 +137,9 @@ mod tests {
         assert_eq!(
             expression,
             Expression::If(If {
-                condition: Box::new(Expression::Variable("b".to_string())),
+                condition: Box::new(Expression::Variable(Variable {
+                    name: "b".to_string()
+                })),
                 then: Block { statements: vec![] },
                 else_: None,
             })
@@ -147,7 +156,9 @@ mod tests {
         assert_eq!(
             expression,
             Expression::If(If {
-                condition: Box::new(Expression::Variable("b".to_string())),
+                condition: Box::new(Expression::Variable(Variable {
+                    name: "b".to_string()
+                })),
                 then: Block { statements: vec![] },
                 else_: Some(Box::new(Else::Block(Block { statements: vec![] })))
             })
@@ -164,10 +175,14 @@ mod tests {
         assert_eq!(
             expression,
             Expression::If(If {
-                condition: Box::new(Expression::Variable("b".to_string())),
+                condition: Box::new(Expression::Variable(Variable {
+                    name: "b".to_string()
+                })),
                 then: Block { statements: vec![] },
                 else_: Some(Box::new(Else::If(If {
-                    condition: Box::new(Expression::Variable("c".to_string())),
+                    condition: Box::new(Expression::Variable(Variable {
+                        name: "c".to_string()
+                    })),
                     then: Block { statements: vec![] },
                     else_: None,
                 }))),
@@ -185,7 +200,9 @@ mod tests {
         assert_eq!(
             expression,
             Expression::While(While {
-                condition: Box::new(Expression::Variable("b".to_string())),
+                condition: Box::new(Expression::Variable(Variable {
+                    name: "b".to_string()
+                })),
                 block: Block { statements: vec![] },
             })
         );
