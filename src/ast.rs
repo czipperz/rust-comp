@@ -1,7 +1,7 @@
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum TopLevel<'a> {
-    Function(Function<'a>),
-    ModFile(ModFile<'a>),
+    Function(&'a Function<'a>),
+    ModFile(&'a ModFile<'a>),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -12,29 +12,29 @@ pub struct ModFile<'a> {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Function<'a> {
     pub name: &'a str,
-    pub parameters: Vec<Parameter<'a>>,
-    pub body: Block<'a>,
+    pub parameters: Vec<&'a Parameter<'a>>,
+    pub body: &'a Block<'a>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Parameter<'a> {
     pub name: &'a str,
-    pub type_: Type<'a>,
+    pub type_: &'a Type<'a>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Statement<'a> {
     Empty,
-    Expression(Expression<'a>),
-    Let(Let<'a>),
+    Expression(&'a Expression<'a>),
+    Let(&'a Let<'a>),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Expression<'a> {
-    Variable(Variable<'a>),
-    Block(Block<'a>),
-    If(If<'a>),
-    While(While<'a>),
+    Variable(&'a Variable<'a>),
+    Block(&'a Block<'a>),
+    If(&'a If<'a>),
+    While(&'a While<'a>),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -44,38 +44,38 @@ pub struct Variable<'a> {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct If<'a> {
-    pub condition: Box<Expression<'a>>,
-    pub then: Block<'a>,
-    pub else_: Option<Box<Else<'a>>>,
+    pub condition: &'a Expression<'a>,
+    pub then: &'a Block<'a>,
+    pub else_: Option<&'a Else<'a>>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Else<'a> {
-    If(If<'a>),
-    Block(Block<'a>),
+    If(&'a If<'a>),
+    Block(&'a Block<'a>),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct While<'a> {
-    pub condition: Box<Expression<'a>>,
-    pub block: Block<'a>,
+    pub condition: &'a Expression<'a>,
+    pub block: &'a Block<'a>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Let<'a> {
     pub name: &'a str,
-    pub type_: Option<Type<'a>>,
-    pub value: Option<Expression<'a>>,
+    pub type_: Option<&'a Type<'a>>,
+    pub value: Option<&'a Expression<'a>>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Block<'a> {
-    pub statements: Vec<Statement<'a>>,
+    pub statements: Vec<&'a Statement<'a>>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Type<'a> {
-    Named(NamedType<'a>),
+    Named(&'a NamedType<'a>),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

@@ -1,4 +1,5 @@
 use super::Error;
+use crate::arena::Allocator;
 use crate::pos::*;
 use crate::token::*;
 
@@ -7,15 +8,22 @@ pub struct Parser<'a> {
     tokens: &'a [Token],
     eofpos: Pos,
     pub index: usize,
+    allocator: Allocator<'a>,
 }
 
 impl<'a> Parser<'a> {
-    pub fn new(file_contents: &'a str, tokens: &'a [Token], eofpos: Pos) -> Self {
+    pub fn new(
+        file_contents: &'a str,
+        tokens: &'a [Token],
+        eofpos: Pos,
+        allocator: Allocator<'a>,
+    ) -> Self {
         Parser {
             file_contents,
             tokens,
             eofpos,
             index: 0,
+            allocator,
         }
     }
 
@@ -56,18 +64,24 @@ impl<'a> Parser<'a> {
             ))
         }
     }
+
+    pub fn alloc<T>(&self, t: T) -> &'a T {
+        &*self.allocator.alloc(t)
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::arena::Arena;
     use crate::lex::read_tokens;
 
     #[test]
     fn test_span_in_bounds() {
+        let mut arena = Arena::new();
         let contents = "fn";
         let (tokens, eofpos) = read_tokens(0, contents).unwrap();
-        let parser = Parser::new(contents, &tokens, eofpos);
+        let parser = Parser::new(contents, &tokens, eofpos, arena.allocator());
         assert_eq!(
             parser.span(),
             Span {
@@ -80,16 +94,18 @@ mod tests {
 
     #[test]
     fn test_span_out_of_bounds() {
+        let mut arena = Arena::new();
         let contents = "  ";
-        let parser = Parser::new(contents, &[], Pos { file: 0, index: 2 });
+        let parser = Parser::new(contents, &[], Pos { file: 0, index: 2 }, arena.allocator());
         assert_eq!(parser.span(), parser.eof());
     }
 
     #[test]
     fn test_eof() {
+        let mut arena = Arena::new();
         let eofpos = Pos { file: 0, index: 3 };
         let contents = " \n ";
-        let parser = Parser::new(contents, &[], eofpos);
+        let parser = Parser::new(contents, &[], eofpos, arena.allocator());
         assert_eq!(
             parser.eof(),
             Span {
@@ -102,52 +118,58 @@ mod tests {
 
     #[test]
     fn test_expect_label_out_of_bounds() {
+        let mut arena = Arena::new();
         let contents = "";
-        let mut parser = Parser::new(contents, &[], Pos { file: 0, index: 0 });
+        let mut parser = Parser::new(contents, &[], Pos { file: 0, index: 0 }, arena.allocator());
         assert!(parser.expect_label().is_err());
         assert_eq!(parser.index, 0);
     }
 
     #[test]
     fn test_expect_label_matches() {
+        let mut arena = Arena::new();
         let contents = "abc";
         let (tokens, eofpos) = read_tokens(0, contents).unwrap();
-        let mut parser = Parser::new(contents, &tokens, eofpos);
+        let mut parser = Parser::new(contents, &tokens, eofpos, arena.allocator());
         assert_eq!(parser.expect_label().unwrap(), "abc");
         assert_eq!(parser.index, tokens.len());
     }
 
     #[test]
     fn test_expect_label_no_match() {
+        let mut arena = Arena::new();
         let contents = "fn";
         let (tokens, eofpos) = read_tokens(0, contents).unwrap();
-        let mut parser = Parser::new(contents, &tokens, eofpos);
+        let mut parser = Parser::new(contents, &tokens, eofpos, arena.allocator());
         assert!(parser.expect_label().is_err());
         assert_eq!(parser.index, 0);
     }
 
     #[test]
     fn test_expect_token_out_of_bounds() {
+        let mut arena = Arena::new();
         let contents = "";
-        let mut parser = Parser::new(contents, &[], Pos { file: 0, index: 0 });
+        let mut parser = Parser::new(contents, &[], Pos { file: 0, index: 0 }, arena.allocator());
         assert!(parser.expect_token(TokenValue::Fn).is_err());
         assert_eq!(parser.index, 0);
     }
 
     #[test]
     fn test_expect_token_matches() {
+        let mut arena = Arena::new();
         let contents = "fn";
         let (tokens, eofpos) = read_tokens(0, contents).unwrap();
-        let mut parser = Parser::new(contents, &tokens, eofpos);
+        let mut parser = Parser::new(contents, &tokens, eofpos, arena.allocator());
         assert!(parser.expect_token(TokenValue::Fn).is_ok());
         assert_eq!(parser.index, tokens.len());
     }
 
     #[test]
     fn test_expect_token_no_match() {
+        let mut arena = Arena::new();
         let contents = "fn";
         let (tokens, eofpos) = read_tokens(0, contents).unwrap();
-        let mut parser = Parser::new(contents, &tokens, eofpos);
+        let mut parser = Parser::new(contents, &tokens, eofpos, arena.allocator());
         assert!(parser.expect_token(TokenValue::OpenParen).is_err());
         assert_eq!(parser.index, 0);
     }

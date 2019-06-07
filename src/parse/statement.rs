@@ -6,7 +6,7 @@ use super::Error;
 use crate::ast::*;
 use crate::token::*;
 
-pub fn expect_statement<'a>(parser: &mut Parser<'a>) -> Result<Statement<'a>, Error> {
+pub fn expect_statement<'a>(parser: &mut Parser<'a>) -> Result<&'a Statement<'a>, Error> {
     one_of(
         parser,
         &mut [
@@ -18,7 +18,7 @@ pub fn expect_statement<'a>(parser: &mut Parser<'a>) -> Result<Statement<'a>, Er
     )
 }
 
-fn expect_let_statement<'a>(parser: &mut Parser<'a>) -> Result<Statement<'a>, Error> {
+fn expect_let_statement<'a>(parser: &mut Parser<'a>) -> Result<&'a Statement<'a>, Error> {
     parser.expect_token(TokenValue::Let)?;
     let name = parser.expect_label()?;
     let type_ = if parser.expect_token(TokenValue::Colon).is_ok() {
@@ -32,16 +32,16 @@ fn expect_let_statement<'a>(parser: &mut Parser<'a>) -> Result<Statement<'a>, Er
         None
     };
     parser.expect_token(TokenValue::Semicolon)?;
-    Ok(Statement::Let(Let { name, type_, value }))
+    Ok(parser.alloc(Statement::Let(parser.alloc(Let { name, type_, value }))))
 }
 
-fn expect_empty_statement<'a>(parser: &mut Parser<'a>) -> Result<Statement<'a>, Error> {
+fn expect_empty_statement<'a>(parser: &mut Parser<'a>) -> Result<&'a Statement<'a>, Error> {
     parser
         .expect_token(TokenValue::Semicolon)
-        .map(|_| Statement::Empty)
+        .map(|_| parser.alloc(Statement::Empty))
 }
 
-fn expect_expression_statement<'a>(parser: &mut Parser<'a>) -> Result<Statement<'a>, Error> {
+fn expect_expression_statement<'a>(parser: &mut Parser<'a>) -> Result<&'a Statement<'a>, Error> {
     let expression = expect_expression(parser)?;
     match expression {
         Expression::Variable(_) => parser.expect_token(TokenValue::Semicolon)?,
@@ -49,77 +49,83 @@ fn expect_expression_statement<'a>(parser: &mut Parser<'a>) -> Result<Statement<
         Expression::If(_) => (),
         Expression::While(_) => (),
     }
-    Ok(Statement::Expression(expression))
+    Ok(parser.alloc(Statement::Expression(expression)))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::arena::Arena;
     use crate::lex::read_tokens;
     use crate::pos::*;
 
     #[test]
     fn test_expect_statement_empty() {
+        let mut arena = Arena::new();
         let contents = "";
-        let mut parser = Parser::new(contents, &[], Pos { file: 0, index: 0 });
+        let mut parser = Parser::new(contents, &[], Pos { file: 0, index: 0 }, arena.allocator());
         assert!(expect_statement(&mut parser).is_err());
         assert_eq!(parser.index, 0);
     }
 
     #[test]
     fn test_expect_statement_semicolon() {
+        let mut arena = Arena::new();
         let contents = &";";
         let (tokens, eofpos) = read_tokens(0, contents).unwrap();
-        let mut parser = Parser::new(contents, &tokens, eofpos);
+        let mut parser = Parser::new(contents, &tokens, eofpos, arena.allocator());
         let statement = expect_statement(&mut parser).unwrap();
         assert_eq!(parser.index, tokens.len());
-        assert_eq!(statement, Statement::Empty);
+        assert_eq!(statement, &Statement::Empty);
     }
 
     #[test]
     fn test_let_statement_with_type_and_value() {
+        let mut arena = Arena::new();
         let contents = "let x: i32 = y;";
         let (tokens, eofpos) = read_tokens(0, contents).unwrap();
-        let mut parser = Parser::new(contents, &tokens, eofpos);
+        let mut parser = Parser::new(contents, &tokens, eofpos, arena.allocator());
         let statement = expect_let_statement(&mut parser);
         assert_eq!(parser.index, tokens.len());
         assert_eq!(
             statement,
-            Ok(Statement::Let(Let {
+            Ok(&Statement::Let(&Let {
                 name: "x",
-                type_: Some(Type::Named(NamedType { name: "i32" })),
-                value: Some(Expression::Variable(Variable { name: "y" })),
+                type_: Some(&Type::Named(&NamedType { name: "i32" })),
+                value: Some(&Expression::Variable(&Variable { name: "y" })),
             }))
         );
     }
 
     #[test]
     fn test_let_statement_with_value() {
+        let mut arena = Arena::new();
         let contents = "let x = y;";
         let (tokens, eofpos) = read_tokens(0, contents).unwrap();
-        let mut parser = Parser::new(contents, &tokens, eofpos);
+        let mut parser = Parser::new(contents, &tokens, eofpos, arena.allocator());
         let statement = expect_let_statement(&mut parser);
         assert_eq!(parser.index, tokens.len());
         assert_eq!(
             statement,
-            Ok(Statement::Let(Let {
+            Ok(&Statement::Let(&Let {
                 name: "x",
                 type_: None,
-                value: Some(Expression::Variable(Variable { name: "y" })),
+                value: Some(&Expression::Variable(&Variable { name: "y" })),
             }))
         );
     }
 
     #[test]
     fn test_let_statement_without_value() {
+        let mut arena = Arena::new();
         let contents = "let x;";
         let (tokens, eofpos) = read_tokens(0, contents).unwrap();
-        let mut parser = Parser::new(contents, &tokens, eofpos);
+        let mut parser = Parser::new(contents, &tokens, eofpos, arena.allocator());
         let statement = expect_let_statement(&mut parser);
         assert_eq!(parser.index, tokens.len());
         assert_eq!(
             statement,
-            Ok(Statement::Let(Let {
+            Ok(&Statement::Let(&Let {
                 name: "x",
                 type_: None,
                 value: None
@@ -129,9 +135,10 @@ mod tests {
 
     #[test]
     fn test_let_statement_let_if_else_error_no_semicolon() {
+        let mut arena = Arena::new();
         let contents = "let x = if b {} else {}";
         let (tokens, eofpos) = read_tokens(0, contents).unwrap();
-        let mut parser = Parser::new(contents, &tokens, eofpos);
+        let mut parser = Parser::new(contents, &tokens, eofpos, arena.allocator());
         let statement = expect_let_statement(&mut parser);
         assert_eq!(parser.index, tokens.len());
         assert!(statement.is_err());
@@ -139,9 +146,10 @@ mod tests {
 
     #[test]
     fn test_expect_expression_statement_variable_no_semicolon_should_error() {
+        let mut arena = Arena::new();
         let contents = "ab";
         let (tokens, eofpos) = read_tokens(0, contents).unwrap();
-        let mut parser = Parser::new(contents, &tokens, eofpos);
+        let mut parser = Parser::new(contents, &tokens, eofpos, arena.allocator());
         let statement = expect_expression_statement(&mut parser);
         assert_eq!(parser.index, tokens.len());
         assert!(statement.is_err());
@@ -149,14 +157,15 @@ mod tests {
 
     #[test]
     fn test_expect_expression_statement_variable_semicolon() {
+        let mut arena = Arena::new();
         let contents = "ab;";
         let (tokens, eofpos) = read_tokens(0, contents).unwrap();
-        let mut parser = Parser::new(contents, &tokens, eofpos);
+        let mut parser = Parser::new(contents, &tokens, eofpos, arena.allocator());
         let statement = expect_expression_statement(&mut parser);
         assert_eq!(parser.index, tokens.len());
         assert_eq!(
             statement,
-            Ok(Statement::Expression(Expression::Variable(Variable {
+            Ok(&Statement::Expression(&Expression::Variable(&Variable {
                 name: "ab",
             })))
         );
@@ -164,9 +173,10 @@ mod tests {
 
     #[test]
     fn test_expect_expression_statement_if_doesnt_consume_semicolon() {
+        let mut arena = Arena::new();
         let contents = "if b {};";
         let (tokens, eofpos) = read_tokens(0, contents).unwrap();
-        let mut parser = Parser::new(contents, &tokens, eofpos);
+        let mut parser = Parser::new(contents, &tokens, eofpos, arena.allocator());
         let statement = expect_expression_statement(&mut parser);
         assert_eq!(parser.index, tokens.len() - 1);
         assert!(statement.is_ok());
@@ -174,9 +184,10 @@ mod tests {
 
     #[test]
     fn test_expect_expression_statement_block_doesnt_consume_semicolon() {
+        let mut arena = Arena::new();
         let contents = "{ b; };";
         let (tokens, eofpos) = read_tokens(0, contents).unwrap();
-        let mut parser = Parser::new(contents, &tokens, eofpos);
+        let mut parser = Parser::new(contents, &tokens, eofpos, arena.allocator());
         let statement = expect_expression_statement(&mut parser);
         assert_eq!(parser.index, tokens.len() - 1);
         assert!(statement.is_ok());

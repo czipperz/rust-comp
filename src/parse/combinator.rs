@@ -55,30 +55,36 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::arena::Arena;
     use crate::pos::Pos;
 
     #[test]
     fn test_many_ok_no_move_then_err_no_move() {
+        let mut arena = Arena::new();
         let mut first = true;
         assert_eq!(
-            many(&mut Parser::new("", &[], Pos { file: 0, index: 0 }), |_| {
-                if first {
-                    first = false;
-                    Ok(())
-                } else {
-                    Err(())
+            many(
+                &mut Parser::new("", &[], Pos { file: 0, index: 0 }, arena.allocator()),
+                |_| {
+                    if first {
+                        first = false;
+                        Ok(())
+                    } else {
+                        Err(())
+                    }
                 }
-            }),
+            ),
             Ok(vec![()])
         );
     }
 
     #[test]
     fn test_many_ok_move_then_err_move() {
+        let mut arena = Arena::new();
         let mut first = true;
         assert_eq!(
             many(
-                &mut Parser::new("", &[], Pos { file: 0, index: 0 }),
+                &mut Parser::new("", &[], Pos { file: 0, index: 0 }, arena.allocator()),
                 |parser| {
                     parser.index += 1;
                     if first {
@@ -95,10 +101,11 @@ mod tests {
 
     #[test]
     fn test_many_ok_move_then_err_no_move() {
+        let mut arena = Arena::new();
         let mut first = true;
         assert_eq!(
             many(
-                &mut Parser::new("", &[], Pos { file: 0, index: 0 }),
+                &mut Parser::new("", &[], Pos { file: 0, index: 0 }, arena.allocator()),
                 |parser| {
                     if first {
                         first = false;
@@ -115,9 +122,10 @@ mod tests {
 
     #[test]
     fn test_cant_parse_separator() {
+        let mut arena = Arena::new();
         assert_eq!(
             many_separator(
-                &mut Parser::new("", &[], Pos { file: 0, index: 0 }),
+                &mut Parser::new("", &[], Pos { file: 0, index: 0 }, arena.allocator()),
                 |_| Ok(()),
                 |_| Err(())
             ),
@@ -127,9 +135,10 @@ mod tests {
 
     #[test]
     fn test_cant_parse_separator_but_advance() {
+        let mut arena = Arena::new();
         assert_eq!(
             many_separator(
-                &mut Parser::new("", &[], Pos { file: 0, index: 0 }),
+                &mut Parser::new("", &[], Pos { file: 0, index: 0 }, arena.allocator()),
                 |_| Ok(()),
                 |parser| {
                     parser.index += 1;
@@ -142,10 +151,11 @@ mod tests {
 
     #[test]
     fn test_successful_parse_separator() {
+        let mut arena = Arena::new();
         let mut first = true;
         assert_eq!(
             many_separator(
-                &mut Parser::new("", &[], Pos { file: 0, index: 0 }),
+                &mut Parser::new("", &[], Pos { file: 0, index: 0 }, arena.allocator()),
                 |_| {
                     if first {
                         first = false;
@@ -162,9 +172,10 @@ mod tests {
 
     #[test]
     fn test_one_of_no_functions_should_return_error() {
+        let mut arena = Arena::new();
         assert_eq!(
             one_of::<(), i32, fn(&mut Parser) -> Result<(), i32>>(
-                &mut Parser::new("", &[], Pos { file: 0, index: 0 }),
+                &mut Parser::new("", &[], Pos { file: 0, index: 0 }, arena.allocator()),
                 &mut [],
                 1
             ),
@@ -174,9 +185,10 @@ mod tests {
 
     #[test]
     fn test_one_of_two_functions_first_ok() {
+        let mut arena = Arena::new();
         assert_eq!(
             one_of::<i32, i32, fn(&mut Parser) -> Result<i32, i32>>(
-                &mut Parser::new("", &[], Pos { file: 0, index: 0 }),
+                &mut Parser::new("", &[], Pos { file: 0, index: 0 }, arena.allocator()),
                 &mut [|_| Ok(1), |_| panic!()],
                 2
             ),
