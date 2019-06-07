@@ -1,84 +1,84 @@
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum TopLevel {
-    Function(Function),
-    ModFile(ModFile),
+pub enum TopLevel<'a> {
+    Function(Function<'a>),
+    ModFile(ModFile<'a>),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct ModFile {
-    pub mod_: String,
+pub struct ModFile<'a> {
+    pub mod_: &'a str,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Function {
-    pub name: String,
-    pub parameters: Vec<Parameter>,
-    pub body: Block,
+pub struct Function<'a> {
+    pub name: &'a str,
+    pub parameters: Vec<Parameter<'a>>,
+    pub body: Block<'a>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Parameter {
-    pub name: String,
-    pub type_: Type,
+pub struct Parameter<'a> {
+    pub name: &'a str,
+    pub type_: Type<'a>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum Statement {
+pub enum Statement<'a> {
     Empty,
-    Expression(Expression),
-    Let(Let),
+    Expression(Expression<'a>),
+    Let(Let<'a>),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum Expression {
-    Variable(Variable),
-    Block(Block),
-    If(If),
-    While(While),
+pub enum Expression<'a> {
+    Variable(Variable<'a>),
+    Block(Block<'a>),
+    If(If<'a>),
+    While(While<'a>),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Variable {
-    pub name: String,
+pub struct Variable<'a> {
+    pub name: &'a str,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct If {
-    pub condition: Box<Expression>,
-    pub then: Block,
-    pub else_: Option<Box<Else>>,
+pub struct If<'a> {
+    pub condition: Box<Expression<'a>>,
+    pub then: Block<'a>,
+    pub else_: Option<Box<Else<'a>>>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum Else {
-    If(If),
-    Block(Block),
+pub enum Else<'a> {
+    If(If<'a>),
+    Block(Block<'a>),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct While {
-    pub condition: Box<Expression>,
-    pub block: Block,
+pub struct While<'a> {
+    pub condition: Box<Expression<'a>>,
+    pub block: Block<'a>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Let {
-    pub name: String,
-    pub type_: Option<Type>,
-    pub value: Option<Expression>,
+pub struct Let<'a> {
+    pub name: &'a str,
+    pub type_: Option<Type<'a>>,
+    pub value: Option<Expression<'a>>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Block {
-    pub statements: Vec<Statement>,
+pub struct Block<'a> {
+    pub statements: Vec<Statement<'a>>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum Type {
-    Named(NamedType),
+pub enum Type<'a> {
+    Named(NamedType<'a>),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct NamedType {
-    pub name: String,
+pub struct NamedType<'a> {
+    pub name: &'a str,
 }

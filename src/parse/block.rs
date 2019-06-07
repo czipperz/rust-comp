@@ -5,7 +5,7 @@ use super::Error;
 use crate::ast::*;
 use crate::token::TokenValue;
 
-pub fn expect_block(parser: &mut Parser) -> Result<Block, Error> {
+pub fn expect_block<'a>(parser: &mut Parser<'a>) -> Result<Block<'a>, Error> {
     parser.expect_token(TokenValue::OpenCurly)?;
     let statements = many(parser, expect_statement)?;
     parser.expect_token(TokenValue::CloseCurly)?;

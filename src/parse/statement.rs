@@ -6,7 +6,7 @@ use super::Error;
 use crate::ast::*;
 use crate::token::*;
 
-pub fn expect_statement(parser: &mut Parser) -> Result<Statement, Error> {
+pub fn expect_statement<'a>(parser: &mut Parser<'a>) -> Result<Statement<'a>, Error> {
     one_of(
         parser,
         &mut [
@@ -18,9 +18,9 @@ pub fn expect_statement(parser: &mut Parser) -> Result<Statement, Error> {
     )
 }
 
-fn expect_let_statement(parser: &mut Parser) -> Result<Statement, Error> {
+fn expect_let_statement<'a>(parser: &mut Parser<'a>) -> Result<Statement<'a>, Error> {
     parser.expect_token(TokenValue::Let)?;
-    let name = parser.expect_label()?.to_string();
+    let name = parser.expect_label()?;
     let type_ = if parser.expect_token(TokenValue::Colon).is_ok() {
         Some(expect_type(parser)?)
     } else {
@@ -35,13 +35,13 @@ fn expect_let_statement(parser: &mut Parser) -> Result<Statement, Error> {
     Ok(Statement::Let(Let { name, type_, value }))
 }
 
-fn expect_empty_statement(parser: &mut Parser) -> Result<Statement, Error> {
+fn expect_empty_statement<'a>(parser: &mut Parser<'a>) -> Result<Statement<'a>, Error> {
     parser
         .expect_token(TokenValue::Semicolon)
         .map(|_| Statement::Empty)
 }
 
-fn expect_expression_statement(parser: &mut Parser) -> Result<Statement, Error> {
+fn expect_expression_statement<'a>(parser: &mut Parser<'a>) -> Result<Statement<'a>, Error> {
     let expression = expect_expression(parser)?;
     match expression {
         Expression::Variable(_) => parser.expect_token(TokenValue::Semicolon)?,
@@ -86,13 +86,9 @@ mod tests {
         assert_eq!(
             statement,
             Ok(Statement::Let(Let {
-                name: "x".to_string(),
-                type_: Some(Type::Named(NamedType {
-                    name: "i32".to_string()
-                })),
-                value: Some(Expression::Variable(Variable {
-                    name: "y".to_string()
-                })),
+                name: "x",
+                type_: Some(Type::Named(NamedType { name: "i32" })),
+                value: Some(Expression::Variable(Variable { name: "y" })),
             }))
         );
     }
@@ -107,11 +103,9 @@ mod tests {
         assert_eq!(
             statement,
             Ok(Statement::Let(Let {
-                name: "x".to_string(),
+                name: "x",
                 type_: None,
-                value: Some(Expression::Variable(Variable {
-                    name: "y".to_string()
-                })),
+                value: Some(Expression::Variable(Variable { name: "y" })),
             }))
         );
     }
@@ -126,7 +120,7 @@ mod tests {
         assert_eq!(
             statement,
             Ok(Statement::Let(Let {
-                name: "x".to_string(),
+                name: "x",
                 type_: None,
                 value: None
             }))
@@ -163,7 +157,7 @@ mod tests {
         assert_eq!(
             statement,
             Ok(Statement::Expression(Expression::Variable(Variable {
-                name: "ab".to_string()
+                name: "ab",
             })))
         );
     }

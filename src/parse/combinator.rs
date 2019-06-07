@@ -1,20 +1,22 @@
 use super::parser::Parser;
 
-pub fn many<T, E, F>(parser: &mut Parser, f: F) -> Result<Vec<T>, E>
+pub fn many<'a, T, E, F>(parser: &mut Parser<'a>, f: F) -> Result<Vec<T>, E>
 where
-    F: FnMut(&mut Parser) -> Result<T, E>,
+    F: FnMut(&mut Parser<'a>) -> Result<T, E>,
+    T: 'a,
 {
     many_separator(parser, f, |_| Ok(()))
 }
 
-pub fn many_separator<T, E, F, S>(
-    parser: &mut Parser,
+pub fn many_separator<'a, T, E, F, S>(
+    parser: &mut Parser<'a>,
     mut f: F,
     mut separator: S,
 ) -> Result<Vec<T>, E>
 where
-    F: FnMut(&mut Parser) -> Result<T, E>,
-    S: FnMut(&mut Parser) -> Result<(), E>,
+    F: FnMut(&mut Parser<'a>) -> Result<T, E>,
+    S: FnMut(&mut Parser<'a>) -> Result<(), E>,
+    T: 'a,
 {
     let mut xs = Vec::new();
     loop {
@@ -34,9 +36,10 @@ where
     }
 }
 
-pub fn one_of<T, E, F>(parser: &mut Parser, fs: &mut [F], none_match: E) -> Result<T, E>
+pub fn one_of<'a, T, E, F>(parser: &mut Parser<'a>, fs: &mut [F], none_match: E) -> Result<T, E>
 where
-    F: FnMut(&mut Parser) -> Result<T, E>,
+    F: FnMut(&mut Parser<'a>) -> Result<T, E>,
+    T: 'a,
 {
     let old_index = parser.index;
     for f in fs {

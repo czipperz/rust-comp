@@ -7,7 +7,11 @@ use crate::ast::*;
 use crate::pos::Pos;
 use crate::token::*;
 
-pub fn parse(file_contents: &str, tokens: &[Token], eofpos: Pos) -> Result<Vec<TopLevel>, Error> {
+pub fn parse<'a>(
+    file_contents: &'a str,
+    tokens: &'a [Token],
+    eofpos: Pos,
+) -> Result<Vec<TopLevel<'a>>, Error> {
     let mut parser = Parser::new(file_contents, tokens, eofpos);
     let top_levels = many(&mut parser, expect_top_level)?;
 
@@ -18,7 +22,7 @@ pub fn parse(file_contents: &str, tokens: &[Token], eofpos: Pos) -> Result<Vec<T
     }
 }
 
-fn expect_top_level(parser: &mut Parser) -> Result<TopLevel, Error> {
+fn expect_top_level<'a>(parser: &mut Parser<'a>) -> Result<TopLevel<'a>, Error> {
     one_of(
         parser,
         &mut [expect_toplevel_fn, expect_mod][..],
@@ -26,23 +30,23 @@ fn expect_top_level(parser: &mut Parser) -> Result<TopLevel, Error> {
     )
 }
 
-fn expect_toplevel_fn(parser: &mut Parser) -> Result<TopLevel, Error> {
+fn expect_toplevel_fn<'a>(parser: &mut Parser<'a>) -> Result<TopLevel<'a>, Error> {
     expect_fn(parser).map(TopLevel::Function)
 }
 
-fn expect_fn(parser: &mut Parser) -> Result<Function, Error> {
+fn expect_fn<'a>(parser: &mut Parser<'a>) -> Result<Function<'a>, Error> {
     parser.expect_token(TokenValue::Fn)?;
     let name = parser.expect_label()?;
     let parameters = expect_parameters(parser)?;
     let body = expect_block(parser)?;
     Ok(Function {
-        name: name.to_string(),
+        name,
         parameters,
         body,
     })
 }
 
-fn expect_parameters(parser: &mut Parser) -> Result<Vec<Parameter>, Error> {
+fn expect_parameters<'a>(parser: &mut Parser<'a>) -> Result<Vec<Parameter<'a>>, Error> {
     parser.expect_token(TokenValue::OpenParen)?;
     let parameters = many_separator(parser, expect_parameter, |parser| {
         parser.expect_token(TokenValue::Comma)
@@ -51,23 +55,18 @@ fn expect_parameters(parser: &mut Parser) -> Result<Vec<Parameter>, Error> {
     Ok(parameters)
 }
 
-fn expect_parameter(parser: &mut Parser) -> Result<Parameter, Error> {
+fn expect_parameter<'a>(parser: &mut Parser<'a>) -> Result<Parameter<'a>, Error> {
     let name = parser.expect_label()?;
     parser.expect_token(TokenValue::Colon)?;
     let type_ = expect_type(parser)?;
-    Ok(Parameter {
-        name: name.to_string(),
-        type_,
-    })
+    Ok(Parameter { name, type_ })
 }
 
-fn expect_mod(parser: &mut Parser) -> Result<TopLevel, Error> {
+fn expect_mod<'a>(parser: &mut Parser<'a>) -> Result<TopLevel<'a>, Error> {
     parser.expect_token(TokenValue::Mod)?;
     let name = parser.expect_label()?;
     parser.expect_token(TokenValue::Semicolon)?;
-    Ok(TopLevel::ModFile(ModFile {
-        mod_: name.to_string(),
-    }))
+    Ok(TopLevel::ModFile(ModFile { mod_: name }))
 }
 
 #[cfg(test)]
@@ -117,10 +116,8 @@ mod tests {
         assert_eq!(
             parameters,
             vec![Parameter {
-                name: "x".to_string(),
-                type_: Type::Named(NamedType {
-                    name: "i32".to_string()
-                })
+                name: "x",
+                type_: Type::Named(NamedType { name: "i32" })
             }]
         );
     }
@@ -136,16 +133,12 @@ mod tests {
             parameters,
             vec![
                 Parameter {
-                    name: "x".to_string(),
-                    type_: Type::Named(NamedType {
-                        name: "i32".to_string()
-                    })
+                    name: "x",
+                    type_: Type::Named(NamedType { name: "i32" })
                 },
                 Parameter {
-                    name: "y".to_string(),
-                    type_: Type::Named(NamedType {
-                        name: "i32".to_string()
-                    })
+                    name: "y",
+                    type_: Type::Named(NamedType { name: "i32" })
                 }
             ]
         );
@@ -161,10 +154,8 @@ mod tests {
         assert_eq!(
             parameter,
             Parameter {
-                name: "x".to_string(),
-                type_: Type::Named(NamedType {
-                    name: "i32".to_string()
-                })
+                name: "x",
+                type_: Type::Named(NamedType { name: "i32" })
             }
         );
     }
@@ -176,11 +167,6 @@ mod tests {
         let mut parser = Parser::new(contents, &tokens, eofpos);
         let mod_ = expect_mod(&mut parser).unwrap();
         assert_eq!(parser.index, tokens.len());
-        assert_eq!(
-            mod_,
-            TopLevel::ModFile(ModFile {
-                mod_: "x".to_string()
-            })
-        );
+        assert_eq!(mod_, TopLevel::ModFile(ModFile { mod_: "x" }));
     }
 }
