@@ -32,7 +32,7 @@ fn expect_let_statement(parser: &mut Parser) -> Result<Statement, Error> {
         None
     };
     parser.expect_token(TokenValue::Semicolon)?;
-    Ok(Statement::Let(name, type_, value))
+    Ok(Statement::Let(Let { name, type_, value }))
 }
 
 fn expect_empty_statement(parser: &mut Parser) -> Result<Statement, Error> {
@@ -85,11 +85,11 @@ mod tests {
         assert_eq!(parser.index, tokens.len());
         assert_eq!(
             statement,
-            Ok(Statement::Let(
-                "x".to_string(),
-                Some(Type::Named("i32".to_string())),
-                Some(Expression::Variable("y".to_string()))
-            ))
+            Ok(Statement::Let(Let {
+                name: "x".to_string(),
+                type_: Some(Type::Named("i32".to_string())),
+                value: Some(Expression::Variable("y".to_string())),
+            }))
         );
     }
 
@@ -102,11 +102,11 @@ mod tests {
         assert_eq!(parser.index, tokens.len());
         assert_eq!(
             statement,
-            Ok(Statement::Let(
-                "x".to_string(),
-                None,
-                Some(Expression::Variable("y".to_string()))
-            ))
+            Ok(Statement::Let(Let {
+                name: "x".to_string(),
+                type_: None,
+                value: Some(Expression::Variable("y".to_string())),
+            }))
         );
     }
 
@@ -117,7 +117,14 @@ mod tests {
         let mut parser = Parser::new(contents, &tokens, eofpos);
         let statement = expect_let_statement(&mut parser);
         assert_eq!(parser.index, tokens.len());
-        assert_eq!(statement, Ok(Statement::Let("x".to_string(), None, None)));
+        assert_eq!(
+            statement,
+            Ok(Statement::Let(Let {
+                name: "x".to_string(),
+                type_: None,
+                value: None
+            }))
+        );
     }
 
     #[test]

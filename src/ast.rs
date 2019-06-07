@@ -21,34 +21,41 @@ pub struct Parameter {
 pub enum Statement {
     Empty,
     Expression(Expression),
-    Let(String, Option<Type>, Option<Expression>),
+    Let(Let),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Expression {
     Variable(String),
     Block(Block),
-    If(IfExpression),
-    While(WhileExpression),
+    If(If),
+    While(While),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct IfExpression {
+pub struct If {
     pub condition: Box<Expression>,
     pub then: Block,
-    pub else_: Option<Box<ElseExpression>>,
+    pub else_: Option<Box<Else>>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum ElseExpression {
-    If(IfExpression),
+pub enum Else {
+    If(If),
     Block(Block),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct WhileExpression {
+pub struct While {
     pub condition: Box<Expression>,
     pub block: Block,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Let {
+    pub name: String,
+    pub type_: Option<Type>,
+    pub value: Option<Expression>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

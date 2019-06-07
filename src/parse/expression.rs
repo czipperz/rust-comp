@@ -32,7 +32,7 @@ fn expect_if_expression(parser: &mut Parser) -> Result<Expression, Error> {
     expect_if_expression_(parser).map(Expression::If)
 }
 
-fn expect_if_expression_(parser: &mut Parser) -> Result<IfExpression, Error> {
+fn expect_if_expression_(parser: &mut Parser) -> Result<If, Error> {
     parser.expect_token(TokenValue::If)?;
     let condition = expect_expression(parser)?;
     let then = expect_block(parser)?;
@@ -41,19 +41,19 @@ fn expect_if_expression_(parser: &mut Parser) -> Result<IfExpression, Error> {
     } else {
         None
     };
-    Ok(IfExpression {
+    Ok(If {
         condition: Box::new(condition),
         then,
         else_,
     })
 }
 
-fn expect_else_expression(parser: &mut Parser) -> Result<ElseExpression, Error> {
-    fn else_expression_if(parser: &mut Parser) -> Result<ElseExpression, Error> {
-        expect_if_expression_(parser).map(ElseExpression::If)
+fn expect_else_expression(parser: &mut Parser) -> Result<Else, Error> {
+    fn else_expression_if(parser: &mut Parser) -> Result<Else, Error> {
+        expect_if_expression_(parser).map(Else::If)
     }
-    fn else_expression_block(parser: &mut Parser) -> Result<ElseExpression, Error> {
-        expect_block(parser).map(ElseExpression::Block)
+    fn else_expression_block(parser: &mut Parser) -> Result<Else, Error> {
+        expect_block(parser).map(Else::Block)
     }
 
     one_of(
@@ -67,7 +67,7 @@ fn expect_while_expression(parser: &mut Parser) -> Result<Expression, Error> {
     parser.expect_token(TokenValue::While)?;
     let condition = expect_expression(parser)?;
     let block = expect_block(parser)?;
-    Ok(Expression::While(WhileExpression {
+    Ok(Expression::While(While {
         condition: Box::new(condition),
         block,
     }))
@@ -129,7 +129,7 @@ mod tests {
         assert_eq!(parser.index, tokens.len());
         assert_eq!(
             expression,
-            Expression::If(IfExpression {
+            Expression::If(If {
                 condition: Box::new(Expression::Variable("b".to_string())),
                 then: Block { statements: vec![] },
                 else_: None,
@@ -146,12 +146,10 @@ mod tests {
         assert_eq!(parser.index, tokens.len());
         assert_eq!(
             expression,
-            Expression::If(IfExpression {
+            Expression::If(If {
                 condition: Box::new(Expression::Variable("b".to_string())),
                 then: Block { statements: vec![] },
-                else_: Some(Box::new(ElseExpression::Block(Block {
-                    statements: vec![]
-                })))
+                else_: Some(Box::new(Else::Block(Block { statements: vec![] })))
             })
         );
     }
@@ -165,10 +163,10 @@ mod tests {
         assert_eq!(parser.index, tokens.len());
         assert_eq!(
             expression,
-            Expression::If(IfExpression {
+            Expression::If(If {
                 condition: Box::new(Expression::Variable("b".to_string())),
                 then: Block { statements: vec![] },
-                else_: Some(Box::new(ElseExpression::If(IfExpression {
+                else_: Some(Box::new(Else::If(If {
                     condition: Box::new(Expression::Variable("c".to_string())),
                     then: Block { statements: vec![] },
                     else_: None,
@@ -186,7 +184,7 @@ mod tests {
         assert_eq!(parser.index, tokens.len());
         assert_eq!(
             expression,
-            Expression::While(WhileExpression {
+            Expression::While(While {
                 condition: Box::new(Expression::Variable("b".to_string())),
                 block: Block { statements: vec![] },
             })
