@@ -1,3 +1,4 @@
+mod arena;
 mod ast;
 mod diagnostic;
 mod lex;
