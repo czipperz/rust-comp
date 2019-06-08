@@ -18,7 +18,6 @@ pub fn read_tokens<'a>(file: usize, contents: &str) -> Result<(Vec<Token>, Pos),
         start: tagged_iter.pos.index,
         end: tagged_iter.pos.index,
     };
-    let symbols = "(){}:,-=>;";
 
     loop {
         skip_comments(&mut tokens, &mut tagged_iter, &mut span)?;
@@ -36,19 +35,16 @@ pub fn read_tokens<'a>(file: usize, contents: &str) -> Result<(Vec<Token>, Pos),
                 flush_temp(&mut tokens, tagged_iter.contents, span);
                 span.start = tagged_iter.pos.index;
             }
-            Some(ch) if symbols.contains(ch) && span.start != span.end => {
-                // end the current token
-                flush_temp(&mut tokens, tagged_iter.contents, span);
-                span.start = span.end;
-            }
-            Some(ch) if symbols.contains(ch) => {
-                // start a new symbol token
-                tagged_iter.advance();
-                span.end = tagged_iter.pos.index;
-                if "-=".contains(ch) {
-                    if tagged_iter.peek() == Some('>') {
-                        tagged_iter.advance();
-                        span.end = tagged_iter.pos.index;
+            Some(ch) if is_symbol(ch) => {
+                if span.start == span.end {
+                    // start a new symbol token
+                    tagged_iter.advance();
+                    span.end = tagged_iter.pos.index;
+                    if "-=".contains(ch) {
+                        if tagged_iter.peek() == Some('>') {
+                            tagged_iter.advance();
+                            span.end = tagged_iter.pos.index;
+                        }
                     }
                 }
                 flush_temp(&mut tokens, tagged_iter.contents, span);
@@ -59,6 +55,11 @@ pub fn read_tokens<'a>(file: usize, contents: &str) -> Result<(Vec<Token>, Pos),
     }
 
     Ok((tokens, tagged_iter.pos))
+}
+
+fn is_symbol(ch: char) -> bool {
+    let symbols = "(),-:;=>{}";
+    ch.is_ascii() && symbols.as_bytes().binary_search(&(ch as u8)).is_ok()
 }
 
 fn skip_comments(
