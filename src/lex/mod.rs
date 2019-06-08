@@ -13,47 +13,47 @@ pub fn read_tokens<'a>(file: usize, contents: &str) -> Result<(Vec<Token>, Pos),
     let mut tagged_iter = TaggedIter::new(file, contents);
     let mut tokens = Vec::new();
     let mut span = Span {
-        file: tagged_iter.pos.file,
-        start: tagged_iter.pos.index,
-        end: tagged_iter.pos.index,
+        file: tagged_iter.pos().file,
+        start: tagged_iter.pos().index,
+        end: tagged_iter.pos().index,
     };
 
     loop {
         skip_comments(&mut tokens, &mut tagged_iter, &mut span)?;
 
-        span.end = tagged_iter.pos.index;
+        span.end = tagged_iter.pos().index;
 
         match tagged_iter.peek() {
             None => {
-                flush_temp(&mut tokens, tagged_iter.contents, span);
+                flush_temp(&mut tokens, tagged_iter.contents(), span);
                 break;
             }
             Some(ch) if ch.is_whitespace() => {
                 // end the current token
                 tagged_iter.advance();
-                flush_temp(&mut tokens, tagged_iter.contents, span);
-                span.start = tagged_iter.pos.index;
+                flush_temp(&mut tokens, tagged_iter.contents(), span);
+                span.start = tagged_iter.pos().index;
             }
             Some(ch) if is_symbol(ch) => {
                 if span.start == span.end {
                     // start a new symbol token
                     tagged_iter.advance();
-                    span.end = tagged_iter.pos.index;
+                    span.end = tagged_iter.pos().index;
                     if "-=".contains(ch) {
                         if tagged_iter.peek() == Some('>') {
                             tagged_iter.advance();
-                            span.end = tagged_iter.pos.index;
+                            span.end = tagged_iter.pos().index;
                         }
                     }
                 }
-                flush_temp(&mut tokens, tagged_iter.contents, span);
+                flush_temp(&mut tokens, tagged_iter.contents(), span);
                 span.start = span.end;
             }
             Some(_) => tagged_iter.advance(),
         }
     }
 
-    Ok((tokens, tagged_iter.pos))
+    Ok((tokens, tagged_iter.pos()))
 }
 
 fn is_symbol(ch: char) -> bool {
@@ -68,8 +68,8 @@ fn skip_comments(
 ) -> Result<(), Error> {
     loop {
         if tagged_iter.peek() == Some('/') && tagged_iter.peek2() == Some('/') {
-            span.end = tagged_iter.pos.index;
-            flush_temp(tokens, tagged_iter.contents, *span);
+            span.end = tagged_iter.pos().index;
+            flush_temp(tokens, tagged_iter.contents(), *span);
 
             tagged_iter.advance();
             tagged_iter.advance();
@@ -78,17 +78,17 @@ fn skip_comments(
             }
             tagged_iter.advance();
 
-            span.start = tagged_iter.pos.index;
+            span.start = tagged_iter.pos().index;
             continue;
         }
 
         if tagged_iter.peek() == Some('/') && tagged_iter.peek2() == Some('*') {
-            span.end = tagged_iter.pos.index;
-            flush_temp(tokens, tagged_iter.contents, *span);
+            span.end = tagged_iter.pos().index;
+            flush_temp(tokens, tagged_iter.contents(), *span);
 
             skip_block_comment(tagged_iter)?;
 
-            span.start = tagged_iter.pos.index;
+            span.start = tagged_iter.pos().index;
             continue;
         }
         break;
@@ -98,7 +98,7 @@ fn skip_comments(
 }
 
 fn skip_block_comment(tagged_iter: &mut TaggedIter) -> Result<(), Error> {
-    let pos = tagged_iter.pos;
+    let pos = tagged_iter.pos();
     tagged_iter.advance();
     tagged_iter.advance();
 

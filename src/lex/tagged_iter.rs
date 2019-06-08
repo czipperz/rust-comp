@@ -1,29 +1,48 @@
 use crate::pos::*;
 
 pub struct TaggedIter<'a> {
-    pub contents: &'a str,
-    pub pos: Pos,
+    contents: &'a str,
+    pos: Pos,
+    next: Option<char>,
+    next2: Option<char>,
 }
 
 impl<'a> TaggedIter<'a> {
     pub fn new(file: usize, contents: &'a str) -> Self {
+        let mut chars = contents.chars();
         TaggedIter {
             contents,
             pos: Pos { file, index: 0 },
+            next: chars.next(),
+            next2: chars.next(),
         }
     }
 
+    pub fn contents(&self) -> &'a str {
+        self.contents
+    }
+
+    pub fn pos(&self) -> Pos {
+        self.pos
+    }
+
     pub fn peek(&self) -> Option<char> {
-        self.contents[self.pos.index..].chars().next()
+        self.next
     }
 
     pub fn peek2(&self) -> Option<char> {
-        self.contents[self.pos.index..].chars().nth(1)
+        self.next2
     }
 
     pub fn advance(&mut self) {
         if let Some(c) = self.peek() {
             self.pos.increment(c);
+
+            // Reading from memory is expensive.  We call peek often but rarely
+            // call advance.  Thus we prestore the values here.
+            let mut chars = self.contents[self.pos.index..].chars();
+            self.next = chars.next();
+            self.next2 = chars.next();
         } else {
             panic!();
         }
