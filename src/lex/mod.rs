@@ -128,27 +128,28 @@ fn skip_block_comment(tagged_iter: &mut TaggedIter) -> Result<(), Error> {
 
 fn flush_temp(tokens: &mut Vec<Token>, file_contents: &str, span: Span) {
     const SYMBOLS: [(&str, TokenValue); 16] = [
+        ("(", TokenValue::OpenParen),
+        (")", TokenValue::CloseParen),
+        (",", TokenValue::Comma),
+        ("->", TokenValue::ThinArrow),
+        (":", TokenValue::Colon),
+        (";", TokenValue::Semicolon),
+        ("=", TokenValue::Set),
+        ("=>", TokenValue::FatArrow),
         ("else", TokenValue::Else),
         ("fn", TokenValue::Fn),
         ("if", TokenValue::If),
         ("let", TokenValue::Let),
         ("mod", TokenValue::Mod),
         ("while", TokenValue::While),
-        ("(", TokenValue::OpenParen),
-        (")", TokenValue::CloseParen),
         ("{", TokenValue::OpenCurly),
         ("}", TokenValue::CloseCurly),
-        (":", TokenValue::Colon),
-        (",", TokenValue::Comma),
-        ("->", TokenValue::ThinArrow),
-        ("=>", TokenValue::FatArrow),
-        ("=", TokenValue::Set),
-        (";", TokenValue::Semicolon),
     ];
 
     if span.start != span.end {
         tokens.push(Token {
-            value: if let Some(i) = SYMBOLS.iter().position(|(s, _)| **s == file_contents[span]) {
+            value: if let Ok(i) = SYMBOLS.binary_search_by(|(s, _)| (*s).cmp(&file_contents[span]))
+            {
                 SYMBOLS[i].1.clone()
             } else {
                 TokenValue::Label
