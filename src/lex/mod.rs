@@ -3,6 +3,7 @@ use self::tagged_iter::TaggedIter;
 
 use crate::pos::*;
 use crate::token::*;
+use std::collections::HashMap;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Error {
@@ -10,6 +11,24 @@ pub enum Error {
 }
 
 pub fn read_tokens<'a>(file: usize, contents: &str) -> Result<(Vec<Token>, Pos), Error> {
+    let mut keywords = HashMap::new();
+    keywords.insert("(", TokenValue::OpenParen);
+    keywords.insert(")", TokenValue::CloseParen);
+    keywords.insert(",", TokenValue::Comma);
+    keywords.insert("->", TokenValue::ThinArrow);
+    keywords.insert(":", TokenValue::Colon);
+    keywords.insert(";", TokenValue::Semicolon);
+    keywords.insert("=", TokenValue::Set);
+    keywords.insert("=>", TokenValue::FatArrow);
+    keywords.insert("else", TokenValue::Else);
+    keywords.insert("fn", TokenValue::Fn);
+    keywords.insert("if", TokenValue::If);
+    keywords.insert("let", TokenValue::Let);
+    keywords.insert("mod", TokenValue::Mod);
+    keywords.insert("while", TokenValue::While);
+    keywords.insert("{", TokenValue::OpenCurly);
+    keywords.insert("}", TokenValue::CloseCurly);
+
     let mut tagged_iter = TaggedIter::new(file, contents);
     let mut tokens = Vec::new();
     let mut span = Span {
@@ -19,18 +38,18 @@ pub fn read_tokens<'a>(file: usize, contents: &str) -> Result<(Vec<Token>, Pos),
     };
 
     loop {
-        skip_comments(&mut tokens, &mut tagged_iter, &mut span)?;
+        skip_comments(&keywords, &mut tokens, &mut tagged_iter, &mut span)?;
 
         span.end = tagged_iter.pos().index;
 
         match tagged_iter.peek() {
             None => {
-                flush_temp(&mut tokens, tagged_iter.contents(), span);
+                flush_temp(&keywords, &mut tokens, tagged_iter.contents(), span);
                 break;
             }
             Some(ch) if ch.is_whitespace() => {
                 // end the current token
-                flush_temp(&mut tokens, tagged_iter.contents(), span);
+                flush_temp(&keywords, &mut tokens, tagged_iter.contents(), span);
 
                 // eat all whitespace
                 tagged_iter.advance();
@@ -47,7 +66,7 @@ pub fn read_tokens<'a>(file: usize, contents: &str) -> Result<(Vec<Token>, Pos),
             Some(ch) if is_symbol(ch) => {
                 if span.start != span.end {
                     // there is still a previous token, flush it
-                    flush_temp_nonempty(&mut tokens, tagged_iter.contents(), span);
+                    flush_temp_nonempty(&keywords, &mut tokens, tagged_iter.contents(), span);
                     span.start = span.end;
                 }
 
@@ -60,7 +79,7 @@ pub fn read_tokens<'a>(file: usize, contents: &str) -> Result<(Vec<Token>, Pos),
                 }
                 span.end = tagged_iter.pos().index;
 
-                flush_temp_nonempty(&mut tokens, tagged_iter.contents(), span);
+                flush_temp_nonempty(&keywords, &mut tokens, tagged_iter.contents(), span);
                 span.start = span.end;
             }
             Some(_) => tagged_iter.advance(),
@@ -76,6 +95,7 @@ fn is_symbol(ch: char) -> bool {
 }
 
 fn skip_comments(
+    keywords: &HashMap<&str, TokenValue>,
     tokens: &mut Vec<Token>,
     tagged_iter: &mut TaggedIter,
     span: &mut Span,
@@ -83,7 +103,7 @@ fn skip_comments(
     loop {
         if tagged_iter.peek() == Some('/') && tagged_iter.peek2() == Some('/') {
             span.end = tagged_iter.pos().index;
-            flush_temp(tokens, tagged_iter.contents(), *span);
+            flush_temp(keywords, tokens, tagged_iter.contents(), *span);
 
             tagged_iter.advance();
             tagged_iter.advance();
@@ -98,7 +118,7 @@ fn skip_comments(
 
         if tagged_iter.peek() == Some('/') && tagged_iter.peek2() == Some('*') {
             span.end = tagged_iter.pos().index;
-            flush_temp(tokens, tagged_iter.contents(), *span);
+            flush_temp(keywords, tokens, tagged_iter.contents(), *span);
 
             skip_block_comment(tagged_iter)?;
 
@@ -139,35 +159,26 @@ fn skip_block_comment(tagged_iter: &mut TaggedIter) -> Result<(), Error> {
     Ok(())
 }
 
-fn flush_temp(tokens: &mut Vec<Token>, file_contents: &str, span: Span) {
+fn flush_temp(
+    keywords: &HashMap<&str, TokenValue>,
+    tokens: &mut Vec<Token>,
+    file_contents: &str,
+    span: Span,
+) {
     if span.start != span.end {
-        flush_temp_nonempty(tokens, file_contents, span)
+        flush_temp_nonempty(&keywords, tokens, file_contents, span)
     }
 }
 
-fn flush_temp_nonempty(tokens: &mut Vec<Token>, file_contents: &str, span: Span) {
-    const SYMBOLS: [(&str, TokenValue); 16] = [
-        ("(", TokenValue::OpenParen),
-        (")", TokenValue::CloseParen),
-        (",", TokenValue::Comma),
-        ("->", TokenValue::ThinArrow),
-        (":", TokenValue::Colon),
-        (";", TokenValue::Semicolon),
-        ("=", TokenValue::Set),
-        ("=>", TokenValue::FatArrow),
-        ("else", TokenValue::Else),
-        ("fn", TokenValue::Fn),
-        ("if", TokenValue::If),
-        ("let", TokenValue::Let),
-        ("mod", TokenValue::Mod),
-        ("while", TokenValue::While),
-        ("{", TokenValue::OpenCurly),
-        ("}", TokenValue::CloseCurly),
-    ];
-
+fn flush_temp_nonempty(
+    keywords: &HashMap<&str, TokenValue>,
+    tokens: &mut Vec<Token>,
+    file_contents: &str,
+    span: Span,
+) {
     tokens.push(Token {
-        value: if let Ok(i) = SYMBOLS.binary_search_by(|(s, _)| (*s).cmp(&file_contents[span])) {
-            SYMBOLS[i].1.clone()
+        value: if let Some(tv) = keywords.get(&file_contents[span]) {
+            tv.clone()
         } else {
             TokenValue::Label
         },
