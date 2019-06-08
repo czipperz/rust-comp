@@ -30,8 +30,18 @@ pub fn read_tokens<'a>(file: usize, contents: &str) -> Result<(Vec<Token>, Pos),
             }
             Some(ch) if ch.is_whitespace() => {
                 // end the current token
-                tagged_iter.advance();
                 flush_temp(&mut tokens, tagged_iter.contents(), span);
+
+                // eat all whitespace
+                tagged_iter.advance();
+                loop {
+                    match tagged_iter.peek() {
+                        Some(ch) if ch.is_whitespace() => {
+                            tagged_iter.advance();
+                        }
+                        _ => break,
+                    }
+                }
                 span.start = tagged_iter.pos().index;
             }
             Some(ch) if is_symbol(ch) => {
