@@ -52,6 +52,19 @@ where
     Err(none_match)
 }
 
+pub fn maybe<'a, T, E, F>(parser: &mut Parser<'a>, mut f: F) -> Result<Option<T>, E>
+where
+    F: FnMut(&mut Parser<'a>) -> Result<T, E>,
+    T: 'a,
+{
+    let old_index = parser.index;
+    match f(parser) {
+        Ok(x) => Ok(Some(x)),
+        Err(_) if old_index == parser.index => Ok(None),
+        Err(e) => Err(e),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

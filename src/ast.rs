@@ -71,6 +71,7 @@ pub struct Let<'a> {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Block<'a> {
     pub statements: Vec<Statement<'a>>,
+    pub expression: Option<Box<Expression<'a>>>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

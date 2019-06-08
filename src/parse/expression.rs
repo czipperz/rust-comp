@@ -117,7 +117,13 @@ mod tests {
         let mut parser = Parser::new(contents, &tokens, eofpos);
         let expression = expect_block_expression(&mut parser).unwrap();
         assert_eq!(parser.index, tokens.len());
-        assert_eq!(expression, Expression::Block(Block { statements: vec![] }));
+        assert_eq!(
+            expression,
+            Expression::Block(Block {
+                statements: vec![],
+                expression: None,
+            })
+        );
     }
 
     #[test]
@@ -131,7 +137,10 @@ mod tests {
             expression,
             Expression::If(If {
                 condition: Box::new(Expression::Variable(Variable { name: "b" })),
-                then: Block { statements: vec![] },
+                then: Block {
+                    statements: vec![],
+                    expression: None,
+                },
                 else_: None,
             })
         );
@@ -148,8 +157,14 @@ mod tests {
             expression,
             Expression::If(If {
                 condition: Box::new(Expression::Variable(Variable { name: "b" })),
-                then: Block { statements: vec![] },
-                else_: Some(Box::new(Else::Block(Block { statements: vec![] })))
+                then: Block {
+                    statements: vec![],
+                    expression: None,
+                },
+                else_: Some(Box::new(Else::Block(Block {
+                    statements: vec![],
+                    expression: None,
+                })))
             })
         );
     }
@@ -165,10 +180,16 @@ mod tests {
             expression,
             Expression::If(If {
                 condition: Box::new(Expression::Variable(Variable { name: "b" })),
-                then: Block { statements: vec![] },
+                then: Block {
+                    statements: vec![],
+                    expression: None,
+                },
                 else_: Some(Box::new(Else::If(If {
                     condition: Box::new(Expression::Variable(Variable { name: "c" })),
-                    then: Block { statements: vec![] },
+                    then: Block {
+                        statements: vec![],
+                        expression: None,
+                    },
                     else_: None,
                 }))),
             })
@@ -186,7 +207,10 @@ mod tests {
             expression,
             Expression::While(While {
                 condition: Box::new(Expression::Variable(Variable { name: "b" })),
-                block: Block { statements: vec![] },
+                block: Block {
+                    statements: vec![],
+                    expression: None,
+                },
             })
         );
     }
