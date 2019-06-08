@@ -38,13 +38,12 @@ pub fn read_tokens<'a>(file: usize, contents: &str) -> Result<(Vec<Token>, Pos),
                 if span.start == span.end {
                     // start a new symbol token
                     tagged_iter.advance();
-                    span.end = tagged_iter.pos().index;
                     if "-=".contains(ch) {
                         if tagged_iter.peek() == Some('>') {
                             tagged_iter.advance();
-                            span.end = tagged_iter.pos().index;
                         }
                     }
+                    span.end = tagged_iter.pos().index;
                 }
                 flush_temp(&mut tokens, tagged_iter.contents(), span);
                 span.start = span.end;
