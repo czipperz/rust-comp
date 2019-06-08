@@ -150,15 +150,14 @@ fn flush_temp_nonempty(tokens: &mut Vec<Token>, file_contents: &str, span: Span)
         ("}", TokenValue::CloseCurly),
     ];
 
-        tokens.push(Token {
-            value: if let Ok(i) = SYMBOLS.binary_search_by(|(s, _)| (*s).cmp(&file_contents[span]))
-            {
-                SYMBOLS[i].1.clone()
-            } else {
-                TokenValue::Label
-            },
-            span,
-        });
+    tokens.push(Token {
+        value: if let Ok(i) = SYMBOLS.binary_search_by(|(s, _)| (*s).cmp(&file_contents[span])) {
+            SYMBOLS[i].1.clone()
+        } else {
+            TokenValue::Label
+        },
+        span,
+    });
 }
 
 #[cfg(test)]
