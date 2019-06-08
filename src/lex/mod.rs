@@ -3,7 +3,6 @@ use self::tagged_iter::TaggedIter;
 
 use crate::pos::*;
 use crate::token::*;
-use std::fmt;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Error {
@@ -156,14 +155,6 @@ fn flush_temp(tokens: &mut Vec<Token>, file_contents: &str, span: Span) {
             },
             span,
         });
-    }
-}
-
-impl fmt::Display for Error {
-    fn fmt(&self, _f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            _ => Ok(()),
-        }
     }
 }
 
