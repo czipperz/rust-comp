@@ -45,7 +45,7 @@ pub fn read_tokens<'a>(file: usize, contents: &str) -> Result<(Vec<Token>, Pos),
                     }
                     span.end = tagged_iter.pos().index;
                 }
-                flush_temp(&mut tokens, tagged_iter.contents(), span);
+                flush_temp_nonempty(&mut tokens, tagged_iter.contents(), span);
                 span.start = span.end;
             }
             Some(_) => tagged_iter.advance(),
@@ -125,6 +125,12 @@ fn skip_block_comment(tagged_iter: &mut TaggedIter) -> Result<(), Error> {
 }
 
 fn flush_temp(tokens: &mut Vec<Token>, file_contents: &str, span: Span) {
+    if span.start != span.end {
+        flush_temp_nonempty(tokens, file_contents, span)
+    }
+}
+
+fn flush_temp_nonempty(tokens: &mut Vec<Token>, file_contents: &str, span: Span) {
     const SYMBOLS: [(&str, TokenValue); 16] = [
         ("(", TokenValue::OpenParen),
         (")", TokenValue::CloseParen),
@@ -144,7 +150,6 @@ fn flush_temp(tokens: &mut Vec<Token>, file_contents: &str, span: Span) {
         ("}", TokenValue::CloseCurly),
     ];
 
-    if span.start != span.end {
         tokens.push(Token {
             value: if let Ok(i) = SYMBOLS.binary_search_by(|(s, _)| (*s).cmp(&file_contents[span]))
             {
@@ -154,7 +159,6 @@ fn flush_temp(tokens: &mut Vec<Token>, file_contents: &str, span: Span) {
             },
             span,
         });
-    }
 }
 
 #[cfg(test)]
