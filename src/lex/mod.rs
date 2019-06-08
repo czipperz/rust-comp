@@ -35,16 +35,21 @@ pub fn read_tokens<'a>(file: usize, contents: &str) -> Result<(Vec<Token>, Pos),
                 span.start = tagged_iter.pos().index;
             }
             Some(ch) if is_symbol(ch) => {
-                if span.start == span.end {
-                    // start a new symbol token
-                    tagged_iter.advance();
-                    if "-=".contains(ch) {
-                        if tagged_iter.peek() == Some('>') {
-                            tagged_iter.advance();
-                        }
-                    }
-                    span.end = tagged_iter.pos().index;
+                if span.start != span.end {
+                    // there is still a previous token, flush it
+                    flush_temp_nonempty(&mut tokens, tagged_iter.contents(), span);
+                    span.start = span.end;
                 }
+
+                // start a new symbol token
+                tagged_iter.advance();
+                if "-=".contains(ch) {
+                    if tagged_iter.peek() == Some('>') {
+                        tagged_iter.advance();
+                    }
+                }
+                span.end = tagged_iter.pos().index;
+
                 flush_temp_nonempty(&mut tokens, tagged_iter.contents(), span);
                 span.start = span.end;
             }
