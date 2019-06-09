@@ -13,6 +13,7 @@ pub enum Error {
 pub fn read_tokens<'a>(file: usize, contents: &str) -> Result<(Vec<Token>, Pos), Error> {
     let mut keywords = HashMap::new();
     keywords.insert("!=", TokenKind::NotEquals);
+    keywords.insert("&", TokenKind::Ampersand);
     keywords.insert("(", TokenKind::OpenParen);
     keywords.insert(")", TokenKind::CloseParen);
     keywords.insert("*", TokenKind::Star);
@@ -32,6 +33,7 @@ pub fn read_tokens<'a>(file: usize, contents: &str) -> Result<(Vec<Token>, Pos),
     keywords.insert("if", TokenKind::If);
     keywords.insert("let", TokenKind::Let);
     keywords.insert("mod", TokenKind::Mod);
+    keywords.insert("mut", TokenKind::Mut);
     keywords.insert("pub", TokenKind::Pub);
     keywords.insert("use", TokenKind::Use);
     keywords.insert("while", TokenKind::While);
@@ -107,7 +109,7 @@ pub fn read_tokens<'a>(file: usize, contents: &str) -> Result<(Vec<Token>, Pos),
 }
 
 fn is_symbol(ch: char) -> bool {
-    let symbols = "!()*+,-/:;=>{}";
+    let symbols = "!&()*+,-/:;=>{}";
     ch.is_ascii() && symbols.as_bytes().binary_search(&(ch as u8)).is_ok()
 }
 
@@ -335,6 +337,24 @@ mod tests {
             Ok((
                 vec![Token {
                     kind: TokenKind::Mod,
+                    span: Span {
+                        file: 0,
+                        start: 0,
+                        end: 3
+                    },
+                }],
+                Pos { file: 0, index: 3 }
+            ))
+        );
+    }
+
+    #[test]
+    fn test_read_tokens_mut() {
+        assert_eq!(
+            read_tokens(0, "mut"),
+            Ok((
+                vec![Token {
+                    kind: TokenKind::Mut,
                     span: Span {
                         file: 0,
                         start: 0,
@@ -629,6 +649,24 @@ mod tests {
             Ok((
                 vec![Token {
                     kind: TokenKind::Star,
+                    span: Span {
+                        file: 0,
+                        start: 0,
+                        end: 1,
+                    },
+                }],
+                Pos { file: 0, index: 1 }
+            ))
+        );
+    }
+
+    #[test]
+    fn test_read_tokens_ampersand() {
+        assert_eq!(
+            read_tokens(0, "&"),
+            Ok((
+                vec![Token {
+                    kind: TokenKind::Ampersand,
                     span: Span {
                         file: 0,
                         start: 0,

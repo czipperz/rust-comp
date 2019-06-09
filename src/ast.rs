@@ -122,6 +122,8 @@ pub struct Block<'a> {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Type<'a> {
     Named(NamedType<'a>),
+    Ref(Box<Type<'a>>),
+    RefMut(Box<Type<'a>>),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
