@@ -1,0 +1,13 @@
+#!/bin/sh
+
+if ! cargo fmt --all -- --check; then
+    echo >&2
+    echo "ERROR: Code is not properly formatted" >&2
+    exit 1
+fi
+
+if ! RUST_BACKTRACE=1 cargo test --all; then
+    echo >&2
+    echo "ERROR: Tests are failing" >&2
+    exit 1
+fi
