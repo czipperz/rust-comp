@@ -126,6 +126,7 @@ pub enum Type<'a> {
     RefMut(Box<Type<'a>>),
     PtrConst(Box<Type<'a>>),
     PtrMut(Box<Type<'a>>),
+    Tuple(Vec<Type<'a>>),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
