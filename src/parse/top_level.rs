@@ -19,9 +19,13 @@ pub fn expect_top_level<'a>(parser: &mut Parser<'a>) -> Result<TopLevel<'a>, Err
 fn expect_visibility<'a>(parser: &mut Parser<'a>) -> Result<Visibility<'a>, Error> {
     if parser.expect_token(TokenKind::Pub).is_ok() {
         if parser.expect_token(TokenKind::OpenParen).is_ok() {
-            let path = expect_path(parser)?;
-            parser.expect_token(TokenKind::CloseParen)?;
-            Ok(Visibility::Path(path))
+            if parser.expect_token(TokenKind::CloseParen).is_ok() {
+                Ok(Visibility::Public)
+            } else {
+                let path = expect_path(parser)?;
+                parser.expect_token(TokenKind::CloseParen)?;
+                Ok(Visibility::Path(path))
+            }
         } else {
             Ok(Visibility::Public)
         }
@@ -267,5 +271,15 @@ mod tests {
                 }
             )
         );
+    }
+
+    #[test]
+    fn test_expect_visibility_nothing_in_parens() {
+        let contents = "pub()";
+        let (tokens, eofpos) = read_tokens(0, contents).unwrap();
+        let mut parser = Parser::new(contents, &tokens, eofpos);
+        let visibility = expect_visibility(&mut parser).unwrap();
+        assert_eq!(parser.index, tokens.len());
+        assert_eq!(visibility, Visibility::Public);
     }
 }
