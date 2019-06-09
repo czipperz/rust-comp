@@ -14,11 +14,17 @@ pub enum Visibility {
 pub enum TopLevelKind<'a> {
     Function(Function<'a>),
     ModFile(ModFile<'a>),
+    Use(Use<'a>),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ModFile<'a> {
     pub mod_: &'a str,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Use<'a> {
+    pub path: Vec<&'a str>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

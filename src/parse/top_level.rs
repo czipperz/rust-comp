@@ -30,7 +30,7 @@ fn expect_top_level<'a>(parser: &mut Parser<'a>) -> Result<TopLevel<'a>, Error> 
     };
     let kind = one_of(
         parser,
-        &mut [expect_toplevel_fn, expect_mod][..],
+        &mut [expect_toplevel_fn, expect_mod, expect_use][..],
         Error::Expected("expression", parser.span()),
     )?;
     Ok(TopLevel { kind, visibility })
@@ -73,6 +73,13 @@ fn expect_mod<'a>(parser: &mut Parser<'a>) -> Result<TopLevelKind<'a>, Error> {
     let name = parser.expect_label()?;
     parser.expect_token(TokenKind::Semicolon)?;
     Ok(TopLevelKind::ModFile(ModFile { mod_: name }))
+}
+
+fn expect_use<'a>(parser: &mut Parser<'a>) -> Result<TopLevelKind<'a>, Error> {
+    parser.expect_token(TokenKind::Use)?;
+    let name = parser.expect_label()?;
+    parser.expect_token(TokenKind::Semicolon)?;
+    Ok(TopLevelKind::Use(Use { path: vec![name] }))
 }
 
 #[cfg(test)]
@@ -174,5 +181,15 @@ mod tests {
         let mod_ = expect_mod(&mut parser).unwrap();
         assert_eq!(parser.index, tokens.len());
         assert_eq!(mod_, TopLevelKind::ModFile(ModFile { mod_: "x" }));
+    }
+
+    #[test]
+    fn test_expect_use_label() {
+        let contents = "use x;";
+        let (tokens, eofpos) = read_tokens(0, contents).unwrap();
+        let mut parser = Parser::new(contents, &tokens, eofpos);
+        let mod_ = expect_use(&mut parser).unwrap();
+        assert_eq!(parser.index, tokens.len());
+        assert_eq!(mod_, TopLevelKind::Use(Use { path: vec!["x"] }));
     }
 }
