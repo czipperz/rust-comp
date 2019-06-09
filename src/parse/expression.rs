@@ -407,4 +407,29 @@ mod tests {
             }),
         );
     }
+
+    #[test]
+    fn test_expect_expression_different_precedences() {
+        let contents = "a + b * c - d";
+        let (tokens, eofpos) = read_tokens(0, contents).unwrap();
+        let mut parser = Parser::new(contents, &tokens, eofpos);
+        let expression = expect_expression(&mut parser).unwrap();
+        assert_eq!(parser.index, tokens.len());
+        assert_eq!(
+            expression,
+            Expression::Binary(Binary {
+                left: Box::new(Expression::Binary(Binary {
+                    left: Box::new(Expression::Variable(Variable { name: "a" })),
+                    op: BinOp::Plus,
+                    right: Box::new(Expression::Binary(Binary {
+                        left: Box::new(Expression::Variable(Variable { name: "b" })),
+                        op: BinOp::Times,
+                        right: Box::new(Expression::Variable(Variable { name: "c" })),
+                    }))
+                })),
+                op: BinOp::Minus,
+                right: Box::new(Expression::Variable(Variable { name: "d" })),
+            }),
+        );
+    }
 }
