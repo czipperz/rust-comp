@@ -45,6 +45,7 @@ fn expect_expression_statement<'a>(parser: &mut Parser<'a>) -> Result<Statement<
     let expression = expect_expression(parser)?;
     match expression {
         Expression::Variable(_) => parser.expect_token(TokenValue::Semicolon)?,
+        Expression::Paren(_) => parser.expect_token(TokenValue::Semicolon)?,
         Expression::Block(_) => (),
         Expression::If(_) => (),
         Expression::While(_) => (),

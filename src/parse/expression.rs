@@ -10,6 +10,7 @@ pub fn expect_expression<'a>(parser: &mut Parser<'a>) -> Result<Expression<'a>, 
         parser,
         &mut [
             expect_variable_expression,
+            expect_paren_expression,
             expect_block_expression,
             expect_if_expression,
             expect_while_expression,
@@ -22,6 +23,13 @@ fn expect_variable_expression<'a>(parser: &mut Parser<'a>) -> Result<Expression<
     parser
         .expect_label()
         .map(|name| Expression::Variable(Variable { name }))
+}
+
+fn expect_paren_expression<'a>(parser: &mut Parser<'a>) -> Result<Expression<'a>, Error> {
+    parser.expect_token(TokenValue::OpenParen)?;
+    let expression = expect_expression(parser)?;
+    parser.expect_token(TokenValue::CloseParen)?;
+    Ok(Expression::Paren(Box::new(expression)))
 }
 
 fn expect_block_expression<'a>(parser: &mut Parser<'a>) -> Result<Expression<'a>, Error> {
@@ -88,6 +96,19 @@ mod tests {
         let expression = expect_variable_expression(&mut parser).unwrap();
         assert_eq!(parser.index, tokens.len());
         assert_eq!(expression, Expression::Variable(Variable { name: "ab" }));
+    }
+
+    #[test]
+    fn test_expect_paren_expression() {
+        let contents = "(ab)";
+        let (tokens, eofpos) = read_tokens(0, contents).unwrap();
+        let mut parser = Parser::new(contents, &tokens, eofpos);
+        let expression = expect_paren_expression(&mut parser).unwrap();
+        assert_eq!(parser.index, tokens.len());
+        assert_eq!(
+            expression,
+            Expression::Paren(Box::new(Expression::Variable(Variable { name: "ab" })))
+        );
     }
 
     #[test]

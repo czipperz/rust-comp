@@ -32,6 +32,7 @@ pub enum Statement<'a> {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Expression<'a> {
     Variable(Variable<'a>),
+    Paren(Box<Expression<'a>>),
     Block(Block<'a>),
     If(If<'a>),
     While(While<'a>),
