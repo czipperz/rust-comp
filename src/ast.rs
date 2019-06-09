@@ -70,7 +70,7 @@ pub struct Binary<'a> {
     pub right: Box<Expression<'a>>,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum BinOp {
     Plus,
     Minus,

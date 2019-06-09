@@ -5,8 +5,15 @@ use super::Error;
 use crate::ast::*;
 use crate::token::TokenValue;
 
+type Precedence = i8;
+
 pub fn expect_expression<'a>(parser: &mut Parser<'a>) -> Result<Expression<'a>, Error> {
-    let base = one_of(
+    let base = expect_expression_basic(parser)?;
+    expression_chain(parser, base)
+}
+
+fn expect_expression_basic<'a>(parser: &mut Parser<'a>) -> Result<Expression<'a>, Error> {
+    one_of(
         parser,
         &mut [
             expect_variable_expression,
@@ -16,34 +23,82 @@ pub fn expect_expression<'a>(parser: &mut Parser<'a>) -> Result<Expression<'a>, 
             expect_while_expression,
         ][..],
         Error::Expected("expression", parser.span()),
-    )?;
-    expression_chain(parser, base)
+    )
 }
 
 fn expression_chain<'a>(
     parser: &mut Parser<'a>,
-    base: Expression<'a>,
+    mut expr: Expression<'a>,
 ) -> Result<Expression<'a>, Error> {
-    if let Some(op) = parser.peek().and_then(bin_op_for) {
+    let mut stack = Vec::new();
+    let mut max_precedence = 20;
+
+    while let Some(op) = parser.peek().and_then(BinOp::from_token) {
         parser.index += 1;
-        let right = expect_expression(parser)?;
-        Ok(Expression::Binary(Binary {
-            left: Box::new(base),
-            op,
-            right: Box::new(right),
-        }))
-    } else {
-        Ok(base)
+        let next = expect_expression_basic(parser)?;
+        if op.precedence() <= max_precedence {
+            max_precedence = op.max_precedence();
+            stack.push((expr, op));
+            expr = next;
+        } else {
+            // consolidate stack up to op.max_precedence()
+            while !stack.is_empty() && stack.last().unwrap().1.max_precedence() < op.precedence() {
+                let (left, lop) = stack.pop().unwrap();
+                max_precedence = lop.max_precedence();
+                expr = Expression::Binary(Binary {
+                    left: Box::new(left),
+                    op: lop,
+                    right: Box::new(expr),
+                });
+            }
+            stack.push((expr, op));
+            expr = next;
+        }
     }
+
+    Ok(collapse_stack(expr, stack))
 }
 
-fn bin_op_for(tv: TokenValue) -> Option<BinOp> {
-    match tv {
-        TokenValue::Plus => Some(BinOp::Plus),
-        TokenValue::Minus => Some(BinOp::Minus),
-        TokenValue::Star => Some(BinOp::Times),
-        TokenValue::ForwardSlash => Some(BinOp::DividedBy),
-        _ => None,
+fn collapse_stack<'a>(
+    mut expr: Expression<'a>,
+    stack: Vec<(Expression<'a>, BinOp)>,
+) -> Expression<'a> {
+    for (left, op) in stack.into_iter().rev() {
+        expr = Expression::Binary(Binary {
+            left: Box::new(left),
+            op,
+            right: Box::new(expr),
+        });
+    }
+    expr
+}
+
+impl BinOp {
+    fn from_token(tv: TokenValue) -> Option<BinOp> {
+        match tv {
+            TokenValue::Plus => Some(BinOp::Plus),
+            TokenValue::Minus => Some(BinOp::Minus),
+            TokenValue::Star => Some(BinOp::Times),
+            TokenValue::ForwardSlash => Some(BinOp::DividedBy),
+            _ => None,
+        }
+    }
+
+    /// The precedence required to stop an active chain
+    fn precedence(self) -> Precedence {
+        match self {
+            BinOp::Times | BinOp::DividedBy => 7,
+            BinOp::Plus | BinOp::Minus => 8,
+        }
+    }
+
+    /// The precedence required to continue
+    fn max_precedence(self) -> Precedence {
+        // max_precedence = precedence - if ltr { 1 } else { 0 }
+        match self {
+            BinOp::Times | BinOp::DividedBy => 6,
+            BinOp::Plus | BinOp::Minus => 7,
+        }
     }
 }
 
@@ -328,6 +383,27 @@ mod tests {
                 left: Box::new(Expression::Variable(Variable { name: "a" })),
                 op: BinOp::DividedBy,
                 right: Box::new(Expression::Variable(Variable { name: "b" }))
+            }),
+        );
+    }
+
+    #[test]
+    fn test_expect_expression_left_to_right_precedence() {
+        let contents = "a + b - c";
+        let (tokens, eofpos) = read_tokens(0, contents).unwrap();
+        let mut parser = Parser::new(contents, &tokens, eofpos);
+        let expression = expect_expression(&mut parser).unwrap();
+        assert_eq!(parser.index, tokens.len());
+        assert_eq!(
+            expression,
+            Expression::Binary(Binary {
+                left: Box::new(Expression::Binary(Binary {
+                    left: Box::new(Expression::Variable(Variable { name: "a" })),
+                    op: BinOp::Plus,
+                    right: Box::new(Expression::Variable(Variable { name: "b" })),
+                })),
+                op: BinOp::Minus,
+                right: Box::new(Expression::Variable(Variable { name: "c" })),
             }),
         );
     }

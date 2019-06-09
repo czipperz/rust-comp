@@ -56,6 +56,10 @@ impl<'a> Parser<'a> {
             ))
         }
     }
+
+    pub fn peek(&self) -> Option<TokenValue> {
+        self.tokens.get(self.index).map(|t| t.value.clone())
+    }
 }
 
 #[cfg(test)]
