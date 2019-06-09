@@ -4,8 +4,11 @@ mod expression;
 mod fn_;
 mod parser;
 mod statement;
-mod type_;
 mod top_level;
+mod type_;
+
+#[cfg(test)]
+mod test;
 
 mod error;
 pub use error::Error;

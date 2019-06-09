@@ -173,28 +173,24 @@ fn expect_while_expression<'a>(parser: &mut Parser<'a, '_>) -> Result<Expression
 
 #[cfg(test)]
 mod tests {
+    use super::super::test::parse;
     use super::*;
-    use crate::lex::read_tokens;
-    use crate::pos::*;
+    use crate::pos::Span;
     use crate::token::TokenKind;
 
     #[test]
     fn test_expect_variable_expression() {
-        let contents = "ab";
-        let (tokens, eofpos) = read_tokens(0, contents).unwrap();
-        let mut parser = Parser::new(contents, &tokens, eofpos);
-        let expression = expect_variable_expression(&mut parser).unwrap();
-        assert_eq!(parser.index, tokens.len());
+        let (index, len, expression) = parse(expect_variable_expression, "ab");
+        let expression = expression.unwrap();
+        assert_eq!(index, len);
         assert_eq!(expression, Expression::Variable(Variable { name: "ab" }));
     }
 
     #[test]
     fn test_expect_paren_expression() {
-        let contents = "(ab)";
-        let (tokens, eofpos) = read_tokens(0, contents).unwrap();
-        let mut parser = Parser::new(contents, &tokens, eofpos);
-        let expression = expect_paren_expression(&mut parser).unwrap();
-        assert_eq!(parser.index, tokens.len());
+        let (index, len, expression) = parse(expect_expression, "(ab)");
+        let expression = expression.unwrap();
+        assert_eq!(index, len);
         assert_eq!(
             expression,
             Expression::Paren(Box::new(Expression::Variable(Variable { name: "ab" })))
@@ -203,31 +199,27 @@ mod tests {
 
     #[test]
     fn test_expect_variable_expression_fn_should_error() {
-        let contents = "fn";
-        let (tokens, eofpos) = read_tokens(0, contents).unwrap();
-        let mut parser = Parser::new(contents, &tokens, eofpos);
-        let expression = expect_variable_expression(&mut parser);
-        assert_eq!(parser.index, 0);
+        let (index, _, expression) = parse(expect_variable_expression, "fn");
+        let error = expression.unwrap_err();
+        assert_eq!(index, 0);
         assert_eq!(
-            expression,
-            Err(Error::ExpectedToken(
+            error,
+            Error::ExpectedToken(
                 TokenKind::Label,
                 Span {
                     file: 0,
                     start: 0,
                     end: 2
                 },
-            ))
+            )
         );
     }
 
     #[test]
     fn test_expect_block_expression() {
-        let contents = "{}";
-        let (tokens, eofpos) = read_tokens(0, contents).unwrap();
-        let mut parser = Parser::new(contents, &tokens, eofpos);
-        let expression = expect_block_expression(&mut parser).unwrap();
-        assert_eq!(parser.index, tokens.len());
+        let (index, len, expression) = parse(expect_block_expression, "{}");
+        let expression = expression.unwrap();
+        assert_eq!(index, len);
         assert_eq!(
             expression,
             Expression::Block(Block {
@@ -239,11 +231,9 @@ mod tests {
 
     #[test]
     fn test_expect_if_expression() {
-        let contents = "if b {}";
-        let (tokens, eofpos) = read_tokens(0, contents).unwrap();
-        let mut parser = Parser::new(contents, &tokens, eofpos);
-        let expression = expect_if_expression(&mut parser).unwrap();
-        assert_eq!(parser.index, tokens.len());
+        let (index, len, expression) = parse(expect_if_expression, "if b {}");
+        let expression = expression.unwrap();
+        assert_eq!(index, len);
         assert_eq!(
             expression,
             Expression::If(If {
@@ -259,11 +249,9 @@ mod tests {
 
     #[test]
     fn test_expect_if_else_expression() {
-        let contents = "if b {} else {}";
-        let (tokens, eofpos) = read_tokens(0, contents).unwrap();
-        let mut parser = Parser::new(contents, &tokens, eofpos);
-        let expression = expect_if_expression(&mut parser).unwrap();
-        assert_eq!(parser.index, tokens.len());
+        let (index, len, expression) = parse(expect_if_expression, "if b {} else {}");
+        let expression = expression.unwrap();
+        assert_eq!(index, len);
         assert_eq!(
             expression,
             Expression::If(If {
@@ -282,11 +270,9 @@ mod tests {
 
     #[test]
     fn test_expect_if_else_if_expression() {
-        let contents = "if b {} else if c {}";
-        let (tokens, eofpos) = read_tokens(0, contents).unwrap();
-        let mut parser = Parser::new(contents, &tokens, eofpos);
-        let expression = expect_if_expression(&mut parser).unwrap();
-        assert_eq!(parser.index, tokens.len());
+        let (index, len, expression) = parse(expect_if_expression, "if b {} else if c {}");
+        let expression = expression.unwrap();
+        assert_eq!(index, len);
         assert_eq!(
             expression,
             Expression::If(If {
@@ -309,11 +295,9 @@ mod tests {
 
     #[test]
     fn test_expect_while_expression() {
-        let contents = "while b {}";
-        let (tokens, eofpos) = read_tokens(0, contents).unwrap();
-        let mut parser = Parser::new(contents, &tokens, eofpos);
-        let expression = expect_while_expression(&mut parser).unwrap();
-        assert_eq!(parser.index, tokens.len());
+        let (index, len, expression) = parse(expect_while_expression, "while b {}");
+        let expression = expression.unwrap();
+        assert_eq!(index, len);
         assert_eq!(
             expression,
             Expression::While(While {
@@ -328,11 +312,9 @@ mod tests {
 
     #[test]
     fn test_expect_expression_handles_plus_expressions() {
-        let contents = "a + b";
-        let (tokens, eofpos) = read_tokens(0, contents).unwrap();
-        let mut parser = Parser::new(contents, &tokens, eofpos);
-        let expression = expect_expression(&mut parser).unwrap();
-        assert_eq!(parser.index, tokens.len());
+        let (index, len, expression) = parse(expect_expression, "a + b");
+        let expression = expression.unwrap();
+        assert_eq!(index, len);
         assert_eq!(
             expression,
             Expression::Binary(Binary {
@@ -345,11 +327,9 @@ mod tests {
 
     #[test]
     fn test_expect_expression_handles_minus_expressions() {
-        let contents = "a - b";
-        let (tokens, eofpos) = read_tokens(0, contents).unwrap();
-        let mut parser = Parser::new(contents, &tokens, eofpos);
-        let expression = expect_expression(&mut parser).unwrap();
-        assert_eq!(parser.index, tokens.len());
+        let (index, len, expression) = parse(expect_expression, "a - b");
+        let expression = expression.unwrap();
+        assert_eq!(index, len);
         assert_eq!(
             expression,
             Expression::Binary(Binary {
@@ -362,11 +342,9 @@ mod tests {
 
     #[test]
     fn test_expect_expression_handles_times_expressions() {
-        let contents = "a * b";
-        let (tokens, eofpos) = read_tokens(0, contents).unwrap();
-        let mut parser = Parser::new(contents, &tokens, eofpos);
-        let expression = expect_expression(&mut parser).unwrap();
-        assert_eq!(parser.index, tokens.len());
+        let (index, len, expression) = parse(expect_expression, "a * b");
+        let expression = expression.unwrap();
+        assert_eq!(index, len);
         assert_eq!(
             expression,
             Expression::Binary(Binary {
@@ -379,11 +357,9 @@ mod tests {
 
     #[test]
     fn test_expect_expression_handles_divided_by_expressions() {
-        let contents = "a / b";
-        let (tokens, eofpos) = read_tokens(0, contents).unwrap();
-        let mut parser = Parser::new(contents, &tokens, eofpos);
-        let expression = expect_expression(&mut parser).unwrap();
-        assert_eq!(parser.index, tokens.len());
+        let (index, len, expression) = parse(expect_expression, "a / b");
+        let expression = expression.unwrap();
+        assert_eq!(index, len);
         assert_eq!(
             expression,
             Expression::Binary(Binary {
@@ -396,11 +372,9 @@ mod tests {
 
     #[test]
     fn test_expect_expression_left_to_right_precedence() {
-        let contents = "a + b - c";
-        let (tokens, eofpos) = read_tokens(0, contents).unwrap();
-        let mut parser = Parser::new(contents, &tokens, eofpos);
-        let expression = expect_expression(&mut parser).unwrap();
-        assert_eq!(parser.index, tokens.len());
+        let (index, len, expression) = parse(expect_expression, "a + b - c");
+        let expression = expression.unwrap();
+        assert_eq!(index, len);
         assert_eq!(
             expression,
             Expression::Binary(Binary {
@@ -417,11 +391,9 @@ mod tests {
 
     #[test]
     fn test_expect_expression_different_precedences() {
-        let contents = "a + b * c - d";
-        let (tokens, eofpos) = read_tokens(0, contents).unwrap();
-        let mut parser = Parser::new(contents, &tokens, eofpos);
-        let expression = expect_expression(&mut parser).unwrap();
-        assert_eq!(parser.index, tokens.len());
+        let (index, len, expression) = parse(expect_expression, "a + b * c - d");
+        let expression = expression.unwrap();
+        assert_eq!(index, len);
         assert_eq!(
             expression,
             Expression::Binary(Binary {

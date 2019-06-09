@@ -46,6 +46,7 @@ fn expect_return_type<'a>(parser: &mut Parser<'a, '_>) -> Result<Type<'a>, Error
 
 #[cfg(test)]
 mod tests {
+    use super::super::test::parse;
     use super::*;
     use crate::lex::read_tokens;
 
@@ -63,11 +64,9 @@ mod tests {
 
     #[test]
     fn test_expect_fn_matching() {
-        let contents = "fn f () {}";
-        let (tokens, eofpos) = read_tokens(0, contents).unwrap();
-        let mut parser = Parser::new(contents, &tokens, eofpos);
-        let f = expect_fn(&mut parser).unwrap();
-        assert_eq!(parser.index, tokens.len());
+        let (index, len, f) = parse(expect_fn, "fn f () {}");
+        let f = f.unwrap();
+        assert_eq!(index, len);
         assert_eq!(f.name, "f");
         assert_eq!(f.parameters.len(), 0);
         assert_eq!(f.body.statements.len(), 0);
@@ -75,11 +74,9 @@ mod tests {
 
     #[test]
     fn test_expect_parameters_1_parameter() {
-        let contents = "(x: i32)";
-        let (tokens, eofpos) = read_tokens(0, contents).unwrap();
-        let mut parser = Parser::new(contents, &tokens, eofpos);
-        let parameters = expect_parameters(&mut parser).unwrap();
-        assert_eq!(parser.index, tokens.len());
+        let (index, len, parameters) = parse(expect_parameters, "(x: i32)");
+        let parameters = parameters.unwrap();
+        assert_eq!(index, len);
         assert_eq!(
             parameters,
             vec![Parameter {
@@ -91,11 +88,9 @@ mod tests {
 
     #[test]
     fn test_expect_parameters_2_parameters() {
-        let contents = "(x: i32, y: i32)";
-        let (tokens, eofpos) = read_tokens(0, contents).unwrap();
-        let mut parser = Parser::new(contents, &tokens, eofpos);
-        let parameters = expect_parameters(&mut parser).unwrap();
-        assert_eq!(parser.index, tokens.len());
+        let (index, len, parameters) = parse(expect_parameters, "(x: i32, y: i32)");
+        let parameters = parameters.unwrap();
+        assert_eq!(index, len);
         assert_eq!(
             parameters,
             vec![
@@ -113,11 +108,9 @@ mod tests {
 
     #[test]
     fn test_expect_parameter() {
-        let contents = "x: i32";
-        let (tokens, eofpos) = read_tokens(0, contents).unwrap();
-        let mut parser = Parser::new(contents, &tokens, eofpos);
-        let parameter = expect_parameter(&mut parser).unwrap();
-        assert_eq!(parser.index, tokens.len());
+        let (index, len, parameter) = parse(expect_parameter, "x: i32");
+        let parameter = parameter.unwrap();
+        assert_eq!(index, len);
         assert_eq!(
             parameter,
             Parameter {
@@ -129,21 +122,20 @@ mod tests {
 
     #[test]
     fn test_expect_return_type_nothing() {
-        let contents = "{";
-        let (tokens, eofpos) = read_tokens(0, contents).unwrap();
-        let mut parser = Parser::new(contents, &tokens, eofpos);
-        let return_type = expect_return_type(&mut parser).unwrap();
-        assert_eq!(parser.index, 0);
+        let (index, _, return_type) = parse(expect_return_type, "{");
+        let return_type = return_type.unwrap();
+        assert_eq!(index, 0);
         assert_eq!(return_type, Type::Tuple(vec![]));
     }
 
     #[test]
     fn test_expect_return_type_something() {
-        let contents = "-> &x {";
-        let (tokens, eofpos) = read_tokens(0, contents).unwrap();
-        let mut parser = Parser::new(contents, &tokens, eofpos);
-        let return_type = expect_return_type(&mut parser).unwrap();
-        assert_eq!(parser.index, tokens.len() - 1);
-        assert_eq!(return_type, Type::Ref(Box::new(Type::Named(NamedType { name: "x" }))));
+        let (index, len, return_type) = parse(expect_return_type, "-> &x {");
+        let return_type = return_type.unwrap();
+        assert_eq!(index, len - 1);
+        assert_eq!(
+            return_type,
+            Type::Ref(Box::new(Type::Named(NamedType { name: "x" })))
+        );
     }
 }

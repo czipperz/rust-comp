@@ -23,9 +23,7 @@ pub fn expect_type<'a>(parser: &mut Parser<'a, '_>) -> Result<Type<'a>, Error> {
             ))
         }
     } else if parser.expect_token(TokenKind::OpenParen).is_ok() {
-        let types = many_separator(parser, expect_type, |p| {
-            p.expect_token(TokenKind::Comma)
-        })?;
+        let types = many_separator(parser, expect_type, |p| p.expect_token(TokenKind::Comma))?;
         parser.expect_token(TokenKind::CloseParen)?;
         Ok(Type::Tuple(types))
     } else {

@@ -45,39 +45,33 @@ pub fn expect_block<'a>(parser: &mut Parser<'a, '_>) -> Result<Block<'a>, Error>
 
 #[cfg(test)]
 mod tests {
+    use super::super::test::parse;
     use super::*;
-    use crate::lex::read_tokens;
     use crate::pos::Span;
 
     #[test]
     fn test_expect_block_no_statements() {
-        let contents = "{}";
-        let (tokens, eofpos) = read_tokens(0, contents).unwrap();
-        let mut parser = Parser::new(contents, &tokens, eofpos);
-        let block = expect_block(&mut parser).unwrap();
-        assert_eq!(parser.index, tokens.len());
+        let (index, len, block) = parse(expect_block, "{}");
+        let block = block.unwrap();
+        assert_eq!(index, len);
         assert_eq!(block.statements.len(), 0);
         assert_eq!(block.expression, None);
     }
 
     #[test]
     fn test_expect_block_with_empty_statements() {
-        let contents = "{;;}";
-        let (tokens, eofpos) = read_tokens(0, contents).unwrap();
-        let mut parser = Parser::new(contents, &tokens, eofpos);
-        let block = expect_block(&mut parser).unwrap();
-        assert_eq!(parser.index, tokens.len());
+        let (index, len, block) = parse(expect_block, "{;;}");
+        let block = block.unwrap();
+        assert_eq!(index, len);
         assert_eq!(block.statements, [Statement::Empty, Statement::Empty]);
         assert_eq!(block.expression, None);
     }
 
     #[test]
     fn test_expect_block_with_statement_then_expression() {
-        let contents = "{x;y}";
-        let (tokens, eofpos) = read_tokens(0, contents).unwrap();
-        let mut parser = Parser::new(contents, &tokens, eofpos);
-        let block = expect_block(&mut parser).unwrap();
-        assert_eq!(parser.index, tokens.len());
+        let (index, len, block) = parse(expect_block, "{x;y}");
+        let block = block.unwrap();
+        assert_eq!(index, len);
         assert_eq!(
             block.statements,
             [Statement::Expression(Expression::Variable(Variable {
@@ -92,13 +86,11 @@ mod tests {
 
     #[test]
     fn test_expect_block_with_statement_then_malformed_expression() {
-        let contents = "{x;(y}";
-        let (tokens, eofpos) = read_tokens(0, contents).unwrap();
-        let mut parser = Parser::new(contents, &tokens, eofpos);
-        let block = expect_block(&mut parser).unwrap_err();
-        assert_eq!(parser.index, tokens.len() - 1);
+        let (index, len, block) = parse(expect_block, "{x;(y}");
+        let error = block.unwrap_err();
+        assert_eq!(index, len - 1);
         assert_eq!(
-            block,
+            error,
             Error::ExpectedToken(
                 TokenKind::CloseParen,
                 Span {
@@ -112,13 +104,11 @@ mod tests {
 
     #[test]
     fn test_expect_block_with_statement_then_invalid_statement() {
-        let contents = "{x;let}";
-        let (tokens, eofpos) = read_tokens(0, contents).unwrap();
-        let mut parser = Parser::new(contents, &tokens, eofpos);
-        let block = expect_block(&mut parser).unwrap_err();
-        assert_eq!(parser.index, tokens.len() - 1);
+        let (index, len, block) = parse(expect_block, "{x;let}");
+        let error = block.unwrap_err();
+        assert_eq!(index, len - 1);
         assert_eq!(
-            block,
+            error,
             Error::ExpectedToken(
                 TokenKind::Label,
                 Span {
@@ -132,13 +122,11 @@ mod tests {
 
     #[test]
     fn test_expect_block_with_statement_then_if_no_closing_curly() {
-        let contents = "{x;if x {";
-        let (tokens, eofpos) = read_tokens(0, contents).unwrap();
-        let mut parser = Parser::new(contents, &tokens, eofpos);
-        let block = expect_block(&mut parser).unwrap_err();
-        assert_eq!(parser.index, tokens.len());
+        let (index, len, block) = parse(expect_block, "{x;if x {");
+        let error = block.unwrap_err();
+        assert_eq!(index, len);
         assert_eq!(
-            block,
+            error,
             Error::ExpectedToken(
                 TokenKind::CloseCurly,
                 Span {
