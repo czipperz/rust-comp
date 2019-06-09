@@ -1,12 +1,13 @@
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TopLevel<'a> {
     pub kind: TopLevelKind<'a>,
-    pub visibility: Visibility,
+    pub visibility: Visibility<'a>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum Visibility {
+pub enum Visibility<'a> {
     Private,
+    Path(Path<'a>),
     Public,
 }
 
@@ -24,6 +25,12 @@ pub struct ModFile<'a> {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Use<'a> {
+    pub path: Path<'a>,
+    pub item: &'a str,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Path<'a> {
     pub path: Vec<&'a str>,
 }
 
