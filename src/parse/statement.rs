@@ -19,33 +19,33 @@ pub fn expect_statement<'a>(parser: &mut Parser<'a>) -> Result<Statement<'a>, Er
 }
 
 fn expect_let_statement<'a>(parser: &mut Parser<'a>) -> Result<Statement<'a>, Error> {
-    parser.expect_token(TokenValue::Let)?;
+    parser.expect_token(TokenKind::Let)?;
     let name = parser.expect_label()?;
-    let type_ = if parser.expect_token(TokenValue::Colon).is_ok() {
+    let type_ = if parser.expect_token(TokenKind::Colon).is_ok() {
         Some(expect_type(parser)?)
     } else {
         None
     };
-    let value = if parser.expect_token(TokenValue::Set).is_ok() {
+    let value = if parser.expect_token(TokenKind::Set).is_ok() {
         Some(expect_expression(parser)?)
     } else {
         None
     };
-    parser.expect_token(TokenValue::Semicolon)?;
+    parser.expect_token(TokenKind::Semicolon)?;
     Ok(Statement::Let(Let { name, type_, value }))
 }
 
 fn expect_empty_statement<'a>(parser: &mut Parser<'a>) -> Result<Statement<'a>, Error> {
     parser
-        .expect_token(TokenValue::Semicolon)
+        .expect_token(TokenKind::Semicolon)
         .map(|_| Statement::Empty)
 }
 
 fn expect_expression_statement<'a>(parser: &mut Parser<'a>) -> Result<Statement<'a>, Error> {
     let expression = expect_expression(parser)?;
     match expression {
-        Expression::Variable(_) => parser.expect_token(TokenValue::Semicolon)?,
-        Expression::Paren(_) => parser.expect_token(TokenValue::Semicolon)?,
+        Expression::Variable(_) => parser.expect_token(TokenKind::Semicolon)?,
+        Expression::Paren(_) => parser.expect_token(TokenKind::Semicolon)?,
         Expression::Block(_) => (),
         Expression::If(_) => (),
         Expression::While(_) => (),

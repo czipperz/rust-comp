@@ -36,13 +36,13 @@ impl<'a> Parser<'a> {
     }
 
     pub fn expect_label(&mut self) -> Result<&'a str, Error> {
-        self.expect_token(TokenValue::Label)?;
+        self.expect_token(TokenKind::Label)?;
         let span = self.tokens[self.index - 1].span;
         Ok(&self.file_contents[span])
     }
 
-    pub fn expect_token(&mut self, expected: TokenValue) -> Result<(), Error> {
-        if self.index < self.tokens.len() && self.tokens[self.index].value == expected {
+    pub fn expect_token(&mut self, expected: TokenKind) -> Result<(), Error> {
+        if self.index < self.tokens.len() && self.tokens[self.index].kind == expected {
             self.index += 1;
             Ok(())
         } else {
@@ -57,8 +57,8 @@ impl<'a> Parser<'a> {
         }
     }
 
-    pub fn peek(&self) -> Option<TokenValue> {
-        self.tokens.get(self.index).map(|t| t.value.clone())
+    pub fn peek(&self) -> Option<TokenKind> {
+        self.tokens.get(self.index).map(|t| t.kind)
     }
 }
 
@@ -134,7 +134,7 @@ mod tests {
     fn test_expect_token_out_of_bounds() {
         let contents = "";
         let mut parser = Parser::new(contents, &[], Pos { file: 0, index: 0 });
-        assert!(parser.expect_token(TokenValue::Fn).is_err());
+        assert!(parser.expect_token(TokenKind::Fn).is_err());
         assert_eq!(parser.index, 0);
     }
 
@@ -143,7 +143,7 @@ mod tests {
         let contents = "fn";
         let (tokens, eofpos) = read_tokens(0, contents).unwrap();
         let mut parser = Parser::new(contents, &tokens, eofpos);
-        assert!(parser.expect_token(TokenValue::Fn).is_ok());
+        assert!(parser.expect_token(TokenKind::Fn).is_ok());
         assert_eq!(parser.index, tokens.len());
     }
 
@@ -152,7 +152,7 @@ mod tests {
         let contents = "fn";
         let (tokens, eofpos) = read_tokens(0, contents).unwrap();
         let mut parser = Parser::new(contents, &tokens, eofpos);
-        assert!(parser.expect_token(TokenValue::OpenParen).is_err());
+        assert!(parser.expect_token(TokenKind::OpenParen).is_err());
         assert_eq!(parser.index, 0);
     }
 }

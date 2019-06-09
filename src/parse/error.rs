@@ -1,8 +1,8 @@
 use crate::pos::Span;
-use crate::token::TokenValue;
+use crate::token::TokenKind;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Error {
-    ExpectedToken(TokenValue, Span),
+    ExpectedToken(TokenKind, Span),
     Expected(&'static str, Span),
 }

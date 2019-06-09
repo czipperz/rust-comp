@@ -12,28 +12,28 @@ pub enum Error {
 
 pub fn read_tokens<'a>(file: usize, contents: &str) -> Result<(Vec<Token>, Pos), Error> {
     let mut keywords = HashMap::new();
-    keywords.insert("!=", TokenValue::NotEquals);
-    keywords.insert("(", TokenValue::OpenParen);
-    keywords.insert(")", TokenValue::CloseParen);
-    keywords.insert("*", TokenValue::Star);
-    keywords.insert("+", TokenValue::Plus);
-    keywords.insert(",", TokenValue::Comma);
-    keywords.insert("-", TokenValue::Minus);
-    keywords.insert("->", TokenValue::ThinArrow);
-    keywords.insert("/", TokenValue::ForwardSlash);
-    keywords.insert(":", TokenValue::Colon);
-    keywords.insert(";", TokenValue::Semicolon);
-    keywords.insert("=", TokenValue::Set);
-    keywords.insert("==", TokenValue::Equals);
-    keywords.insert("=>", TokenValue::FatArrow);
-    keywords.insert("else", TokenValue::Else);
-    keywords.insert("fn", TokenValue::Fn);
-    keywords.insert("if", TokenValue::If);
-    keywords.insert("let", TokenValue::Let);
-    keywords.insert("mod", TokenValue::Mod);
-    keywords.insert("while", TokenValue::While);
-    keywords.insert("{", TokenValue::OpenCurly);
-    keywords.insert("}", TokenValue::CloseCurly);
+    keywords.insert("!=", TokenKind::NotEquals);
+    keywords.insert("(", TokenKind::OpenParen);
+    keywords.insert(")", TokenKind::CloseParen);
+    keywords.insert("*", TokenKind::Star);
+    keywords.insert("+", TokenKind::Plus);
+    keywords.insert(",", TokenKind::Comma);
+    keywords.insert("-", TokenKind::Minus);
+    keywords.insert("->", TokenKind::ThinArrow);
+    keywords.insert("/", TokenKind::ForwardSlash);
+    keywords.insert(":", TokenKind::Colon);
+    keywords.insert(";", TokenKind::Semicolon);
+    keywords.insert("=", TokenKind::Set);
+    keywords.insert("==", TokenKind::Equals);
+    keywords.insert("=>", TokenKind::FatArrow);
+    keywords.insert("else", TokenKind::Else);
+    keywords.insert("fn", TokenKind::Fn);
+    keywords.insert("if", TokenKind::If);
+    keywords.insert("let", TokenKind::Let);
+    keywords.insert("mod", TokenKind::Mod);
+    keywords.insert("while", TokenKind::While);
+    keywords.insert("{", TokenKind::OpenCurly);
+    keywords.insert("}", TokenKind::CloseCurly);
 
     let mut tagged_iter = TaggedIter::new(file, contents);
     let mut tokens = Vec::new();
@@ -106,7 +106,7 @@ fn is_symbol(ch: char) -> bool {
 }
 
 fn skip_comments(
-    keywords: &HashMap<&str, TokenValue>,
+    keywords: &HashMap<&str, TokenKind>,
     tokens: &mut Vec<Token>,
     tagged_iter: &mut TaggedIter,
     span: &mut Span,
@@ -171,7 +171,7 @@ fn skip_block_comment(tagged_iter: &mut TaggedIter) -> Result<(), Error> {
 }
 
 fn flush_temp(
-    keywords: &HashMap<&str, TokenValue>,
+    keywords: &HashMap<&str, TokenKind>,
     tokens: &mut Vec<Token>,
     file_contents: &str,
     span: Span,
@@ -182,16 +182,16 @@ fn flush_temp(
 }
 
 fn flush_temp_nonempty(
-    keywords: &HashMap<&str, TokenValue>,
+    keywords: &HashMap<&str, TokenKind>,
     tokens: &mut Vec<Token>,
     file_contents: &str,
     span: Span,
 ) {
     tokens.push(Token {
-        value: if let Some(tv) = keywords.get(&file_contents[span]) {
-            tv.clone()
+        kind: if let Some(kind) = keywords.get(&file_contents[span]) {
+            *kind
         } else {
-            TokenValue::Label
+            TokenKind::Label
         },
         span,
     });
@@ -220,7 +220,7 @@ mod tests {
             read_tokens(0, "else"),
             Ok((
                 vec![Token {
-                    value: TokenValue::Else,
+                    kind: TokenKind::Else,
                     span: Span {
                         file: 0,
                         start: 0,
@@ -238,7 +238,7 @@ mod tests {
             read_tokens(0, "fn"),
             Ok((
                 vec![Token {
-                    value: TokenValue::Fn,
+                    kind: TokenKind::Fn,
                     span: Span {
                         file: 0,
                         start: 0,
@@ -256,7 +256,7 @@ mod tests {
             read_tokens(0, "fn "),
             Ok((
                 vec![Token {
-                    value: TokenValue::Fn,
+                    kind: TokenKind::Fn,
                     span: Span {
                         file: 0,
                         start: 0,
@@ -274,7 +274,7 @@ mod tests {
             read_tokens(0, "fnx"),
             Ok((
                 vec![Token {
-                    value: TokenValue::Label,
+                    kind: TokenKind::Label,
                     span: Span {
                         file: 0,
                         start: 0,
@@ -292,7 +292,7 @@ mod tests {
             read_tokens(0, "if"),
             Ok((
                 vec![Token {
-                    value: TokenValue::If,
+                    kind: TokenKind::If,
                     span: Span {
                         file: 0,
                         start: 0,
@@ -310,7 +310,7 @@ mod tests {
             read_tokens(0, "let"),
             Ok((
                 vec![Token {
-                    value: TokenValue::Let,
+                    kind: TokenKind::Let,
                     span: Span {
                         file: 0,
                         start: 0,
@@ -328,7 +328,7 @@ mod tests {
             read_tokens(0, "mod"),
             Ok((
                 vec![Token {
-                    value: TokenValue::Mod,
+                    kind: TokenKind::Mod,
                     span: Span {
                         file: 0,
                         start: 0,
@@ -346,7 +346,7 @@ mod tests {
             read_tokens(0, "while"),
             Ok((
                 vec![Token {
-                    value: TokenValue::While,
+                    kind: TokenKind::While,
                     span: Span {
                         file: 0,
                         start: 0,
@@ -365,7 +365,7 @@ mod tests {
             Ok((
                 vec![
                     Token {
-                        value: TokenValue::OpenParen,
+                        kind: TokenKind::OpenParen,
                         span: Span {
                             file: 0,
                             start: 0,
@@ -373,7 +373,7 @@ mod tests {
                         },
                     },
                     Token {
-                        value: TokenValue::CloseParen,
+                        kind: TokenKind::CloseParen,
                         span: Span {
                             file: 0,
                             start: 1,
@@ -381,7 +381,7 @@ mod tests {
                         },
                     },
                     Token {
-                        value: TokenValue::OpenCurly,
+                        kind: TokenKind::OpenCurly,
                         span: Span {
                             file: 0,
                             start: 2,
@@ -389,7 +389,7 @@ mod tests {
                         },
                     },
                     Token {
-                        value: TokenValue::CloseCurly,
+                        kind: TokenKind::CloseCurly,
                         span: Span {
                             file: 0,
                             start: 3,
@@ -397,7 +397,7 @@ mod tests {
                         },
                     },
                     Token {
-                        value: TokenValue::Colon,
+                        kind: TokenKind::Colon,
                         span: Span {
                             file: 0,
                             start: 4,
@@ -405,7 +405,7 @@ mod tests {
                         },
                     },
                     Token {
-                        value: TokenValue::Comma,
+                        kind: TokenKind::Comma,
                         span: Span {
                             file: 0,
                             start: 5,
@@ -413,7 +413,7 @@ mod tests {
                         },
                     },
                     Token {
-                        value: TokenValue::Semicolon,
+                        kind: TokenKind::Semicolon,
                         span: Span {
                             file: 0,
                             start: 6,
@@ -433,7 +433,7 @@ mod tests {
             Ok((
                 vec![
                     Token {
-                        value: TokenValue::Set,
+                        kind: TokenKind::Set,
                         span: Span {
                             file: 0,
                             start: 0,
@@ -441,7 +441,7 @@ mod tests {
                         },
                     },
                     Token {
-                        value: TokenValue::OpenParen,
+                        kind: TokenKind::OpenParen,
                         span: Span {
                             file: 0,
                             start: 1,
@@ -461,7 +461,7 @@ mod tests {
             Ok((
                 vec![
                     Token {
-                        value: TokenValue::Label,
+                        kind: TokenKind::Label,
                         span: Span {
                             file: 0,
                             start: 0,
@@ -469,7 +469,7 @@ mod tests {
                         },
                     },
                     Token {
-                        value: TokenValue::OpenParen,
+                        kind: TokenKind::OpenParen,
                         span: Span {
                             file: 0,
                             start: 1,
@@ -477,7 +477,7 @@ mod tests {
                         },
                     },
                     Token {
-                        value: TokenValue::Label,
+                        kind: TokenKind::Label,
                         span: Span {
                             file: 0,
                             start: 2,
@@ -496,7 +496,7 @@ mod tests {
             read_tokens(0, "=>"),
             Ok((
                 vec![Token {
-                    value: TokenValue::FatArrow,
+                    kind: TokenKind::FatArrow,
                     span: Span {
                         file: 0,
                         start: 0,
@@ -514,7 +514,7 @@ mod tests {
             read_tokens(0, "->"),
             Ok((
                 vec![Token {
-                    value: TokenValue::ThinArrow,
+                    kind: TokenKind::ThinArrow,
                     span: Span {
                         file: 0,
                         start: 0,
@@ -532,7 +532,7 @@ mod tests {
             read_tokens(0, "+"),
             Ok((
                 vec![Token {
-                    value: TokenValue::Plus,
+                    kind: TokenKind::Plus,
                     span: Span {
                         file: 0,
                         start: 0,
@@ -550,7 +550,7 @@ mod tests {
             read_tokens(0, "-"),
             Ok((
                 vec![Token {
-                    value: TokenValue::Minus,
+                    kind: TokenKind::Minus,
                     span: Span {
                         file: 0,
                         start: 0,
@@ -568,7 +568,7 @@ mod tests {
             read_tokens(0, "*"),
             Ok((
                 vec![Token {
-                    value: TokenValue::Star,
+                    kind: TokenKind::Star,
                     span: Span {
                         file: 0,
                         start: 0,
@@ -586,7 +586,7 @@ mod tests {
             read_tokens(0, "/"),
             Ok((
                 vec![Token {
-                    value: TokenValue::ForwardSlash,
+                    kind: TokenKind::ForwardSlash,
                     span: Span {
                         file: 0,
                         start: 0,
@@ -604,7 +604,7 @@ mod tests {
             read_tokens(0, "=="),
             Ok((
                 vec![Token {
-                    value: TokenValue::Equals,
+                    kind: TokenKind::Equals,
                     span: Span {
                         file: 0,
                         start: 0,
@@ -622,7 +622,7 @@ mod tests {
             read_tokens(0, "!="),
             Ok((
                 vec![Token {
-                    value: TokenValue::NotEquals,
+                    kind: TokenKind::NotEquals,
                     span: Span {
                         file: 0,
                         start: 0,
@@ -641,7 +641,7 @@ mod tests {
             Ok((
                 vec![
                     Token {
-                        value: TokenValue::Let,
+                        kind: TokenKind::Let,
                         span: Span {
                             file: 0,
                             start: 0,
@@ -649,7 +649,7 @@ mod tests {
                         },
                     },
                     Token {
-                        value: TokenValue::Label,
+                        kind: TokenKind::Label,
                         span: Span {
                             file: 0,
                             start: 12,
@@ -669,7 +669,7 @@ mod tests {
             Ok((
                 vec![
                     Token {
-                        value: TokenValue::Let,
+                        kind: TokenKind::Let,
                         span: Span {
                             file: 0,
                             start: 0,
@@ -677,7 +677,7 @@ mod tests {
                         },
                     },
                     Token {
-                        value: TokenValue::Label,
+                        kind: TokenKind::Label,
                         span: Span {
                             file: 0,
                             start: 12,
@@ -697,7 +697,7 @@ mod tests {
             Ok((
                 vec![
                     Token {
-                        value: TokenValue::Let,
+                        kind: TokenKind::Let,
                         span: Span {
                             file: 0,
                             start: 0,
@@ -705,7 +705,7 @@ mod tests {
                         },
                     },
                     Token {
-                        value: TokenValue::Label,
+                        kind: TokenKind::Label,
                         span: Span {
                             file: 0,
                             start: 18,
@@ -725,7 +725,7 @@ mod tests {
             Ok((
                 vec![
                     Token {
-                        value: TokenValue::Let,
+                        kind: TokenKind::Let,
                         span: Span {
                             file: 0,
                             start: 0,
@@ -733,7 +733,7 @@ mod tests {
                         },
                     },
                     Token {
-                        value: TokenValue::Label,
+                        kind: TokenKind::Label,
                         span: Span {
                             file: 0,
                             start: 15,

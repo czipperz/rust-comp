@@ -4,10 +4,10 @@ use super::parser::Parser;
 use super::statement::expect_statement;
 use super::Error;
 use crate::ast::*;
-use crate::token::TokenValue;
+use crate::token::TokenKind;
 
 pub fn expect_block<'a>(parser: &mut Parser<'a>) -> Result<Block<'a>, Error> {
-    parser.expect_token(TokenValue::OpenCurly)?;
+    parser.expect_token(TokenKind::OpenCurly)?;
 
     let mut statements = Vec::new();
     let expression;
@@ -36,7 +36,7 @@ pub fn expect_block<'a>(parser: &mut Parser<'a>) -> Result<Block<'a>, Error> {
             }
         }
     }
-    parser.expect_token(TokenValue::CloseCurly)?;
+    parser.expect_token(TokenKind::CloseCurly)?;
     Ok(Block {
         statements,
         expression: expression.map(Box::new),
@@ -100,7 +100,7 @@ mod tests {
         assert_eq!(
             block,
             Error::ExpectedToken(
-                TokenValue::CloseParen,
+                TokenKind::CloseParen,
                 Span {
                     file: 0,
                     start: 5,
@@ -120,7 +120,7 @@ mod tests {
         assert_eq!(
             block,
             Error::ExpectedToken(
-                TokenValue::Label,
+                TokenKind::Label,
                 Span {
                     file: 0,
                     start: 6,
@@ -140,7 +140,7 @@ mod tests {
         assert_eq!(
             block,
             Error::ExpectedToken(
-                TokenValue::CloseCurly,
+                TokenKind::CloseCurly,
                 Span {
                     file: 0,
                     start: 9,

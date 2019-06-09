@@ -3,7 +3,7 @@ use super::combinator::*;
 use super::parser::Parser;
 use super::Error;
 use crate::ast::*;
-use crate::token::TokenValue;
+use crate::token::TokenKind;
 
 type Precedence = i8;
 
@@ -74,15 +74,15 @@ fn collapse_stack<'a>(
 }
 
 impl BinOp {
-    fn from_token(tv: TokenValue) -> Option<BinOp> {
+    fn from_token(tv: TokenKind) -> Option<BinOp> {
         match tv {
-            TokenValue::Plus => Some(BinOp::Plus),
-            TokenValue::Minus => Some(BinOp::Minus),
-            TokenValue::Star => Some(BinOp::Times),
-            TokenValue::ForwardSlash => Some(BinOp::DividedBy),
-            TokenValue::Equals => Some(BinOp::EqualTo),
-            TokenValue::NotEquals => Some(BinOp::NotEqualTo),
-            TokenValue::Set => Some(BinOp::SetTo),
+            TokenKind::Plus => Some(BinOp::Plus),
+            TokenKind::Minus => Some(BinOp::Minus),
+            TokenKind::Star => Some(BinOp::Times),
+            TokenKind::ForwardSlash => Some(BinOp::DividedBy),
+            TokenKind::Equals => Some(BinOp::EqualTo),
+            TokenKind::NotEquals => Some(BinOp::NotEqualTo),
+            TokenKind::Set => Some(BinOp::SetTo),
             _ => None,
         }
     }
@@ -116,9 +116,9 @@ fn expect_variable_expression<'a>(parser: &mut Parser<'a>) -> Result<Expression<
 }
 
 fn expect_paren_expression<'a>(parser: &mut Parser<'a>) -> Result<Expression<'a>, Error> {
-    parser.expect_token(TokenValue::OpenParen)?;
+    parser.expect_token(TokenKind::OpenParen)?;
     let expression = expect_expression(parser)?;
-    parser.expect_token(TokenValue::CloseParen)?;
+    parser.expect_token(TokenKind::CloseParen)?;
     Ok(Expression::Paren(Box::new(expression)))
 }
 
@@ -131,10 +131,10 @@ fn expect_if_expression<'a>(parser: &mut Parser<'a>) -> Result<Expression<'a>, E
 }
 
 fn expect_if_expression_<'a>(parser: &mut Parser<'a>) -> Result<If<'a>, Error> {
-    parser.expect_token(TokenValue::If)?;
+    parser.expect_token(TokenKind::If)?;
     let condition = expect_expression(parser)?;
     let then = expect_block(parser)?;
-    let else_ = if parser.expect_token(TokenValue::Else).is_ok() {
+    let else_ = if parser.expect_token(TokenKind::Else).is_ok() {
         Some(Box::new(expect_else_expression(parser)?))
     } else {
         None
@@ -162,7 +162,7 @@ fn expect_else_expression<'a>(parser: &mut Parser<'a>) -> Result<Else<'a>, Error
 }
 
 fn expect_while_expression<'a>(parser: &mut Parser<'a>) -> Result<Expression<'a>, Error> {
-    parser.expect_token(TokenValue::While)?;
+    parser.expect_token(TokenKind::While)?;
     let condition = expect_expression(parser)?;
     let block = expect_block(parser)?;
     Ok(Expression::While(While {
@@ -176,7 +176,7 @@ mod tests {
     use super::*;
     use crate::lex::read_tokens;
     use crate::pos::*;
-    use crate::token::TokenValue;
+    use crate::token::TokenKind;
 
     #[test]
     fn test_expect_variable_expression() {
@@ -211,7 +211,7 @@ mod tests {
         assert_eq!(
             expression,
             Err(Error::ExpectedToken(
-                TokenValue::Label,
+                TokenKind::Label,
                 Span {
                     file: 0,
                     start: 0,

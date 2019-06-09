@@ -35,7 +35,7 @@ fn expect_toplevel_fn<'a>(parser: &mut Parser<'a>) -> Result<TopLevel<'a>, Error
 }
 
 fn expect_fn<'a>(parser: &mut Parser<'a>) -> Result<Function<'a>, Error> {
-    parser.expect_token(TokenValue::Fn)?;
+    parser.expect_token(TokenKind::Fn)?;
     let name = parser.expect_label()?;
     let parameters = expect_parameters(parser)?;
     let body = expect_block(parser)?;
@@ -47,25 +47,25 @@ fn expect_fn<'a>(parser: &mut Parser<'a>) -> Result<Function<'a>, Error> {
 }
 
 fn expect_parameters<'a>(parser: &mut Parser<'a>) -> Result<Vec<Parameter<'a>>, Error> {
-    parser.expect_token(TokenValue::OpenParen)?;
+    parser.expect_token(TokenKind::OpenParen)?;
     let parameters = many_separator(parser, expect_parameter, |parser| {
-        parser.expect_token(TokenValue::Comma)
+        parser.expect_token(TokenKind::Comma)
     })?;
-    parser.expect_token(TokenValue::CloseParen)?;
+    parser.expect_token(TokenKind::CloseParen)?;
     Ok(parameters)
 }
 
 fn expect_parameter<'a>(parser: &mut Parser<'a>) -> Result<Parameter<'a>, Error> {
     let name = parser.expect_label()?;
-    parser.expect_token(TokenValue::Colon)?;
+    parser.expect_token(TokenKind::Colon)?;
     let type_ = expect_type(parser)?;
     Ok(Parameter { name, type_ })
 }
 
 fn expect_mod<'a>(parser: &mut Parser<'a>) -> Result<TopLevel<'a>, Error> {
-    parser.expect_token(TokenValue::Mod)?;
+    parser.expect_token(TokenKind::Mod)?;
     let name = parser.expect_label()?;
-    parser.expect_token(TokenValue::Semicolon)?;
+    parser.expect_token(TokenKind::Semicolon)?;
     Ok(TopLevel::ModFile(ModFile { mod_: name }))
 }
 

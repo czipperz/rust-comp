@@ -2,12 +2,12 @@ use crate::pos::*;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Token {
-    pub value: TokenValue,
+    pub kind: TokenKind,
     pub span: Span,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub enum TokenValue {
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TokenKind {
     Else,
     Fn,
     If,
