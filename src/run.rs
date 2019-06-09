@@ -24,8 +24,7 @@ pub fn run(mut diagnostic: Diagnostic, _opt: opt::Opt) -> Result<(), Error> {
     let mut lines = 0;
     let mut bytes = 0;
     for i in 0..diagnostic.files.len() {
-        diagnostic
-            .add_file_contents(read_file::read_file(&diagnostic.files[i])?);
+        diagnostic.add_file_contents(read_file::read_file(&diagnostic.files[i])?);
         bytes += diagnostic.files_contents[i].len();
         lines += diagnostic.files_lines[i].len();
     }
