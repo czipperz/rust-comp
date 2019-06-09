@@ -39,7 +39,6 @@ fn expression_chain<'a>(
         if op.precedence() <= max_precedence {
             max_precedence = op.max_precedence();
             stack.push((expr, op));
-            expr = next;
         } else {
             // consolidate stack up to op.max_precedence()
             while !stack.is_empty() && stack.last().unwrap().1.max_precedence() < op.precedence() {
@@ -52,8 +51,8 @@ fn expression_chain<'a>(
                 });
             }
             stack.push((expr, op));
-            expr = next;
         }
+        expr = next;
     }
 
     Ok(collapse_stack(expr, stack))
