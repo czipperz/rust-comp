@@ -1,5 +1,7 @@
 # rust-comp
 
+![Travis CI Build](https://travis-ci.com/czipperz/rust-comp.svg?branch=master)
+
 This project is a compiler for the Rust programming language.
 
 ## Goals
