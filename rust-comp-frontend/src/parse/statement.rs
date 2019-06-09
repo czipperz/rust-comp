@@ -49,7 +49,7 @@ fn expect_expression_statement<'a>(parser: &mut Parser<'a, '_>) -> Result<Statem
         Expression::Block(_) => (),
         Expression::If(_) => (),
         Expression::While(_) => (),
-        Expression::Binary(_) => (),
+        Expression::Binary(_) => parser.expect_token(TokenKind::Semicolon)?,
     }
     Ok(Statement::Expression(expression))
 }
@@ -168,6 +168,42 @@ mod tests {
     }
 
     #[test]
+    fn test_expect_expression_statement_paren_expression_no_semicolon_should_error() {
+        let (index, len, statement) = parse(expect_expression_statement, "(ab)");
+        let error = statement.unwrap_err();
+        assert_eq!(index, len);
+        assert_eq!(
+            error,
+            Error::ExpectedToken(
+                TokenKind::Semicolon,
+                Span {
+                    file: 0,
+                    start: 4,
+                    end: 5,
+                }
+            )
+        );
+    }
+
+    #[test]
+    fn test_expect_expression_statement_binary_expression_no_semicolon_should_error() {
+        let (index, len, statement) = parse(expect_expression_statement, "a + b");
+        let error = statement.unwrap_err();
+        assert_eq!(index, len);
+        assert_eq!(
+            error,
+            Error::ExpectedToken(
+                TokenKind::Semicolon,
+                Span {
+                    file: 0,
+                    start: 5,
+                    end: 6,
+                }
+            )
+        );
+    }
+
+    #[test]
     fn test_expect_expression_statement_variable_semicolon() {
         let (index, len, statement) = parse(expect_expression_statement, "ab;");
         let statement = statement.unwrap();
@@ -179,6 +215,13 @@ mod tests {
     }
 
     #[test]
+    fn test_expect_expression_statement_block_doesnt_consume_semicolon() {
+        let (index, len, statement) = parse(expect_expression_statement, "{ b; };");
+        assert_eq!(index, len - 1);
+        assert!(statement.is_ok());
+    }
+
+    #[test]
     fn test_expect_expression_statement_if_doesnt_consume_semicolon() {
         let (index, len, statement) = parse(expect_expression_statement, "if b {};");
         assert_eq!(index, len - 1);
@@ -186,8 +229,8 @@ mod tests {
     }
 
     #[test]
-    fn test_expect_expression_statement_block_doesnt_consume_semicolon() {
-        let (index, len, statement) = parse(expect_expression_statement, "{ b; };");
+    fn test_expect_expression_statement_while_doesnt_consume_semicolon() {
+        let (index, len, statement) = parse(expect_expression_statement, "while b {};");
         assert_eq!(index, len - 1);
         assert!(statement.is_ok());
     }
