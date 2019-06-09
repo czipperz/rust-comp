@@ -33,7 +33,7 @@ pub fn expect_block<'a>(parser: &mut Parser<'a>) -> Result<Block<'a>, Error> {
                     })?);
                 }
                 break;
-            },
+            }
         }
     }
     parser.expect_token(TokenValue::CloseCurly)?;
@@ -87,6 +87,26 @@ mod tests {
         assert_eq!(
             block.expression,
             Some(Box::new(Expression::Variable(Variable { name: "y" })))
+        );
+    }
+
+    #[test]
+    fn test_expect_block_with_statement_then_malformed_expression() {
+        let contents = "{x;(y}";
+        let (tokens, eofpos) = read_tokens(0, contents).unwrap();
+        let mut parser = Parser::new(contents, &tokens, eofpos);
+        let block = expect_block(&mut parser).unwrap_err();
+        assert_eq!(parser.index, tokens.len() - 1);
+        assert_eq!(
+            block,
+            Error::ExpectedToken(
+                TokenValue::CloseParen,
+                Span {
+                    file: 0,
+                    start: 5,
+                    end: 6,
+                }
+            )
         );
     }
 
