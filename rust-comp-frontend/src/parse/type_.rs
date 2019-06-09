@@ -63,6 +63,21 @@ mod tests {
     }
 
     #[test]
+    fn test_expect_type_ref_ref() {
+        let contents = "&&abc";
+        let (tokens, eofpos) = read_tokens(0, contents).unwrap();
+        let mut parser = Parser::new(contents, &tokens, eofpos);
+        let type_ = expect_type(&mut parser).unwrap();
+        assert_eq!(parser.index, tokens.len());
+        assert_eq!(
+            type_,
+            Type::Ref(Box::new(Type::Ref(Box::new(Type::Named(NamedType {
+                name: "abc"
+            })))))
+        );
+    }
+
+    #[test]
     fn test_expect_type_ref_mut() {
         let contents = "&mut abc";
         let (tokens, eofpos) = read_tokens(0, contents).unwrap();
