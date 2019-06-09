@@ -80,6 +80,8 @@ impl BinOp {
             TokenValue::Minus => Some(BinOp::Minus),
             TokenValue::Star => Some(BinOp::Times),
             TokenValue::ForwardSlash => Some(BinOp::DividedBy),
+            TokenValue::Equals => Some(BinOp::EqualTo),
+            TokenValue::NotEquals => Some(BinOp::NotEqualTo),
             _ => None,
         }
     }
@@ -89,6 +91,7 @@ impl BinOp {
         match self {
             BinOp::Times | BinOp::DividedBy => 7,
             BinOp::Plus | BinOp::Minus => 8,
+            BinOp::EqualTo | BinOp::NotEqualTo => 13,
         }
     }
 
@@ -98,6 +101,7 @@ impl BinOp {
         match self {
             BinOp::Times | BinOp::DividedBy => 6,
             BinOp::Plus | BinOp::Minus => 7,
+            BinOp::EqualTo | BinOp::NotEqualTo => 13,
         }
     }
 }

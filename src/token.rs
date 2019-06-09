@@ -23,6 +23,8 @@ pub enum TokenValue {
     Comma,
     ThinArrow,
     FatArrow,
+    Equals,
+    NotEquals,
     ForwardSlash,
     Minus,
     Plus,

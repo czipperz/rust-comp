@@ -12,6 +12,7 @@ pub enum Error {
 
 pub fn read_tokens<'a>(file: usize, contents: &str) -> Result<(Vec<Token>, Pos), Error> {
     let mut keywords = HashMap::new();
+    keywords.insert("!=", TokenValue::NotEquals);
     keywords.insert("(", TokenValue::OpenParen);
     keywords.insert(")", TokenValue::CloseParen);
     keywords.insert("*", TokenValue::Star);
@@ -23,6 +24,7 @@ pub fn read_tokens<'a>(file: usize, contents: &str) -> Result<(Vec<Token>, Pos),
     keywords.insert(":", TokenValue::Colon);
     keywords.insert(";", TokenValue::Semicolon);
     keywords.insert("=", TokenValue::Set);
+    keywords.insert("==", TokenValue::Equals);
     keywords.insert("=>", TokenValue::FatArrow);
     keywords.insert("else", TokenValue::Else);
     keywords.insert("fn", TokenValue::Fn);
@@ -81,6 +83,11 @@ pub fn read_tokens<'a>(file: usize, contents: &str) -> Result<(Vec<Token>, Pos),
                         tagged_iter.advance();
                     }
                 }
+                if "!=".contains(ch) {
+                    if tagged_iter.peek() == Some('=') {
+                        tagged_iter.advance();
+                    }
+                }
                 span.end = tagged_iter.pos().index;
 
                 flush_temp_nonempty(&keywords, &mut tokens, tagged_iter.contents(), span);
@@ -94,7 +101,7 @@ pub fn read_tokens<'a>(file: usize, contents: &str) -> Result<(Vec<Token>, Pos),
 }
 
 fn is_symbol(ch: char) -> bool {
-    let symbols = "()*+,-/:;=>{}";
+    let symbols = "!()*+,-/:;=>{}";
     ch.is_ascii() && symbols.as_bytes().binary_search(&(ch as u8)).is_ok()
 }
 
@@ -587,6 +594,42 @@ mod tests {
                     },
                 }],
                 Pos { file: 0, index: 1 }
+            ))
+        );
+    }
+
+    #[test]
+    fn test_read_tokens_equals() {
+        assert_eq!(
+            read_tokens(0, "=="),
+            Ok((
+                vec![Token {
+                    value: TokenValue::Equals,
+                    span: Span {
+                        file: 0,
+                        start: 0,
+                        end: 2,
+                    },
+                }],
+                Pos { file: 0, index: 2 }
+            ))
+        );
+    }
+
+    #[test]
+    fn test_read_tokens_not_equals() {
+        assert_eq!(
+            read_tokens(0, "!="),
+            Ok((
+                vec![Token {
+                    value: TokenValue::NotEquals,
+                    span: Span {
+                        file: 0,
+                        start: 0,
+                        end: 2,
+                    },
+                }],
+                Pos { file: 0, index: 2 }
             ))
         );
     }
