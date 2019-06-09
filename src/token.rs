@@ -22,6 +22,7 @@ pub enum TokenKind {
     OpenCurly,
     CloseCurly,
     Colon,
+    ColonColon,
     Comma,
     ThinArrow,
     FatArrow,

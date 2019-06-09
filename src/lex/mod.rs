@@ -22,6 +22,7 @@ pub fn read_tokens<'a>(file: usize, contents: &str) -> Result<(Vec<Token>, Pos),
     keywords.insert("->", TokenKind::ThinArrow);
     keywords.insert("/", TokenKind::ForwardSlash);
     keywords.insert(":", TokenKind::Colon);
+    keywords.insert("::", TokenKind::ColonColon);
     keywords.insert(";", TokenKind::Semicolon);
     keywords.insert("=", TokenKind::Set);
     keywords.insert("==", TokenKind::Equals);
@@ -89,6 +90,9 @@ pub fn read_tokens<'a>(file: usize, contents: &str) -> Result<(Vec<Token>, Pos),
                     if tagged_iter.peek() == Some('=') {
                         tagged_iter.advance();
                     }
+                }
+                if ch == ':' && tagged_iter.peek() == Some(':') {
+                    tagged_iter.advance();
                 }
                 span.end = tagged_iter.pos().index;
 
@@ -553,6 +557,24 @@ mod tests {
             Ok((
                 vec![Token {
                     kind: TokenKind::ThinArrow,
+                    span: Span {
+                        file: 0,
+                        start: 0,
+                        end: 2
+                    },
+                }],
+                Pos { file: 0, index: 2 }
+            ))
+        );
+    }
+
+    #[test]
+    fn test_read_tokens_colon_colon() {
+        assert_eq!(
+            read_tokens(0, "::"),
+            Ok((
+                vec![Token {
+                    kind: TokenKind::ColonColon,
                     span: Span {
                         file: 0,
                         start: 0,

@@ -77,9 +77,13 @@ fn expect_mod<'a>(parser: &mut Parser<'a>) -> Result<TopLevelKind<'a>, Error> {
 
 fn expect_use<'a>(parser: &mut Parser<'a>) -> Result<TopLevelKind<'a>, Error> {
     parser.expect_token(TokenKind::Use)?;
-    let name = parser.expect_label()?;
+    let mut path = Vec::new();
+    path.push(parser.expect_label()?);
+    if parser.expect_token(TokenKind::ColonColon).is_ok() {
+        path.push(parser.expect_label()?);
+    }
     parser.expect_token(TokenKind::Semicolon)?;
-    Ok(TopLevelKind::Use(Use { path: vec![name] }))
+    Ok(TopLevelKind::Use(Use { path }))
 }
 
 #[cfg(test)]
@@ -191,5 +195,20 @@ mod tests {
         let mod_ = expect_use(&mut parser).unwrap();
         assert_eq!(parser.index, tokens.len());
         assert_eq!(mod_, TopLevelKind::Use(Use { path: vec!["x"] }));
+    }
+
+    #[test]
+    fn test_expect_use_label_colon_colon_label() {
+        let contents = "use x::y;";
+        let (tokens, eofpos) = read_tokens(0, contents).unwrap();
+        let mut parser = Parser::new(contents, &tokens, eofpos);
+        let mod_ = expect_use(&mut parser).unwrap();
+        assert_eq!(parser.index, tokens.len());
+        assert_eq!(
+            mod_,
+            TopLevelKind::Use(Use {
+                path: vec!["x", "y"]
+            })
+        );
     }
 }
