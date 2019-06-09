@@ -20,33 +20,30 @@ pub fn expect_expression<'a>(parser: &mut Parser<'a>) -> Result<Expression<'a>, 
     expression_chain(parser, base)
 }
 
-pub fn expression_chain<'a>(parser: &mut Parser<'a>, base: Expression<'a>) -> Result<Expression<'a>, Error> {
-    if parser.expect_token(TokenValue::Plus).is_ok() {
+fn expression_chain<'a>(
+    parser: &mut Parser<'a>,
+    base: Expression<'a>,
+) -> Result<Expression<'a>, Error> {
+    if let Some(op) = parser.peek().and_then(bin_op_for) {
+        parser.index += 1;
+        let right = expect_expression(parser)?;
         Ok(Expression::Binary(Binary {
             left: Box::new(base),
-            op: BinOp::Plus,
-            right: Box::new(expect_expression(parser)?),
-        }))
-    } else if parser.expect_token(TokenValue::Minus).is_ok() {
-        Ok(Expression::Binary(Binary {
-            left: Box::new(base),
-            op: BinOp::Minus,
-            right: Box::new(expect_expression(parser)?),
-        }))
-    } else if parser.expect_token(TokenValue::Star).is_ok() {
-        Ok(Expression::Binary(Binary {
-            left: Box::new(base),
-            op: BinOp::Times,
-            right: Box::new(expect_expression(parser)?),
-        }))
-    } else if parser.expect_token(TokenValue::ForwardSlash).is_ok() {
-        Ok(Expression::Binary(Binary {
-            left: Box::new(base),
-            op: BinOp::DividedBy,
-            right: Box::new(expect_expression(parser)?),
+            op,
+            right: Box::new(right),
         }))
     } else {
         Ok(base)
+    }
+}
+
+fn bin_op_for(tv: TokenValue) -> Option<BinOp> {
+    match tv {
+        TokenValue::Plus => Some(BinOp::Plus),
+        TokenValue::Minus => Some(BinOp::Minus),
+        TokenValue::Star => Some(BinOp::Times),
+        TokenValue::ForwardSlash => Some(BinOp::DividedBy),
+        _ => None,
     }
 }
 
