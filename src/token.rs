@@ -14,6 +14,7 @@ pub enum TokenKind {
     Let,
     Label,
     Mod,
+    Pub,
     While,
     OpenParen,
     CloseParen,

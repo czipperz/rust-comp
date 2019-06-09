@@ -23,15 +23,21 @@ pub fn parse<'a>(
 }
 
 fn expect_top_level<'a>(parser: &mut Parser<'a>) -> Result<TopLevel<'a>, Error> {
-    one_of(
+    let visibility = if parser.expect_token(TokenKind::Pub).is_ok() {
+        Visibility::Public
+    } else {
+        Visibility::Private
+    };
+    let kind = one_of(
         parser,
         &mut [expect_toplevel_fn, expect_mod][..],
         Error::Expected("expression", parser.span()),
-    )
+    )?;
+    Ok(TopLevel { kind, visibility })
 }
 
-fn expect_toplevel_fn<'a>(parser: &mut Parser<'a>) -> Result<TopLevel<'a>, Error> {
-    expect_fn(parser).map(TopLevel::Function)
+fn expect_toplevel_fn<'a>(parser: &mut Parser<'a>) -> Result<TopLevelKind<'a>, Error> {
+    expect_fn(parser).map(TopLevelKind::Function)
 }
 
 fn expect_fn<'a>(parser: &mut Parser<'a>) -> Result<Function<'a>, Error> {
@@ -62,11 +68,11 @@ fn expect_parameter<'a>(parser: &mut Parser<'a>) -> Result<Parameter<'a>, Error>
     Ok(Parameter { name, type_ })
 }
 
-fn expect_mod<'a>(parser: &mut Parser<'a>) -> Result<TopLevel<'a>, Error> {
+fn expect_mod<'a>(parser: &mut Parser<'a>) -> Result<TopLevelKind<'a>, Error> {
     parser.expect_token(TokenKind::Mod)?;
     let name = parser.expect_label()?;
     parser.expect_token(TokenKind::Semicolon)?;
-    Ok(TopLevel::ModFile(ModFile { mod_: name }))
+    Ok(TopLevelKind::ModFile(ModFile { mod_: name }))
 }
 
 #[cfg(test)]
@@ -167,6 +173,6 @@ mod tests {
         let mut parser = Parser::new(contents, &tokens, eofpos);
         let mod_ = expect_mod(&mut parser).unwrap();
         assert_eq!(parser.index, tokens.len());
-        assert_eq!(mod_, TopLevel::ModFile(ModFile { mod_: "x" }));
+        assert_eq!(mod_, TopLevelKind::ModFile(ModFile { mod_: "x" }));
     }
 }

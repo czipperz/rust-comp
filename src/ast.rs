@@ -1,5 +1,17 @@
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum TopLevel<'a> {
+pub struct TopLevel<'a> {
+    pub kind: TopLevelKind<'a>,
+    pub visibility: Visibility,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Visibility {
+    Private,
+    Public,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum TopLevelKind<'a> {
     Function(Function<'a>),
     ModFile(ModFile<'a>),
 }
