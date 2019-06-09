@@ -8,6 +8,7 @@ pub struct Token {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum TokenKind {
+    Const,
     Else,
     Fn,
     If,

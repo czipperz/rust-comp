@@ -124,6 +124,8 @@ pub enum Type<'a> {
     Named(NamedType<'a>),
     Ref(Box<Type<'a>>),
     RefMut(Box<Type<'a>>),
+    PtrConst(Box<Type<'a>>),
+    PtrMut(Box<Type<'a>>),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

@@ -28,6 +28,7 @@ pub fn read_tokens<'a>(file: usize, contents: &str) -> Result<(Vec<Token>, Pos),
     keywords.insert("=", TokenKind::Set);
     keywords.insert("==", TokenKind::Equals);
     keywords.insert("=>", TokenKind::FatArrow);
+    keywords.insert("const", TokenKind::Const);
     keywords.insert("else", TokenKind::Else);
     keywords.insert("fn", TokenKind::Fn);
     keywords.insert("if", TokenKind::If);
@@ -219,6 +220,24 @@ mod tests {
         assert_eq!(
             read_tokens(0, "  \n  "),
             Ok((vec![], Pos { file: 0, index: 5 }))
+        );
+    }
+
+    #[test]
+    fn test_read_tokens_const() {
+        assert_eq!(
+            read_tokens(0, "const"),
+            Ok((
+                vec![Token {
+                    kind: TokenKind::Const,
+                    span: Span {
+                        file: 0,
+                        start: 0,
+                        end: 5
+                    },
+                }],
+                Pos { file: 0, index: 5 }
+            ))
         );
     }
 
