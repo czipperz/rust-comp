@@ -38,6 +38,7 @@ pub struct Path<'a> {
 pub struct Function<'a> {
     pub name: &'a str,
     pub parameters: Vec<Parameter<'a>>,
+    pub return_type: Type<'a>,
     pub body: Block<'a>,
 }
 
