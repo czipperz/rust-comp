@@ -82,6 +82,7 @@ impl BinOp {
             TokenValue::ForwardSlash => Some(BinOp::DividedBy),
             TokenValue::Equals => Some(BinOp::EqualTo),
             TokenValue::NotEquals => Some(BinOp::NotEqualTo),
+            TokenValue::Set => Some(BinOp::SetTo),
             _ => None,
         }
     }
@@ -92,6 +93,7 @@ impl BinOp {
             BinOp::Times | BinOp::DividedBy => 7,
             BinOp::Plus | BinOp::Minus => 8,
             BinOp::EqualTo | BinOp::NotEqualTo => 13,
+            BinOp::SetTo => 17,
         }
     }
 
@@ -102,6 +104,7 @@ impl BinOp {
             BinOp::Times | BinOp::DividedBy => 6,
             BinOp::Plus | BinOp::Minus => 7,
             BinOp::EqualTo | BinOp::NotEqualTo => 13,
+            BinOp::SetTo => 17,
         }
     }
 }

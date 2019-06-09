@@ -78,6 +78,7 @@ pub enum BinOp {
     DividedBy,
     EqualTo,
     NotEqualTo,
+    SetTo,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
