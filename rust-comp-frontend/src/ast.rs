@@ -105,6 +105,8 @@ pub enum BinOp {
     EqualTo,
     NotEqualTo,
     SetTo,
+    And,
+    Or,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

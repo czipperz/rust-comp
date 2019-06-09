@@ -14,6 +14,7 @@ pub fn read_tokens<'a>(file: usize, contents: &str) -> Result<(Vec<Token>, Pos),
     let mut keywords = HashMap::new();
     keywords.insert("!=", TokenKind::NotEquals);
     keywords.insert("&", TokenKind::Ampersand);
+    keywords.insert("&&", TokenKind::And);
     keywords.insert("(", TokenKind::OpenParen);
     keywords.insert(")", TokenKind::CloseParen);
     keywords.insert("*", TokenKind::Star);
@@ -39,6 +40,7 @@ pub fn read_tokens<'a>(file: usize, contents: &str) -> Result<(Vec<Token>, Pos),
     keywords.insert("use", TokenKind::Use);
     keywords.insert("while", TokenKind::While);
     keywords.insert("{", TokenKind::OpenCurly);
+    keywords.insert("||", TokenKind::Or);
     keywords.insert("}", TokenKind::CloseCurly);
 
     let mut tagged_iter = TaggedIter::new(file, contents);
@@ -94,7 +96,7 @@ pub fn read_tokens<'a>(file: usize, contents: &str) -> Result<(Vec<Token>, Pos),
                         tagged_iter.advance();
                     }
                 }
-                if ch == ':' && tagged_iter.peek() == Some(':') {
+                if ":&|".contains(ch) && tagged_iter.peek() == Some(ch) {
                     tagged_iter.advance();
                 }
                 span.end = tagged_iter.pos().index;
@@ -110,7 +112,7 @@ pub fn read_tokens<'a>(file: usize, contents: &str) -> Result<(Vec<Token>, Pos),
 }
 
 fn is_symbol(ch: char) -> bool {
-    let symbols = "!&()*+,-/:;=>{}";
+    let symbols = "!&()*+,-/:;=>{|}";
     ch.is_ascii() && symbols.as_bytes().binary_search(&(ch as u8)).is_ok()
 }
 
@@ -740,6 +742,42 @@ mod tests {
             Ok((
                 vec![Token {
                     kind: TokenKind::NotEquals,
+                    span: Span {
+                        file: 0,
+                        start: 0,
+                        end: 2,
+                    },
+                }],
+                Pos { file: 0, index: 2 }
+            ))
+        );
+    }
+
+    #[test]
+    fn test_read_tokens_and() {
+        assert_eq!(
+            read_tokens(0, "&&"),
+            Ok((
+                vec![Token {
+                    kind: TokenKind::And,
+                    span: Span {
+                        file: 0,
+                        start: 0,
+                        end: 2,
+                    },
+                }],
+                Pos { file: 0, index: 2 }
+            ))
+        );
+    }
+
+    #[test]
+    fn test_read_tokens_or() {
+        assert_eq!(
+            read_tokens(0, "||"),
+            Ok((
+                vec![Token {
+                    kind: TokenKind::Or,
                     span: Span {
                         file: 0,
                         start: 0,

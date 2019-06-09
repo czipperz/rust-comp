@@ -83,6 +83,8 @@ impl BinOp {
             TokenKind::Equals => Some(BinOp::EqualTo),
             TokenKind::NotEquals => Some(BinOp::NotEqualTo),
             TokenKind::Set => Some(BinOp::SetTo),
+            TokenKind::And => Some(BinOp::And),
+            TokenKind::Or => Some(BinOp::Or),
             _ => None,
         }
     }
@@ -93,6 +95,7 @@ impl BinOp {
             BinOp::Times | BinOp::DividedBy => 7,
             BinOp::Plus | BinOp::Minus => 8,
             BinOp::EqualTo | BinOp::NotEqualTo => 13,
+            BinOp::And | BinOp::Or => 14,
             BinOp::SetTo => 17,
         }
     }
@@ -104,6 +107,7 @@ impl BinOp {
             BinOp::Times | BinOp::DividedBy => 6,
             BinOp::Plus | BinOp::Minus => 7,
             BinOp::EqualTo | BinOp::NotEqualTo => 13,
+            BinOp::And | BinOp::Or => 13,
             BinOp::SetTo => 17,
         }
     }

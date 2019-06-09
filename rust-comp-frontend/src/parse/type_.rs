@@ -5,7 +5,17 @@ use crate::ast::*;
 use crate::token::TokenKind;
 
 pub fn expect_type<'a>(parser: &mut Parser<'a, '_>) -> Result<Type<'a>, Error> {
-    if parser.expect_token(TokenKind::Ampersand).is_ok() {
+    if parser.expect_token(TokenKind::And).is_ok() {
+        if parser.expect_token(TokenKind::Mut).is_ok() {
+            Ok(Type::Ref(Box::new(Type::RefMut(Box::new(expect_type(
+                parser,
+            )?)))))
+        } else {
+            Ok(Type::Ref(Box::new(Type::Ref(Box::new(expect_type(
+                parser,
+            )?)))))
+        }
+    } else if parser.expect_token(TokenKind::Ampersand).is_ok() {
         if parser.expect_token(TokenKind::Mut).is_ok() {
             Ok(Type::RefMut(Box::new(expect_type(parser)?)))
         } else {
@@ -66,6 +76,19 @@ mod tests {
         assert_eq!(
             type_,
             Type::Ref(Box::new(Type::Ref(Box::new(Type::Named(NamedType {
+                name: "abc"
+            })))))
+        );
+    }
+
+    #[test]
+    fn test_expect_type_ref_ref_mut() {
+        let (index, len, type_) = parse(expect_type, "&&mut abc");
+        let type_ = type_.unwrap();
+        assert_eq!(index, len);
+        assert_eq!(
+            type_,
+            Type::Ref(Box::new(Type::RefMut(Box::new(Type::Named(NamedType {
                 name: "abc"
             })))))
         );
