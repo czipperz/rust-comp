@@ -4,25 +4,9 @@ use super::parser::Parser;
 use super::type_::expect_type;
 use super::Error;
 use crate::ast::*;
-use crate::pos::Pos;
 use crate::token::*;
 
-pub fn parse<'a>(
-    file_contents: &'a str,
-    tokens: &'a [Token],
-    eofpos: Pos,
-) -> Result<Vec<TopLevel<'a>>, Error> {
-    let mut parser = Parser::new(file_contents, tokens, eofpos);
-    let top_levels = many(&mut parser, expect_top_level)?;
-
-    if parser.index < tokens.len() {
-        Err(Error::Expected("top level item", parser.span()))
-    } else {
-        Ok(top_levels)
-    }
-}
-
-fn expect_top_level<'a>(parser: &mut Parser<'a>) -> Result<TopLevel<'a>, Error> {
+pub fn expect_top_level<'a>(parser: &mut Parser<'a>) -> Result<TopLevel<'a>, Error> {
     let visibility = if parser.expect_token(TokenKind::Pub).is_ok() {
         Visibility::Public
     } else {
@@ -90,14 +74,6 @@ fn expect_use<'a>(parser: &mut Parser<'a>) -> Result<TopLevelKind<'a>, Error> {
 mod tests {
     use super::*;
     use crate::lex::read_tokens;
-
-    #[test]
-    fn test_parse_random_inputs_should_error() {
-        let contents = "a b c";
-        let (tokens, eofpos) = read_tokens(0, contents).unwrap();
-        let top_levels = parse(contents, &tokens, eofpos);
-        assert!(top_levels.is_err());
-    }
 
     #[test]
     fn test_expect_fn_invalid() {
