@@ -1,3 +1,5 @@
+#![feature(custom_attribute)]
+
 use structopt::StructOpt;
 
 #[derive(StructOpt, Debug)]

@@ -1,14 +1,9 @@
-mod ast;
 mod diagnostic;
-mod lex;
-mod opt;
-mod parse;
-mod pos;
-mod read_file;
 mod run;
-mod token;
 
-use run::Error;
+use crate::run::Error;
+use rust_comp_frontend::*;
+use rust_comp_opt::parse;
 use std::time;
 
 fn main() {
@@ -24,7 +19,7 @@ fn main() {
 fn run_main() -> Result<(), Error> {
     let start = time::Instant::now();
 
-    let args = opt::parse();
+    let args = parse();
     diagnostic::print_duration("Arguments", start.elapsed());
 
     run::run(diagnostic::Diagnostic::new(args.files), args.opt)?;

@@ -88,6 +88,18 @@ dependencies = [
 name = "rust-comp"
 version = "0.1.0"
 dependencies = [
+ "rust-comp-frontend 0.1.0",
+ "rust-comp-opt 0.1.0",
+]
+
+[[package]]
+name = "rust-comp-frontend"
+version = "0.1.0"
+
+[[package]]
+name = "rust-comp-opt"
+version = "0.1.0"
+dependencies = [
  "structopt 0.2.17 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 

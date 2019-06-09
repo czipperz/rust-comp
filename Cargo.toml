@@ -4,7 +4,9 @@ version = "0.1.0"
 authors = ["Chris Gregory <czipperz@gmail.com>"]
 edition = "2018"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[workspace]
+members = ["rust-comp-frontend", "rust-comp-opt"]
 
 [dependencies]
-structopt = "0.2"
+rust-comp-opt = { path = "rust-comp-opt" }
+rust-comp-frontend = { path = "rust-comp-frontend" }

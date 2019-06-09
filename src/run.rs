@@ -1,5 +1,6 @@
 use crate::diagnostic::*;
-use crate::*;
+use rust_comp_opt::Opt;
+use rust_comp_frontend::*;
 use std::io;
 
 pub enum Error {
@@ -19,7 +20,7 @@ impl From<()> for Error {
     }
 }
 
-pub fn run(mut diagnostic: Diagnostic, _opt: opt::Opt) -> Result<(), Error> {
+pub fn run(mut diagnostic: Diagnostic, _opt: Opt) -> Result<(), Error> {
     let start = std::time::Instant::now();
     let mut lines = 0;
     let mut bytes = 0;
