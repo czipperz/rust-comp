@@ -63,27 +63,23 @@ fn expect_path<'a>(parser: &mut Parser<'a, '_>) -> Result<Path<'a>, Error> {
 
 #[cfg(test)]
 mod tests {
+    use super::super::test::parse;
     use super::*;
-    use crate::lex::read_tokens;
     use crate::pos::Span;
 
     #[test]
     fn test_expect_mod() {
-        let contents = "mod x;";
-        let (tokens, eofpos) = read_tokens(0, contents).unwrap();
-        let mut parser = Parser::new(contents, &tokens, eofpos);
-        let mod_ = expect_mod(&mut parser).unwrap();
-        assert_eq!(parser.index, tokens.len());
+        let (index, len, mod_) = parse(expect_mod, "mod x;");
+        let mod_ = mod_.unwrap();
+        assert_eq!(index, len);
         assert_eq!(mod_, TopLevelKind::ModFile(ModFile { mod_: "x" }));
     }
 
     #[test]
     fn test_expect_use_label() {
-        let contents = "use x;";
-        let (tokens, eofpos) = read_tokens(0, contents).unwrap();
-        let mut parser = Parser::new(contents, &tokens, eofpos);
-        let mod_ = expect_use(&mut parser).unwrap();
-        assert_eq!(parser.index, tokens.len());
+        let (index, len, mod_) = parse(expect_use, "use x;");
+        let mod_ = mod_.unwrap();
+        assert_eq!(index, len);
         assert_eq!(
             mod_,
             TopLevelKind::Use(Use {
@@ -95,11 +91,9 @@ mod tests {
 
     #[test]
     fn test_expect_use_long_path() {
-        let contents = "use x::y::z;";
-        let (tokens, eofpos) = read_tokens(0, contents).unwrap();
-        let mut parser = Parser::new(contents, &tokens, eofpos);
-        let mod_ = expect_use(&mut parser).unwrap();
-        assert_eq!(parser.index, tokens.len());
+        let (index, len, mod_) = parse(expect_use, "use x::y::z;");
+        let mod_ = mod_.unwrap();
+        assert_eq!(index, len);
         assert_eq!(
             mod_,
             TopLevelKind::Use(Use {
@@ -113,31 +107,25 @@ mod tests {
 
     #[test]
     fn test_expect_visibility_nothing() {
-        let contents = "fn";
-        let (tokens, eofpos) = read_tokens(0, contents).unwrap();
-        let mut parser = Parser::new(contents, &tokens, eofpos);
-        let visibility = expect_visibility(&mut parser).unwrap();
-        assert_eq!(parser.index, 0);
+        let (index, _, visibility) = parse(expect_visibility, "fn");
+        let visibility = visibility.unwrap();
+        assert_eq!(index, 0);
         assert_eq!(visibility, Visibility::Private);
     }
 
     #[test]
     fn test_expect_visibility_pub() {
-        let contents = "pub";
-        let (tokens, eofpos) = read_tokens(0, contents).unwrap();
-        let mut parser = Parser::new(contents, &tokens, eofpos);
-        let visibility = expect_visibility(&mut parser).unwrap();
-        assert_eq!(parser.index, tokens.len());
+        let (index, len, visibility) = parse(expect_visibility, "pub");
+        let visibility = visibility.unwrap();
+        assert_eq!(index, len);
         assert_eq!(visibility, Visibility::Public);
     }
 
     #[test]
     fn test_expect_visibility_path() {
-        let contents = "pub(x::y)";
-        let (tokens, eofpos) = read_tokens(0, contents).unwrap();
-        let mut parser = Parser::new(contents, &tokens, eofpos);
-        let visibility = expect_visibility(&mut parser).unwrap();
-        assert_eq!(parser.index, tokens.len());
+        let (index, len, visibility) = parse(expect_visibility, "pub(x::y)");
+        let visibility = visibility.unwrap();
+        assert_eq!(index, len);
         assert_eq!(
             visibility,
             Visibility::Path(Path {
@@ -148,13 +136,11 @@ mod tests {
 
     #[test]
     fn test_expect_visibility_path_no_closing_paren() {
-        let contents = "pub(x::y";
-        let (tokens, eofpos) = read_tokens(0, contents).unwrap();
-        let mut parser = Parser::new(contents, &tokens, eofpos);
-        let err = expect_visibility(&mut parser).unwrap_err();
-        assert_eq!(parser.index, tokens.len());
+        let (index, len, visibility) = parse(expect_visibility, "pub(x::y");
+        let error = visibility.unwrap_err();
+        assert_eq!(index, len);
         assert_eq!(
-            err,
+            error,
             Error::ExpectedToken(
                 TokenKind::CloseParen,
                 Span {
@@ -168,11 +154,9 @@ mod tests {
 
     #[test]
     fn test_expect_visibility_nothing_in_parens() {
-        let contents = "pub()";
-        let (tokens, eofpos) = read_tokens(0, contents).unwrap();
-        let mut parser = Parser::new(contents, &tokens, eofpos);
-        let visibility = expect_visibility(&mut parser).unwrap();
-        assert_eq!(parser.index, tokens.len());
+        let (index, len, visibility) = parse(expect_visibility, "pub()");
+        let visibility = visibility.unwrap();
+        assert_eq!(index, len);
         assert_eq!(visibility, Visibility::Public);
     }
 }
