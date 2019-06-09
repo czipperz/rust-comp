@@ -6,7 +6,7 @@ use crate::ast::*;
 use crate::token::TokenValue;
 
 pub fn expect_expression<'a>(parser: &mut Parser<'a>) -> Result<Expression<'a>, Error> {
-    one_of(
+    let base = one_of(
         parser,
         &mut [
             expect_variable_expression,
@@ -16,7 +16,38 @@ pub fn expect_expression<'a>(parser: &mut Parser<'a>) -> Result<Expression<'a>, 
             expect_while_expression,
         ][..],
         Error::Expected("expression", parser.span()),
-    )
+    )?;
+    expression_chain(parser, base)
+}
+
+pub fn expression_chain<'a>(parser: &mut Parser<'a>, base: Expression<'a>) -> Result<Expression<'a>, Error> {
+    if parser.expect_token(TokenValue::Plus).is_ok() {
+        Ok(Expression::Binary(Binary {
+            left: Box::new(base),
+            op: BinOp::Plus,
+            right: Box::new(expect_expression(parser)?),
+        }))
+    } else if parser.expect_token(TokenValue::Minus).is_ok() {
+        Ok(Expression::Binary(Binary {
+            left: Box::new(base),
+            op: BinOp::Minus,
+            right: Box::new(expect_expression(parser)?),
+        }))
+    } else if parser.expect_token(TokenValue::Star).is_ok() {
+        Ok(Expression::Binary(Binary {
+            left: Box::new(base),
+            op: BinOp::Times,
+            right: Box::new(expect_expression(parser)?),
+        }))
+    } else if parser.expect_token(TokenValue::ForwardSlash).is_ok() {
+        Ok(Expression::Binary(Binary {
+            left: Box::new(base),
+            op: BinOp::DividedBy,
+            right: Box::new(expect_expression(parser)?),
+        }))
+    } else {
+        Ok(base)
+    }
 }
 
 fn expect_variable_expression<'a>(parser: &mut Parser<'a>) -> Result<Expression<'a>, Error> {
@@ -233,6 +264,74 @@ mod tests {
                     expression: None,
                 },
             })
+        );
+    }
+
+    #[test]
+    fn test_expect_expression_handles_plus_expressions() {
+        let contents = "a + b";
+        let (tokens, eofpos) = read_tokens(0, contents).unwrap();
+        let mut parser = Parser::new(contents, &tokens, eofpos);
+        let expression = expect_expression(&mut parser).unwrap();
+        assert_eq!(parser.index, tokens.len());
+        assert_eq!(
+            expression,
+            Expression::Binary(Binary {
+                left: Box::new(Expression::Variable(Variable { name: "a" })),
+                op: BinOp::Plus,
+                right: Box::new(Expression::Variable(Variable { name: "b" }))
+            }),
+        );
+    }
+
+    #[test]
+    fn test_expect_expression_handles_minus_expressions() {
+        let contents = "a - b";
+        let (tokens, eofpos) = read_tokens(0, contents).unwrap();
+        let mut parser = Parser::new(contents, &tokens, eofpos);
+        let expression = expect_expression(&mut parser).unwrap();
+        assert_eq!(parser.index, tokens.len());
+        assert_eq!(
+            expression,
+            Expression::Binary(Binary {
+                left: Box::new(Expression::Variable(Variable { name: "a" })),
+                op: BinOp::Minus,
+                right: Box::new(Expression::Variable(Variable { name: "b" }))
+            }),
+        );
+    }
+
+    #[test]
+    fn test_expect_expression_handles_times_expressions() {
+        let contents = "a * b";
+        let (tokens, eofpos) = read_tokens(0, contents).unwrap();
+        let mut parser = Parser::new(contents, &tokens, eofpos);
+        let expression = expect_expression(&mut parser).unwrap();
+        assert_eq!(parser.index, tokens.len());
+        assert_eq!(
+            expression,
+            Expression::Binary(Binary {
+                left: Box::new(Expression::Variable(Variable { name: "a" })),
+                op: BinOp::Times,
+                right: Box::new(Expression::Variable(Variable { name: "b" }))
+            }),
+        );
+    }
+
+    #[test]
+    fn test_expect_expression_handles_divided_by_expressions() {
+        let contents = "a / b";
+        let (tokens, eofpos) = read_tokens(0, contents).unwrap();
+        let mut parser = Parser::new(contents, &tokens, eofpos);
+        let expression = expect_expression(&mut parser).unwrap();
+        assert_eq!(parser.index, tokens.len());
+        assert_eq!(
+            expression,
+            Expression::Binary(Binary {
+                left: Box::new(Expression::Variable(Variable { name: "a" })),
+                op: BinOp::DividedBy,
+                right: Box::new(Expression::Variable(Variable { name: "b" }))
+            }),
         );
     }
 }

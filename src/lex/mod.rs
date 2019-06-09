@@ -14,8 +14,12 @@ pub fn read_tokens<'a>(file: usize, contents: &str) -> Result<(Vec<Token>, Pos),
     let mut keywords = HashMap::new();
     keywords.insert("(", TokenValue::OpenParen);
     keywords.insert(")", TokenValue::CloseParen);
+    keywords.insert("*", TokenValue::Star);
+    keywords.insert("+", TokenValue::Plus);
     keywords.insert(",", TokenValue::Comma);
+    keywords.insert("-", TokenValue::Minus);
     keywords.insert("->", TokenValue::ThinArrow);
+    keywords.insert("/", TokenValue::ForwardSlash);
     keywords.insert(":", TokenValue::Colon);
     keywords.insert(";", TokenValue::Semicolon);
     keywords.insert("=", TokenValue::Set);
@@ -90,7 +94,7 @@ pub fn read_tokens<'a>(file: usize, contents: &str) -> Result<(Vec<Token>, Pos),
 }
 
 fn is_symbol(ch: char) -> bool {
-    let symbols = "(),-:;=>{}";
+    let symbols = "()*+,-/:;=>{}";
     ch.is_ascii() && symbols.as_bytes().binary_search(&(ch as u8)).is_ok()
 }
 
@@ -511,6 +515,78 @@ mod tests {
                     },
                 }],
                 Pos { file: 0, index: 2 }
+            ))
+        );
+    }
+
+    #[test]
+    fn test_read_tokens_plus() {
+        assert_eq!(
+            read_tokens(0, "+"),
+            Ok((
+                vec![Token {
+                    value: TokenValue::Plus,
+                    span: Span {
+                        file: 0,
+                        start: 0,
+                        end: 1,
+                    },
+                }],
+                Pos { file: 0, index: 1 }
+            ))
+        );
+    }
+
+    #[test]
+    fn test_read_tokens_minus() {
+        assert_eq!(
+            read_tokens(0, "-"),
+            Ok((
+                vec![Token {
+                    value: TokenValue::Minus,
+                    span: Span {
+                        file: 0,
+                        start: 0,
+                        end: 1,
+                    },
+                }],
+                Pos { file: 0, index: 1 }
+            ))
+        );
+    }
+
+    #[test]
+    fn test_read_tokens_star() {
+        assert_eq!(
+            read_tokens(0, "*"),
+            Ok((
+                vec![Token {
+                    value: TokenValue::Star,
+                    span: Span {
+                        file: 0,
+                        start: 0,
+                        end: 1,
+                    },
+                }],
+                Pos { file: 0, index: 1 }
+            ))
+        );
+    }
+
+    #[test]
+    fn test_read_tokens_forward_slash() {
+        assert_eq!(
+            read_tokens(0, "/"),
+            Ok((
+                vec![Token {
+                    value: TokenValue::ForwardSlash,
+                    span: Span {
+                        file: 0,
+                        start: 0,
+                        end: 1,
+                    },
+                }],
+                Pos { file: 0, index: 1 }
             ))
         );
     }

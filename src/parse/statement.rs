@@ -49,6 +49,7 @@ fn expect_expression_statement<'a>(parser: &mut Parser<'a>) -> Result<Statement<
         Expression::Block(_) => (),
         Expression::If(_) => (),
         Expression::While(_) => (),
+        Expression::Binary(_) => (),
     }
     Ok(Statement::Expression(expression))
 }

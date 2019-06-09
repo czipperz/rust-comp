@@ -36,6 +36,7 @@ pub enum Expression<'a> {
     Block(Block<'a>),
     If(If<'a>),
     While(While<'a>),
+    Binary(Binary<'a>),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -60,6 +61,21 @@ pub enum Else<'a> {
 pub struct While<'a> {
     pub condition: Box<Expression<'a>>,
     pub block: Block<'a>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Binary<'a> {
+    pub left: Box<Expression<'a>>,
+    pub op: BinOp,
+    pub right: Box<Expression<'a>>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum BinOp {
+    Plus,
+    Minus,
+    Times,
+    DividedBy,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
