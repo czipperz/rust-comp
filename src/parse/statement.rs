@@ -6,7 +6,7 @@ use super::Error;
 use crate::ast::*;
 use crate::token::*;
 
-pub fn expect_statement<'a>(parser: &mut Parser<'a>) -> Result<Statement<'a>, Error> {
+pub fn expect_statement<'a>(parser: &mut Parser<'a, '_>) -> Result<Statement<'a>, Error> {
     one_of(
         parser,
         &mut [
@@ -18,7 +18,7 @@ pub fn expect_statement<'a>(parser: &mut Parser<'a>) -> Result<Statement<'a>, Er
     )
 }
 
-fn expect_let_statement<'a>(parser: &mut Parser<'a>) -> Result<Statement<'a>, Error> {
+fn expect_let_statement<'a>(parser: &mut Parser<'a, '_>) -> Result<Statement<'a>, Error> {
     parser.expect_token(TokenKind::Let)?;
     let name = parser.expect_label()?;
     let type_ = if parser.expect_token(TokenKind::Colon).is_ok() {
@@ -35,13 +35,13 @@ fn expect_let_statement<'a>(parser: &mut Parser<'a>) -> Result<Statement<'a>, Er
     Ok(Statement::Let(Let { name, type_, value }))
 }
 
-fn expect_empty_statement<'a>(parser: &mut Parser<'a>) -> Result<Statement<'a>, Error> {
+fn expect_empty_statement<'a>(parser: &mut Parser<'a, '_>) -> Result<Statement<'a>, Error> {
     parser
         .expect_token(TokenKind::Semicolon)
         .map(|_| Statement::Empty)
 }
 
-fn expect_expression_statement<'a>(parser: &mut Parser<'a>) -> Result<Statement<'a>, Error> {
+fn expect_expression_statement<'a>(parser: &mut Parser<'a, '_>) -> Result<Statement<'a>, Error> {
     let expression = expect_expression(parser)?;
     match expression {
         Expression::Variable(_) => parser.expect_token(TokenKind::Semicolon)?,

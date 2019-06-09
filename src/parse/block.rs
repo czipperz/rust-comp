@@ -6,7 +6,7 @@ use super::Error;
 use crate::ast::*;
 use crate::token::TokenKind;
 
-pub fn expect_block<'a>(parser: &mut Parser<'a>) -> Result<Block<'a>, Error> {
+pub fn expect_block<'a>(parser: &mut Parser<'a, '_>) -> Result<Block<'a>, Error> {
     parser.expect_token(TokenKind::OpenCurly)?;
 
     let mut statements = Vec::new();

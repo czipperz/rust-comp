@@ -2,15 +2,15 @@ use super::Error;
 use crate::pos::*;
 use crate::token::*;
 
-pub struct Parser<'a> {
+pub struct Parser<'a, 't> {
     file_contents: &'a str,
-    tokens: &'a [Token],
+    tokens: &'t [Token],
     eofpos: Pos,
     pub index: usize,
 }
 
-impl<'a> Parser<'a> {
-    pub fn new(file_contents: &'a str, tokens: &'a [Token], eofpos: Pos) -> Self {
+impl<'a, 't> Parser<'a, 't> {
+    pub fn new(file_contents: &'a str, tokens: &'t [Token], eofpos: Pos) -> Self {
         Parser {
             file_contents,
             tokens,

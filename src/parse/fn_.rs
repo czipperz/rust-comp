@@ -6,7 +6,7 @@ use super::type_::expect_type;
 use crate::ast::*;
 use crate::token::TokenKind;
 
-pub fn expect_fn<'a>(parser: &mut Parser<'a>) -> Result<Function<'a>, Error> {
+pub fn expect_fn<'a>(parser: &mut Parser<'a, '_>) -> Result<Function<'a>, Error> {
     parser.expect_token(TokenKind::Fn)?;
     let name = parser.expect_label()?;
     let parameters = expect_parameters(parser)?;
@@ -20,7 +20,7 @@ pub fn expect_fn<'a>(parser: &mut Parser<'a>) -> Result<Function<'a>, Error> {
     })
 }
 
-fn expect_parameters<'a>(parser: &mut Parser<'a>) -> Result<Vec<Parameter<'a>>, Error> {
+fn expect_parameters<'a>(parser: &mut Parser<'a, '_>) -> Result<Vec<Parameter<'a>>, Error> {
     parser.expect_token(TokenKind::OpenParen)?;
     let parameters = many_separator(parser, expect_parameter, |parser| {
         parser.expect_token(TokenKind::Comma)
@@ -29,14 +29,14 @@ fn expect_parameters<'a>(parser: &mut Parser<'a>) -> Result<Vec<Parameter<'a>>, 
     Ok(parameters)
 }
 
-fn expect_parameter<'a>(parser: &mut Parser<'a>) -> Result<Parameter<'a>, Error> {
+fn expect_parameter<'a>(parser: &mut Parser<'a, '_>) -> Result<Parameter<'a>, Error> {
     let name = parser.expect_label()?;
     parser.expect_token(TokenKind::Colon)?;
     let type_ = expect_type(parser)?;
     Ok(Parameter { name, type_ })
 }
 
-fn expect_return_type<'a>(parser: &mut Parser<'a>) -> Result<Type<'a>, Error> {
+fn expect_return_type<'a>(parser: &mut Parser<'a, '_>) -> Result<Type<'a>, Error> {
     if parser.expect_token(TokenKind::ThinArrow).is_ok() {
         expect_type(parser)
     } else {

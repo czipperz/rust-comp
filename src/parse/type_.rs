@@ -4,7 +4,7 @@ use super::Error;
 use crate::ast::*;
 use crate::token::TokenKind;
 
-pub fn expect_type<'a>(parser: &mut Parser<'a>) -> Result<Type<'a>, Error> {
+pub fn expect_type<'a>(parser: &mut Parser<'a, '_>) -> Result<Type<'a>, Error> {
     if parser.expect_token(TokenKind::Ampersand).is_ok() {
         if parser.expect_token(TokenKind::Mut).is_ok() {
             Ok(Type::RefMut(Box::new(expect_type(parser)?)))

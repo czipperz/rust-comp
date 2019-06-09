@@ -7,12 +7,12 @@ use crate::token::TokenKind;
 
 type Precedence = i8;
 
-pub fn expect_expression<'a>(parser: &mut Parser<'a>) -> Result<Expression<'a>, Error> {
+pub fn expect_expression<'a>(parser: &mut Parser<'a, '_>) -> Result<Expression<'a>, Error> {
     let base = expect_expression_basic(parser)?;
     expression_chain(parser, base)
 }
 
-fn expect_expression_basic<'a>(parser: &mut Parser<'a>) -> Result<Expression<'a>, Error> {
+fn expect_expression_basic<'a>(parser: &mut Parser<'a, '_>) -> Result<Expression<'a>, Error> {
     one_of(
         parser,
         &mut [
@@ -27,7 +27,7 @@ fn expect_expression_basic<'a>(parser: &mut Parser<'a>) -> Result<Expression<'a>
 }
 
 fn expression_chain<'a>(
-    parser: &mut Parser<'a>,
+    parser: &mut Parser<'a, '_>,
     mut expr: Expression<'a>,
 ) -> Result<Expression<'a>, Error> {
     let mut stack = Vec::new();
@@ -109,28 +109,28 @@ impl BinOp {
     }
 }
 
-fn expect_variable_expression<'a>(parser: &mut Parser<'a>) -> Result<Expression<'a>, Error> {
+fn expect_variable_expression<'a>(parser: &mut Parser<'a, '_>) -> Result<Expression<'a>, Error> {
     parser
         .expect_label()
         .map(|name| Expression::Variable(Variable { name }))
 }
 
-fn expect_paren_expression<'a>(parser: &mut Parser<'a>) -> Result<Expression<'a>, Error> {
+fn expect_paren_expression<'a>(parser: &mut Parser<'a, '_>) -> Result<Expression<'a>, Error> {
     parser.expect_token(TokenKind::OpenParen)?;
     let expression = expect_expression(parser)?;
     parser.expect_token(TokenKind::CloseParen)?;
     Ok(Expression::Paren(Box::new(expression)))
 }
 
-fn expect_block_expression<'a>(parser: &mut Parser<'a>) -> Result<Expression<'a>, Error> {
+fn expect_block_expression<'a>(parser: &mut Parser<'a, '_>) -> Result<Expression<'a>, Error> {
     expect_block(parser).map(Expression::Block)
 }
 
-fn expect_if_expression<'a>(parser: &mut Parser<'a>) -> Result<Expression<'a>, Error> {
+fn expect_if_expression<'a>(parser: &mut Parser<'a, '_>) -> Result<Expression<'a>, Error> {
     expect_if_expression_(parser).map(Expression::If)
 }
 
-fn expect_if_expression_<'a>(parser: &mut Parser<'a>) -> Result<If<'a>, Error> {
+fn expect_if_expression_<'a>(parser: &mut Parser<'a, '_>) -> Result<If<'a>, Error> {
     parser.expect_token(TokenKind::If)?;
     let condition = expect_expression(parser)?;
     let then = expect_block(parser)?;
@@ -146,11 +146,11 @@ fn expect_if_expression_<'a>(parser: &mut Parser<'a>) -> Result<If<'a>, Error> {
     })
 }
 
-fn expect_else_expression<'a>(parser: &mut Parser<'a>) -> Result<Else<'a>, Error> {
-    fn else_expression_if<'a>(parser: &mut Parser<'a>) -> Result<Else<'a>, Error> {
+fn expect_else_expression<'a>(parser: &mut Parser<'a, '_>) -> Result<Else<'a>, Error> {
+    fn else_expression_if<'a>(parser: &mut Parser<'a, '_>) -> Result<Else<'a>, Error> {
         expect_if_expression_(parser).map(Else::If)
     }
-    fn else_expression_block<'a>(parser: &mut Parser<'a>) -> Result<Else<'a>, Error> {
+    fn else_expression_block<'a>(parser: &mut Parser<'a, '_>) -> Result<Else<'a>, Error> {
         expect_block(parser).map(Else::Block)
     }
 
@@ -161,7 +161,7 @@ fn expect_else_expression<'a>(parser: &mut Parser<'a>) -> Result<Else<'a>, Error
     )
 }
 
-fn expect_while_expression<'a>(parser: &mut Parser<'a>) -> Result<Expression<'a>, Error> {
+fn expect_while_expression<'a>(parser: &mut Parser<'a, '_>) -> Result<Expression<'a>, Error> {
     parser.expect_token(TokenKind::While)?;
     let condition = expect_expression(parser)?;
     let block = expect_block(parser)?;
