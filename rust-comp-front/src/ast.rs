@@ -118,7 +118,7 @@ pub struct FunctionCall<'a> {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Let<'a> {
-    pub name: &'a str,
+    pub name: Option<&'a str>,
     pub type_: Option<Type<'a>>,
     pub value: Option<Expression<'a>>,
 }
@@ -137,6 +137,7 @@ pub enum Type<'a> {
     PtrConst(Box<Type<'a>>),
     PtrMut(Box<Type<'a>>),
     Tuple(Vec<Type<'a>>),
+    Hole,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

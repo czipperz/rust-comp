@@ -36,6 +36,8 @@ pub fn expect_type<'a>(parser: &mut Parser<'a, '_>) -> Result<Type<'a>, Error> {
         let types = many_separator(parser, expect_type, |p| p.expect_token(TokenKind::Comma))?;
         parser.expect_token(TokenKind::CloseParen)?;
         Ok(Type::Tuple(types))
+    } else if parser.expect_token(TokenKind::Underscore).is_ok() {
+        Ok(Type::Hole)
     } else {
         Ok(Type::Named(NamedType {
             name: parser.expect_label()?,
@@ -177,5 +179,13 @@ mod tests {
                 Type::Ref(Box::new(Type::Named(NamedType { name: "ghi" })))
             ])
         );
+    }
+
+    #[test]
+    fn test_expect_type_hole() {
+        let (index, len, type_) = parse(expect_type, "_");
+        let type_ = type_.unwrap();
+        assert_eq!(index, len);
+        assert_eq!(type_, Type::Hole);
     }
 }

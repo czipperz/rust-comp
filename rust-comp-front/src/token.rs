@@ -38,6 +38,7 @@ pub enum TokenKind {
     Set,
     Star,
     ThinArrow,
+    Underscore,
     Use,
     While,
 }
@@ -78,6 +79,7 @@ impl fmt::Display for TokenKind {
                 Set => "`=`",
                 Star => "`*`",
                 ThinArrow => "`->`",
+                Underscore => "`_`",
                 Use => "`use`",
                 While => "`while`",
             }

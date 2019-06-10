@@ -20,7 +20,13 @@ pub fn expect_statement<'a>(parser: &mut Parser<'a, '_>) -> Result<Statement<'a>
 
 fn expect_let_statement<'a>(parser: &mut Parser<'a, '_>) -> Result<Statement<'a>, Error> {
     parser.expect_token(TokenKind::Let)?;
-    let name = parser.expect_label()?;
+    let name = if let Ok(name) = parser.expect_label() {
+        Some(name)
+    } else if parser.expect_token(TokenKind::Underscore).is_ok() {
+        None
+    } else {
+        return Err(Error::ExpectedToken(TokenKind::Label, parser.span()));
+    };
     let type_ = if parser.expect_token(TokenKind::Colon).is_ok() {
         Some(expect_type(parser)?)
     } else {
@@ -95,7 +101,7 @@ mod tests {
         assert_eq!(
             statement,
             Statement::Let(Let {
-                name: "x",
+                name: Some("x"),
                 type_: Some(Type::Named(NamedType { name: "i32" })),
                 value: Some(Expression::Variable(Variable { name: "y" })),
             })
@@ -103,14 +109,14 @@ mod tests {
     }
 
     #[test]
-    fn test_let_statement_with_value() {
-        let (index, len, statement) = parse(expect_let_statement, "let x = y;");
+    fn test_let_statement_with_value_and_hole() {
+        let (index, len, statement) = parse(expect_let_statement, "let _ = y;");
         let statement = statement.unwrap();
         assert_eq!(index, len);
         assert_eq!(
             statement,
             Statement::Let(Let {
-                name: "x",
+                name: None,
                 type_: None,
                 value: Some(Expression::Variable(Variable { name: "y" })),
             })
@@ -125,7 +131,7 @@ mod tests {
         assert_eq!(
             statement,
             Statement::Let(Let {
-                name: "x",
+                name: Some("x"),
                 type_: None,
                 value: None
             })

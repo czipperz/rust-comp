@@ -29,6 +29,7 @@ pub fn read_tokens<'a>(file: usize, contents: &str) -> Result<(Vec<Token>, Pos),
     keywords.insert("=", TokenKind::Set);
     keywords.insert("==", TokenKind::Equals);
     keywords.insert("=>", TokenKind::FatArrow);
+    keywords.insert("_", TokenKind::Underscore);
     keywords.insert("const", TokenKind::Const);
     keywords.insert("else", TokenKind::Else);
     keywords.insert("fn", TokenKind::Fn);
@@ -112,7 +113,7 @@ pub fn read_tokens<'a>(file: usize, contents: &str) -> Result<(Vec<Token>, Pos),
 }
 
 fn is_symbol(ch: char) -> bool {
-    let symbols = "!&()*+,-/:;=>{|}";
+    let symbols = "!&()*+,-/:;=>_{|}";
     ch.is_ascii() && symbols.as_bytes().binary_search(&(ch as u8)).is_ok()
 }
 
@@ -785,6 +786,24 @@ mod tests {
                     },
                 }],
                 Pos { file: 0, index: 2 }
+            ))
+        );
+    }
+
+    #[test]
+    fn test_read_tokens_underscore() {
+        assert_eq!(
+            read_tokens(0, "_"),
+            Ok((
+                vec![Token {
+                    kind: TokenKind::Underscore,
+                    span: Span {
+                        file: 0,
+                        start: 0,
+                        end: 1,
+                    },
+                }],
+                Pos { file: 0, index: 1 }
             ))
         );
     }
