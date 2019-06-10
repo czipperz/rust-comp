@@ -1,23 +1,10 @@
 use crate::diagnostic::*;
 use rust_comp_frontend::*;
 use rust_comp_opt::Opt;
-use std::io;
 
 pub enum Error {
-    Io(io::Error),
+    File(String),
     Handled,
-}
-
-impl From<io::Error> for Error {
-    fn from(e: io::Error) -> Self {
-        Error::Io(e)
-    }
-}
-
-impl From<()> for Error {
-    fn from(_: ()) -> Self {
-        Error::Handled
-    }
 }
 
 pub fn run(mut diagnostic: Diagnostic, _opt: Opt) -> Result<(), Error> {
@@ -25,7 +12,11 @@ pub fn run(mut diagnostic: Diagnostic, _opt: Opt) -> Result<(), Error> {
     let mut lines = 0;
     let mut bytes = 0;
     for i in 0..diagnostic.files.len() {
-        diagnostic.add_file_contents(read_file::read_file(&diagnostic.files[i])?);
+        let file_contents = match read_file::read_file(&diagnostic.files[i]) {
+            Ok(file_contents) => file_contents,
+            Err(_) => return Err(Error::File(diagnostic.files.into_iter().nth(i).unwrap())),
+        };
+        diagnostic.add_file_contents(file_contents);
         bytes += diagnostic.files_contents[i].len();
         lines += diagnostic.files_lines[i].len();
     }
@@ -48,15 +39,16 @@ pub fn run(mut diagnostic: Diagnostic, _opt: Opt) -> Result<(), Error> {
     Ok(())
 }
 
-fn handle_lex_error(diagnostic: &Diagnostic, e: lex::Error) {
+fn handle_lex_error(diagnostic: &Diagnostic, e: lex::Error) -> Error {
     match e {
         lex::Error::UnterminatedBlockComment(pos) => {
             diagnostic.print_pos_error(format_args!("unterminated block comment"), pos)
         }
     }
+    Error::Handled
 }
 
-fn handle_parse_error(diagnostic: &Diagnostic, e: parse::Error) {
+fn handle_parse_error(diagnostic: &Diagnostic, e: parse::Error) -> Error {
     match e {
         parse::Error::ExpectedToken(token, span) => {
             diagnostic.print_span_error(format_args!("expected {:?}", token), span)
@@ -65,4 +57,5 @@ fn handle_parse_error(diagnostic: &Diagnostic, e: parse::Error) {
             diagnostic.print_span_error(format_args!("expected {}", thing), span)
         }
     }
+    Error::Handled
 }

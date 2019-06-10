@@ -30,7 +30,7 @@ fn run_main() -> Result<(), Error> {
 
 fn handle_error(e: Error) {
     match e {
-        Error::Io(e) => eprintln!("{}", e),
+        Error::File(f) => eprintln!("Error: Could not read from {}", f),
         Error::Handled => (),
     }
 }
