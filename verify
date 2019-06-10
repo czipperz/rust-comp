@@ -12,7 +12,7 @@ if ! cargo fmt --all -- --check; then
     exit 1
 fi
 
-if ! RUST_BACKTRACE=1 cargo test --all; then
+if ! RUST_BACKTRACE=1 cargo test --all -q; then
     echo >&2
     echo "ERROR: Tests are failing" >&2
     exit 1
