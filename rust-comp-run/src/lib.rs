@@ -51,7 +51,7 @@ fn handle_lex_error(diagnostic: &Diagnostic, e: lex::Error) -> Error {
 fn handle_parse_error(diagnostic: &Diagnostic, e: parse::Error) -> Error {
     match e {
         parse::Error::ExpectedToken(token, span) => {
-            diagnostic.print_span_error(format_args!("expected {:?}", token), span)
+            diagnostic.print_span_error(format_args!("expected {}", token), span)
         }
         parse::Error::Expected(thing, span) => {
             diagnostic.print_span_error(format_args!("expected {}", thing), span)
