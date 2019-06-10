@@ -1,4 +1,4 @@
-use crate::diagnostic::*;
+use rust_comp_diagnostic::*;
 use rust_comp_frontend::*;
 use rust_comp_opt::Opt;
 

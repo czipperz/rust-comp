@@ -1,9 +1,6 @@
-mod diagnostic;
-mod run;
-
-use crate::run::Error;
-use rust_comp_frontend::*;
+use rust_comp_diagnostic::{print_duration, Diagnostic};
 use rust_comp_opt::parse;
+use rust_comp_run::{run, Error};
 use std::time;
 
 fn main() {
@@ -20,11 +17,11 @@ fn run_main() -> Result<(), Error> {
     let start = time::Instant::now();
 
     let args = parse();
-    diagnostic::print_duration("Arguments", start.elapsed());
+    print_duration("Arguments", start.elapsed());
 
-    run::run(diagnostic::Diagnostic::new(args.files), args.opt)?;
+    run(Diagnostic::new(args.files), args.opt)?;
 
-    diagnostic::print_duration("Total", start.elapsed());
+    print_duration("Total", start.elapsed());
     Ok(())
 }
 
