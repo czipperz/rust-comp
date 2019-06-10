@@ -6,11 +6,9 @@ if [ "$(git diff --name-only | wc -l)" != 0 ]; then
     exit 1
 fi
 
-if ! cargo fmt --all -- --check; then
-    echo >&2
-    echo "ERROR: Code is not properly formatted" >&2
-    exit 1
-fi
+# auto format changed sources then add the formatting to the stage
+cargo fmt --all
+git add $(git diff --name-only --staged)
 
 if ! RUST_BACKTRACE=1 cargo test --all -q; then
     echo >&2
