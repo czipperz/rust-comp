@@ -38,6 +38,7 @@ pub fn read_tokens<'a>(file: usize, contents: &str) -> Result<(Vec<Token>, Pos),
     keywords.insert("mod", TokenKind::Mod);
     keywords.insert("mut", TokenKind::Mut);
     keywords.insert("pub", TokenKind::Pub);
+    keywords.insert("struct", TokenKind::Struct);
     keywords.insert("use", TokenKind::Use);
     keywords.insert("while", TokenKind::While);
     keywords.insert("{", TokenKind::OpenCurly);
@@ -438,6 +439,24 @@ mod tests {
                     },
                 }],
                 Pos { file: 0, index: 5 }
+            ))
+        );
+    }
+
+    #[test]
+    fn test_read_tokens_struct() {
+        assert_eq!(
+            read_tokens(0, "struct"),
+            Ok((
+                vec![Token {
+                    kind: TokenKind::Struct,
+                    span: Span {
+                        file: 0,
+                        start: 0,
+                        end: 6
+                    },
+                }],
+                Pos { file: 0, index: 6 }
             ))
         );
     }

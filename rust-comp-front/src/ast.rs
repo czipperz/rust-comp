@@ -14,8 +14,22 @@ pub enum Visibility<'a> {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum TopLevelKind<'a> {
     Function(Function<'a>),
+    Struct(Struct<'a>),
     ModFile(ModFile<'a>),
     Use(Use<'a>),
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Struct<'a> {
+    pub name: &'a str,
+    pub fields: Vec<Field<'a>>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Field<'a> {
+    pub visibility: Visibility<'a>,
+    pub name: &'a str,
+    pub type_: Type<'a>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
