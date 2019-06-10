@@ -97,11 +97,11 @@ dependencies = [
 name = "rust-comp-diagnostic"
 version = "0.1.0"
 dependencies = [
- "rust-comp-frontend 0.1.0",
+ "rust-comp-front 0.1.0",
 ]
 
 [[package]]
-name = "rust-comp-frontend"
+name = "rust-comp-front"
 version = "0.1.0"
 
 [[package]]
@@ -116,7 +116,7 @@ name = "rust-comp-run"
 version = "0.1.0"
 dependencies = [
  "rust-comp-diagnostic 0.1.0",
- "rust-comp-frontend 0.1.0",
+ "rust-comp-front 0.1.0",
  "rust-comp-opt 0.1.0",
 ]
 

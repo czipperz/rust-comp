@@ -1,5 +1,5 @@
 [package]
-name = "rust-comp-frontend"
+name = "rust-comp-front"
 version = "0.1.0"
 authors = ["Chris Gregory <czipperz@gmail.com>"]
 edition = "2018"

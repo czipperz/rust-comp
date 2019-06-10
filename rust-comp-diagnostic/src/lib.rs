@@ -1,4 +1,4 @@
-use rust_comp_frontend::pos::{Pos, Span};
+use rust_comp_front::pos::{Pos, Span};
 use std::fmt;
 use std::io;
 

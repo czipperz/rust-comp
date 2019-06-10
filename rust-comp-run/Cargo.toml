@@ -6,5 +6,5 @@ edition = "2018"
 
 [dependencies]
 rust-comp-diagnostic = { path = "../rust-comp-diagnostic" }
-rust-comp-frontend = { path = "../rust-comp-frontend" }
+rust-comp-front = { path = "../rust-comp-front" }
 rust-comp-opt = { path = "../rust-comp-opt" }
