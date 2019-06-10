@@ -73,8 +73,8 @@ fn collapse_stack<'a>(
 }
 
 impl BinOp {
-    fn from_token(tv: TokenKind) -> Option<BinOp> {
-        match tv {
+    fn from_token(token: TokenKind) -> Option<BinOp> {
+        match token {
             TokenKind::Plus => Some(BinOp::Plus),
             TokenKind::Minus => Some(BinOp::Minus),
             TokenKind::Star => Some(BinOp::Times),
