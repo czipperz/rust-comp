@@ -42,6 +42,13 @@ pub struct Enum<'a> {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Variant<'a> {
     pub name: &'a str,
+    pub data: VariantData<'a>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum VariantData<'a> {
+    None,
+    Tuple(Vec<Type<'a>>),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
