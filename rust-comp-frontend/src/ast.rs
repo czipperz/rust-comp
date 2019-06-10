@@ -63,6 +63,7 @@ pub enum Expression<'a> {
     If(If<'a>),
     While(While<'a>),
     Binary(Binary<'a>),
+    FunctionCall(FunctionCall<'a>),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -107,6 +108,12 @@ pub enum BinOp {
     SetTo,
     And,
     Or,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct FunctionCall<'a> {
+    pub function: Box<Expression<'a>>,
+    pub arguments: Vec<Expression<'a>>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

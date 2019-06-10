@@ -33,26 +33,41 @@ fn expression_chain<'a>(
     let mut stack = Vec::new();
     let mut max_precedence = 20;
 
-    while let Some(op) = parser.peek().and_then(BinOp::from_token) {
-        parser.index += 1;
-        let next = expect_expression_basic(parser)?;
-        if op.precedence() <= max_precedence {
-            max_precedence = op.max_precedence();
-            stack.push((expr, op));
-        } else {
-            // consolidate stack up to op.max_precedence()
-            while !stack.is_empty() && stack.last().unwrap().1.max_precedence() < op.precedence() {
-                let (left, lop) = stack.pop().unwrap();
-                max_precedence = lop.max_precedence();
-                expr = Expression::Binary(Binary {
-                    left: Box::new(left),
-                    op: lop,
-                    right: Box::new(expr),
-                });
+    while let Some(token) = parser.peek() {
+        if let Some(op) = BinOp::from_token(token) {
+            parser.index += 1;
+            let next = expect_expression_basic(parser)?;
+            if op.precedence() <= max_precedence {
+                max_precedence = op.max_precedence();
+                stack.push((expr, op));
+            } else {
+                // consolidate stack up to op.max_precedence()
+                while !stack.is_empty()
+                    && stack.last().unwrap().1.max_precedence() < op.precedence()
+                {
+                    let (left, lop) = stack.pop().unwrap();
+                    max_precedence = lop.max_precedence();
+                    expr = Expression::Binary(Binary {
+                        left: Box::new(left),
+                        op: lop,
+                        right: Box::new(expr),
+                    });
+                }
+                stack.push((expr, op));
             }
-            stack.push((expr, op));
+            expr = next;
+        } else if token == TokenKind::OpenParen {
+            parser.index += 1;
+            expr = Expression::FunctionCall(FunctionCall {
+                function: Box::new(expr),
+                arguments: many_separator(parser, expect_expression, |p| {
+                    p.expect_token(TokenKind::Comma)
+                })?,
+            });
+            parser.expect_token(TokenKind::CloseParen)?;
+        } else {
+            break;
         }
-        expr = next;
     }
 
     Ok(collapse_stack(expr, stack))
@@ -412,6 +427,85 @@ mod tests {
                 op: BinOp::Minus,
                 right: Box::new(Expression::Variable(Variable { name: "d" })),
             }),
+        );
+    }
+
+    #[test]
+    fn test_expect_expression_function_call_no_args() {
+        let (index, len, expression) = parse(expect_expression, "f()");
+        let expression = expression.unwrap();
+        assert_eq!(index, len);
+        assert_eq!(
+            expression,
+            Expression::FunctionCall(FunctionCall {
+                function: Box::new(Expression::Variable(Variable { name: "f" })),
+                arguments: vec![],
+            }),
+        );
+    }
+
+    #[test]
+    fn test_expect_expression_function_call_one_arg() {
+        let (index, len, expression) = parse(expect_expression, "f(x + y)");
+        let expression = expression.unwrap();
+        assert_eq!(index, len);
+        assert_eq!(
+            expression,
+            Expression::FunctionCall(FunctionCall {
+                function: Box::new(Expression::Variable(Variable { name: "f" })),
+                arguments: vec![Expression::Binary(Binary {
+                    left: Box::new(Expression::Variable(Variable { name: "x" })),
+                    op: BinOp::Plus,
+                    right: Box::new(Expression::Variable(Variable { name: "y" })),
+                })],
+            }),
+        );
+    }
+
+    #[test]
+    fn test_expect_expression_function_call_two_args() {
+        let (index, len, expression) = parse(expect_expression, "f(x + y, z && a)");
+        let expression = expression.unwrap();
+        assert_eq!(index, len);
+        assert_eq!(
+            expression,
+            Expression::FunctionCall(FunctionCall {
+                function: Box::new(Expression::Variable(Variable { name: "f" })),
+                arguments: vec![
+                    Expression::Binary(Binary {
+                        left: Box::new(Expression::Variable(Variable { name: "x" })),
+                        op: BinOp::Plus,
+                        right: Box::new(Expression::Variable(Variable { name: "y" })),
+                    }),
+                    Expression::Binary(Binary {
+                        left: Box::new(Expression::Variable(Variable { name: "z" })),
+                        op: BinOp::And,
+                        right: Box::new(Expression::Variable(Variable { name: "a" })),
+                    })
+                ],
+            }),
+        );
+    }
+
+    #[test]
+    fn test_expect_expression_function_call_tighter_than_normal_ops() {
+        let (index, len, expression) = parse(expect_expression, "x * f(y) + z");
+        let expression = expression.unwrap();
+        assert_eq!(index, len);
+        assert_eq!(
+            expression,
+            Expression::Binary(Binary {
+                left: Box::new(Expression::Binary(Binary {
+                    left: Box::new(Expression::Variable(Variable { name: "x" })),
+                    op: BinOp::Times,
+                    right: Box::new(Expression::FunctionCall(FunctionCall {
+                        function: Box::new(Expression::Variable(Variable { name: "f" })),
+                        arguments: vec![Expression::Variable(Variable { name: "y" })],
+                    })),
+                })),
+                op: BinOp::Plus,
+                right: Box::new(Expression::Variable(Variable { name: "z" })),
+            })
         );
     }
 }
