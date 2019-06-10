@@ -32,6 +32,7 @@ pub fn read_tokens<'a>(file: usize, contents: &str) -> Result<(Vec<Token>, Pos),
     keywords.insert("_", TokenKind::Underscore);
     keywords.insert("const", TokenKind::Const);
     keywords.insert("else", TokenKind::Else);
+    keywords.insert("false", TokenKind::False);
     keywords.insert("fn", TokenKind::Fn);
     keywords.insert("if", TokenKind::If);
     keywords.insert("let", TokenKind::Let);
@@ -39,6 +40,7 @@ pub fn read_tokens<'a>(file: usize, contents: &str) -> Result<(Vec<Token>, Pos),
     keywords.insert("mut", TokenKind::Mut);
     keywords.insert("pub", TokenKind::Pub);
     keywords.insert("struct", TokenKind::Struct);
+    keywords.insert("true", TokenKind::True);
     keywords.insert("use", TokenKind::Use);
     keywords.insert("while", TokenKind::While);
     keywords.insert("{", TokenKind::OpenCurly);
@@ -264,6 +266,24 @@ mod tests {
     }
 
     #[test]
+    fn test_read_tokens_false() {
+        assert_eq!(
+            read_tokens(0, "false"),
+            Ok((
+                vec![Token {
+                    kind: TokenKind::False,
+                    span: Span {
+                        file: 0,
+                        start: 0,
+                        end: 5
+                    },
+                }],
+                Pos { file: 0, index: 5 }
+            ))
+        );
+    }
+
+    #[test]
     fn test_read_tokens_fn_eof() {
         assert_eq!(
             read_tokens(0, "fn"),
@@ -403,6 +423,24 @@ mod tests {
                     },
                 }],
                 Pos { file: 0, index: 3 }
+            ))
+        );
+    }
+
+    #[test]
+    fn test_read_tokens_true() {
+        assert_eq!(
+            read_tokens(0, "true"),
+            Ok((
+                vec![Token {
+                    kind: TokenKind::True,
+                    span: Span {
+                        file: 0,
+                        start: 0,
+                        end: 4
+                    },
+                }],
+                Pos { file: 0, index: 4 }
             ))
         );
     }

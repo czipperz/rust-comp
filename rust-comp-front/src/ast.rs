@@ -78,6 +78,7 @@ pub enum Expression<'a> {
     While(While<'a>),
     Binary(Binary<'a>),
     FunctionCall(FunctionCall<'a>),
+    Bool(bool),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

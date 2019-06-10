@@ -21,6 +21,7 @@ fn expect_expression_basic<'a>(parser: &mut Parser<'a, '_>) -> Result<Expression
             expect_block_expression,
             expect_if_expression,
             expect_while_expression,
+            expect_bool_expression,
         ][..],
         Error::Expected("expression", parser.span()),
     )
@@ -189,6 +190,16 @@ fn expect_while_expression<'a>(parser: &mut Parser<'a, '_>) -> Result<Expression
     }))
 }
 
+fn expect_bool_expression<'a>(parser: &mut Parser<'a, '_>) -> Result<Expression<'a>, Error> {
+    if parser.expect_token(TokenKind::True).is_ok() {
+        Ok(Expression::Bool(true))
+    } else if parser.expect_token(TokenKind::False).is_ok() {
+        Ok(Expression::Bool(false))
+    } else {
+        Err(Error::Expected("bool expression", parser.span()))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::super::test::parse;
@@ -202,6 +213,22 @@ mod tests {
         let expression = expression.unwrap();
         assert_eq!(index, len);
         assert_eq!(expression, Expression::Variable(Variable { name: "ab" }));
+    }
+
+    #[test]
+    fn test_expect_bool_expression_true() {
+        let (index, len, expression) = parse(expect_bool_expression, "true");
+        let expression = expression.unwrap();
+        assert_eq!(index, len);
+        assert_eq!(expression, Expression::Bool(true));
+    }
+
+    #[test]
+    fn test_expect_bool_expression_false() {
+        let (index, len, expression) = parse(expect_bool_expression, "false");
+        let expression = expression.unwrap();
+        assert_eq!(index, len);
+        assert_eq!(expression, Expression::Bool(false));
     }
 
     #[test]

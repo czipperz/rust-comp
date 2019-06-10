@@ -57,6 +57,7 @@ fn expect_expression_statement<'a>(parser: &mut Parser<'a, '_>) -> Result<Statem
         Expression::While(_) => (),
         Expression::Binary(_) => parser.expect_token(TokenKind::Semicolon)?,
         Expression::FunctionCall(_) => parser.expect_token(TokenKind::Semicolon)?,
+        Expression::Bool(_) => parser.expect_token(TokenKind::Semicolon)?,
     }
     Ok(Statement::Expression(expression))
 }
@@ -223,6 +224,24 @@ mod tests {
                     file: 0,
                     start: 8,
                     end: 9,
+                }
+            )
+        );
+    }
+
+    #[test]
+    fn test_expect_expression_statement_bool_no_semicolon_should_error() {
+        let (index, len, statement) = parse(expect_expression_statement, "false");
+        let error = statement.unwrap_err();
+        assert_eq!(index, len);
+        assert_eq!(
+            error,
+            Error::ExpectedToken(
+                TokenKind::Semicolon,
+                Span {
+                    file: 0,
+                    start: 5,
+                    end: 6,
                 }
             )
         );
