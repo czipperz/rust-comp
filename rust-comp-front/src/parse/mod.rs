@@ -1,5 +1,6 @@
 mod block;
 mod combinator;
+mod enum_;
 mod expression;
 mod fn_;
 mod parser;

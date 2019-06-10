@@ -32,6 +32,7 @@ pub fn read_tokens<'a>(file: usize, contents: &str) -> Result<(Vec<Token>, Pos),
     keywords.insert("_", TokenKind::Underscore);
     keywords.insert("const", TokenKind::Const);
     keywords.insert("else", TokenKind::Else);
+    keywords.insert("enum", TokenKind::Enum);
     keywords.insert("false", TokenKind::False);
     keywords.insert("fn", TokenKind::Fn);
     keywords.insert("if", TokenKind::If);
@@ -254,6 +255,24 @@ mod tests {
             Ok((
                 vec![Token {
                     kind: TokenKind::Else,
+                    span: Span {
+                        file: 0,
+                        start: 0,
+                        end: 4
+                    },
+                }],
+                Pos { file: 0, index: 4 }
+            ))
+        );
+    }
+
+    #[test]
+    fn test_read_tokens_enum() {
+        assert_eq!(
+            read_tokens(0, "enum"),
+            Ok((
+                vec![Token {
+                    kind: TokenKind::Enum,
                     span: Span {
                         file: 0,
                         start: 0,

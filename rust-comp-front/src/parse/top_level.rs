@@ -1,4 +1,5 @@
 use super::combinator::*;
+use super::enum_::expect_enum;
 use super::fn_::expect_fn;
 use super::parser::Parser;
 use super::path::expect_path;
@@ -15,6 +16,7 @@ pub fn expect_top_level<'a>(parser: &mut Parser<'a, '_>) -> Result<TopLevel<'a>,
         &mut [
             expect_toplevel_fn,
             expect_toplevel_struct,
+            expect_toplevel_enum,
             expect_mod,
             expect_use,
         ][..],
@@ -29,6 +31,10 @@ fn expect_toplevel_fn<'a>(parser: &mut Parser<'a, '_>) -> Result<TopLevelKind<'a
 
 fn expect_toplevel_struct<'a>(parser: &mut Parser<'a, '_>) -> Result<TopLevelKind<'a>, Error> {
     expect_struct(parser).map(TopLevelKind::Struct)
+}
+
+fn expect_toplevel_enum<'a>(parser: &mut Parser<'a, '_>) -> Result<TopLevelKind<'a>, Error> {
+    expect_enum(parser).map(TopLevelKind::Enum)
 }
 
 fn expect_mod<'a>(parser: &mut Parser<'a, '_>) -> Result<TopLevelKind<'a>, Error> {

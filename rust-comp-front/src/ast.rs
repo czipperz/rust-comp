@@ -15,6 +15,7 @@ pub enum Visibility<'a> {
 pub enum TopLevelKind<'a> {
     Function(Function<'a>),
     Struct(Struct<'a>),
+    Enum(Enum<'a>),
     ModFile(ModFile<'a>),
     Use(Use<'a>),
 }
@@ -30,6 +31,17 @@ pub struct Field<'a> {
     pub visibility: Visibility<'a>,
     pub name: &'a str,
     pub type_: Type<'a>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Enum<'a> {
+    pub name: &'a str,
+    pub variants: Vec<Variant<'a>>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Variant<'a> {
+    pub name: &'a str,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
