@@ -286,4 +286,11 @@ mod tests {
         assert_eq!(index, len - 1);
         assert!(statement.is_ok());
     }
+
+    #[test]
+    fn test_expect_expression_statement_match_doesnt_consume_semicolon() {
+        let (index, len, statement) = parse(expect_expression_statement, "match b {};");
+        assert_eq!(index, len - 1);
+        assert!(statement.is_ok());
+    }
 }

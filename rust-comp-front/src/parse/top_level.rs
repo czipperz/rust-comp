@@ -20,7 +20,7 @@ pub fn expect_top_level<'a>(parser: &mut Parser<'a, '_>) -> Result<TopLevel<'a>,
             expect_mod,
             expect_use,
         ][..],
-        Error::Expected("expression", parser.span()),
+        Error::Expected("top level declaration", parser.span()),
     )?;
     Ok(TopLevel { kind, visibility })
 }
@@ -56,6 +56,39 @@ fn expect_use<'a>(parser: &mut Parser<'a, '_>) -> Result<TopLevelKind<'a>, Error
 mod tests {
     use super::super::test::parse;
     use super::*;
+    use crate::pos::Span;
+
+    #[test]
+    fn test_expect_top_level_works() {
+        let (index, len, top_level) = parse(expect_top_level, "pub mod x;");
+        let top_level = top_level.unwrap();
+        assert_eq!(index, len);
+        assert_eq!(
+            top_level,
+            TopLevel {
+                kind: TopLevelKind::ModFile(ModFile { mod_: "x" }),
+                visibility: Visibility::Public
+            }
+        );
+    }
+
+    #[test]
+    fn test_expect_top_level_fails() {
+        let (index, len, top_level) = parse(expect_top_level, "pub");
+        let error = top_level.unwrap_err();
+        assert_eq!(index, len);
+        assert_eq!(
+            error,
+            Error::Expected(
+                "top level declaration",
+                Span {
+                    file: 0,
+                    start: 3,
+                    end: 4
+                }
+            )
+        );
+    }
 
     #[test]
     fn test_expect_mod() {

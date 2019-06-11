@@ -33,4 +33,21 @@ mod tests {
         let top_levels = parse(contents, &tokens, eofpos);
         assert!(top_levels.is_err());
     }
+
+    #[test]
+    fn test_parse_no_input_should_be_ok() {
+        let contents = "";
+        let (tokens, eofpos) = read_tokens(0, contents).unwrap();
+        let top_levels = parse(contents, &tokens, eofpos);
+        let top_levels = top_levels.unwrap();
+        assert_eq!(top_levels.len(), 0);
+    }
+
+    #[test]
+    fn test_parse_top_level_error_cascades() {
+        let contents = "pub";
+        let (tokens, eofpos) = read_tokens(0, contents).unwrap();
+        let top_levels = parse(contents, &tokens, eofpos);
+        assert!(top_levels.is_err());
+    }
 }
