@@ -22,8 +22,8 @@ If you already have a file, skip this stop and go to [Run](#Run)
 
 If you don't have a file set up to performance test your code with, follow these
 steps:
-1. Make the report crate
-   * Go to the root of the rust-comp project
+1. Make the `target/report` crate
+   * Go to the `target` directory
    * Run `cargo new --lib report`
 2. Open in a text editor create a new file named `report/src/backup.rs`
    * Put inside it around 1/2 million lines of code.
@@ -63,11 +63,11 @@ can run the compiler against it.
 
 Analyze the program by directly running it:
 
-    ./target/release/rust-comp <ARGUMENTS>
+    ./target/release/rust-comp ./target/report/src/lib.rs
 
 Record a run with perf:
 
-    perf record -g ./target/release/rust-comp <ARGUMENTS>
+    perf record -g ./target/release/rust-comp ./target/report/src/lib.rs
 
 ## Analyze
 
