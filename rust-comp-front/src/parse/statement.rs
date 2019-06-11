@@ -58,6 +58,7 @@ fn expect_expression_statement<'a>(parser: &mut Parser<'a, '_>) -> Result<Statem
         Expression::Binary(_) => parser.expect_token(TokenKind::Semicolon)?,
         Expression::FunctionCall(_) => parser.expect_token(TokenKind::Semicolon)?,
         Expression::Bool(_) => parser.expect_token(TokenKind::Semicolon)?,
+        Expression::Tuple(_) => parser.expect_token(TokenKind::Semicolon)?,
     }
     Ok(Statement::Expression(expression))
 }

@@ -136,9 +136,26 @@ fn expect_variable_expression<'a>(parser: &mut Parser<'a, '_>) -> Result<Express
 
 fn expect_paren_expression<'a>(parser: &mut Parser<'a, '_>) -> Result<Expression<'a>, Error> {
     parser.expect_token(TokenKind::OpenParen)?;
-    let expression = expect_expression(parser)?;
-    parser.expect_token(TokenKind::CloseParen)?;
-    Ok(Expression::Paren(Box::new(expression)))
+    if parser.expect_token(TokenKind::CloseParen).is_ok() {
+        Ok(Expression::Tuple(vec![]))
+    } else {
+        let expression = expect_expression(parser)?;
+        if parser.expect_token(TokenKind::Comma).is_ok() {
+            let mut expressions = Vec::new();
+            expressions.push(expression);
+            while parser.expect_token(TokenKind::CloseParen).is_err() {
+                expressions.push(expect_expression(parser)?);
+                if parser.expect_token(TokenKind::Comma).is_err() {
+                    parser.expect_token(TokenKind::CloseParen)?;
+                    break;
+                }
+            }
+            Ok(Expression::Tuple(expressions))
+        } else {
+            parser.expect_token(TokenKind::CloseParen)?;
+            Ok(Expression::Paren(Box::new(expression)))
+        }
+    }
 }
 
 fn expect_block_expression<'a>(parser: &mut Parser<'a, '_>) -> Result<Expression<'a>, Error> {
@@ -239,6 +256,39 @@ mod tests {
         assert_eq!(
             expression,
             Expression::Paren(Box::new(Expression::Variable(Variable { name: "ab" })))
+        );
+    }
+
+    #[test]
+    fn test_expect_tuple_expression_0() {
+        let (index, len, expression) = parse(expect_expression, "()");
+        let expression = expression.unwrap();
+        assert_eq!(index, len);
+        assert_eq!(expression, Expression::Tuple(vec![]));
+    }
+
+    #[test]
+    fn test_expect_tuple_expression_1() {
+        let (index, len, expression) = parse(expect_expression, "(ab,)");
+        let expression = expression.unwrap();
+        assert_eq!(index, len);
+        assert_eq!(
+            expression,
+            Expression::Tuple(vec![Expression::Variable(Variable { name: "ab" })])
+        );
+    }
+
+    #[test]
+    fn test_expect_tuple_expression_2() {
+        let (index, len, expression) = parse(expect_expression, "(ab, cd)");
+        let expression = expression.unwrap();
+        assert_eq!(index, len);
+        assert_eq!(
+            expression,
+            Expression::Tuple(vec![
+                Expression::Variable(Variable { name: "ab" }),
+                Expression::Variable(Variable { name: "cd" })
+            ])
         );
     }
 

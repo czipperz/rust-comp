@@ -98,6 +98,7 @@ pub enum Expression<'a> {
     Binary(Binary<'a>),
     FunctionCall(FunctionCall<'a>),
     Bool(bool),
+    Tuple(Vec<Expression<'a>>),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
