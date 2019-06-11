@@ -22,7 +22,7 @@ pub fn expect_top_level<'a>(parser: &mut Parser<'a, '_>) -> Result<TopLevel<'a>,
         ][..],
         Error::Expected("top level declaration", parser.span()),
     )?;
-    Ok(TopLevel { kind, visibility })
+    Ok(TopLevel { visibility, kind })
 }
 
 fn expect_toplevel_fn<'a>(parser: &mut Parser<'a, '_>) -> Result<TopLevelKind<'a>, Error> {
@@ -66,8 +66,8 @@ mod tests {
         assert_eq!(
             top_level,
             TopLevel {
+                visibility: Visibility::Public,
                 kind: TopLevelKind::ModFile(ModFile { mod_: "x" }),
-                visibility: Visibility::Public
             }
         );
     }

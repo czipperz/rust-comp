@@ -1,7 +1,7 @@
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TopLevel<'a> {
-    pub kind: TopLevelKind<'a>,
     pub visibility: Visibility<'a>,
+    pub kind: TopLevelKind<'a>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
