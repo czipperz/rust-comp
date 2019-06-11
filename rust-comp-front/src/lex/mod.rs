@@ -118,7 +118,7 @@ pub fn read_tokens<'a>(file: usize, contents: &str) -> Result<(Vec<Token>, Pos),
 }
 
 fn is_symbol(ch: char) -> bool {
-    let symbols = "!&()*+,-/:;=>_{|}";
+    let symbols = "!&()*+,-/:;=>{|}";
     ch.is_ascii() && symbols.as_bytes().binary_search(&(ch as u8)).is_ok()
 }
 
@@ -899,6 +899,24 @@ mod tests {
                     },
                 }],
                 Pos { file: 0, index: 1 }
+            ))
+        );
+    }
+
+    #[test]
+    fn test_read_tokens_underscore_letter_is_label() {
+        assert_eq!(
+            read_tokens(0, "_a"),
+            Ok((
+                vec![Token {
+                    kind: TokenKind::Label,
+                    span: Span {
+                        file: 0,
+                        start: 0,
+                        end: 2,
+                    },
+                }],
+                Pos { file: 0, index: 2 }
             ))
         );
     }
