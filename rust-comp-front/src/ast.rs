@@ -95,6 +95,7 @@ pub enum Expression<'a> {
     Block(Block<'a>),
     If(If<'a>),
     While(While<'a>),
+    Match(Match<'a>),
     Binary(Binary<'a>),
     FunctionCall(FunctionCall<'a>),
     Bool(bool),
@@ -123,6 +124,25 @@ pub enum Else<'a> {
 pub struct While<'a> {
     pub condition: Box<Expression<'a>>,
     pub block: Block<'a>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Match<'a> {
+    pub value: Box<Expression<'a>>,
+    pub matches: Vec<MatchItem<'a>>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct MatchItem<'a> {
+    pub pattern: Pattern<'a>,
+    pub value: Expression<'a>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Pattern<'a> {
+    Named(&'a str),
+    Tuple(Vec<Pattern<'a>>),
+    NamedTuple(&'a str, Vec<Pattern<'a>>),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

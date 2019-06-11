@@ -49,18 +49,25 @@ fn expect_empty_statement<'a>(parser: &mut Parser<'a, '_>) -> Result<Statement<'
 
 fn expect_expression_statement<'a>(parser: &mut Parser<'a, '_>) -> Result<Statement<'a>, Error> {
     let expression = expect_expression(parser)?;
-    match expression {
-        Expression::Variable(_) => parser.expect_token(TokenKind::Semicolon)?,
-        Expression::Paren(_) => parser.expect_token(TokenKind::Semicolon)?,
-        Expression::Block(_) => (),
-        Expression::If(_) => (),
-        Expression::While(_) => (),
-        Expression::Binary(_) => parser.expect_token(TokenKind::Semicolon)?,
-        Expression::FunctionCall(_) => parser.expect_token(TokenKind::Semicolon)?,
-        Expression::Bool(_) => parser.expect_token(TokenKind::Semicolon)?,
-        Expression::Tuple(_) => parser.expect_token(TokenKind::Semicolon)?,
+    if needs_semicolon(&expression) {
+        parser.expect_token(TokenKind::Semicolon)?;
     }
     Ok(Statement::Expression(expression))
+}
+
+pub fn needs_semicolon(expression: &Expression<'_>) -> bool {
+    match *expression {
+        Expression::Variable(_) => true,
+        Expression::Paren(_) => true,
+        Expression::Block(_) => false,
+        Expression::If(_) => false,
+        Expression::While(_) => false,
+        Expression::Match(_) => false,
+        Expression::Binary(_) => true,
+        Expression::FunctionCall(_) => true,
+        Expression::Bool(_) => true,
+        Expression::Tuple(_) => true,
+    }
 }
 
 #[cfg(test)]

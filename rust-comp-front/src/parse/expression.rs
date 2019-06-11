@@ -1,5 +1,6 @@
 use super::block::expect_block;
 use super::combinator::*;
+use super::match_::expect_match;
 use super::parser::Parser;
 use super::Error;
 use crate::ast::*;
@@ -21,6 +22,7 @@ fn expect_expression_basic<'a>(parser: &mut Parser<'a, '_>) -> Result<Expression
             expect_block_expression,
             expect_if_expression,
             expect_while_expression,
+            expect_match_expression,
             expect_bool_expression,
         ][..],
         Error::Expected("expression", parser.span()),
@@ -205,6 +207,10 @@ fn expect_while_expression<'a>(parser: &mut Parser<'a, '_>) -> Result<Expression
         condition: Box::new(condition),
         block,
     }))
+}
+
+fn expect_match_expression<'a>(parser: &mut Parser<'a, '_>) -> Result<Expression<'a>, Error> {
+    expect_match(parser).map(Expression::Match)
 }
 
 fn expect_bool_expression<'a>(parser: &mut Parser<'a, '_>) -> Result<Expression<'a>, Error> {
