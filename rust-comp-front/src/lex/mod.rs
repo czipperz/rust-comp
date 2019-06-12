@@ -67,6 +67,7 @@ pub fn read_tokens<'a>(file: usize, contents: &str) -> Result<(Vec<Token>, Pos),
                 flush_temp(&keywords, &mut tokens, tagged_iter.contents(), span);
                 break;
             }
+
             Some(ch) if ch.is_whitespace() => {
                 // end the current token
                 flush_temp(&keywords, &mut tokens, tagged_iter.contents(), span);
@@ -83,6 +84,7 @@ pub fn read_tokens<'a>(file: usize, contents: &str) -> Result<(Vec<Token>, Pos),
                 }
                 span.start = tagged_iter.pos().index;
             }
+
             Some(ch) if is_symbol(ch) => {
                 if span.start != span.end {
                     // there is still a previous token, flush it
@@ -110,6 +112,7 @@ pub fn read_tokens<'a>(file: usize, contents: &str) -> Result<(Vec<Token>, Pos),
                 flush_temp_nonempty(&keywords, &mut tokens, tagged_iter.contents(), span);
                 span.start = span.end;
             }
+
             Some(_) => tagged_iter.advance(),
         }
     }
