@@ -1,7 +1,6 @@
-use rust_comp_diagnostic::{print_duration, Diagnostic};
+use rust_comp_diagnostic::Diagnostic;
 use rust_comp_opt::parse;
 use rust_comp_run::{run, Error};
-use std::time;
 
 fn main() {
     std::process::exit(match run_main() {
