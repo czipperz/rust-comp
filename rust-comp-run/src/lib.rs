@@ -27,25 +27,12 @@ pub fn run(mut diagnostic: Diagnostic, _opt: Opt) -> Result<(), Error> {
     let start = std::time::Instant::now();
     for i in 0..diagnostic.files.len() {
         let file_contents = &diagnostic.files_contents[i];
-        let (tokens, eofpos) =
-            lex::read_tokens(i, &file_contents).map_err(|e| handle_lex_error(&diagnostic, e))?;
-        //println!("{:?}", tokens);
-
-        let _top_levels = parse::parse(&file_contents, &tokens, eofpos)
+        let _top_levels = parse::parse_top_levels(&file_contents)
             .map_err(|e| handle_parse_error(&diagnostic, e))?;
         //println!("{:?}", top_levels);
     }
     print_duration("LexParse", start.elapsed());
     Ok(())
-}
-
-fn handle_lex_error(diagnostic: &Diagnostic, e: lex::Error) -> Error {
-    match e {
-        lex::Error::UnterminatedBlockComment(pos) => {
-            diagnostic.print_pos_error(format_args!("unterminated block comment"), pos)
-        }
-    }
-    Error::Handled
 }
 
 fn handle_parse_error(diagnostic: &Diagnostic, e: parse::Error) -> Error {
@@ -55,6 +42,9 @@ fn handle_parse_error(diagnostic: &Diagnostic, e: parse::Error) -> Error {
         }
         parse::Error::Expected(thing, span) => {
             diagnostic.print_span_error(format_args!("expected {}", thing), span)
+        }
+        parse::Error::Lex(lex::Error::UnterminatedBlockComment(pos)) => {
+            diagnostic.print_pos_error(format_args!("unterminated block comment"), pos)
         }
     }
     Error::Handled
