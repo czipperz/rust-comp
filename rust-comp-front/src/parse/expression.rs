@@ -21,8 +21,8 @@ fn expect_expression_basic<'a>(parser: &mut Parser<'a, '_>) -> Result<Expression
         Some(TokenKind::If) => expect_if_expression(parser),
         Some(TokenKind::While) => expect_while_expression(parser),
         Some(TokenKind::Match) => expect_match_expression(parser),
-        Some(TokenKind::True) => expect_bool_expression(parser),
-        Some(TokenKind::False) => expect_bool_expression(parser),
+        Some(TokenKind::True) => expect_true_expression(parser),
+        Some(TokenKind::False) => expect_false_expression(parser),
         _ => Err(Error::Expected("expression", parser.span())),
     }
 }
@@ -204,14 +204,14 @@ fn expect_match_expression<'a>(parser: &mut Parser<'a, '_>) -> Result<Expression
     expect_match(parser).map(Expression::Match)
 }
 
-fn expect_bool_expression<'a>(parser: &mut Parser<'a, '_>) -> Result<Expression<'a>, Error> {
-    if parser.expect_token(TokenKind::True).is_ok() {
-        Ok(Expression::Bool(true))
-    } else if parser.expect_token(TokenKind::False).is_ok() {
-        Ok(Expression::Bool(false))
-    } else {
-        Err(Error::Expected("bool expression", parser.span()))
-    }
+fn expect_true_expression<'a>(parser: &mut Parser<'a, '_>) -> Result<Expression<'a>, Error> {
+    parser.expect_token(TokenKind::True)?;
+    Ok(Expression::Bool(true))
+}
+
+fn expect_false_expression<'a>(parser: &mut Parser<'a, '_>) -> Result<Expression<'a>, Error> {
+    parser.expect_token(TokenKind::False)?;
+    Ok(Expression::Bool(false))
 }
 
 #[cfg(test)]
@@ -231,7 +231,7 @@ mod tests {
 
     #[test]
     fn test_expect_bool_expression_true() {
-        let (index, len, expression) = parse(expect_bool_expression, "true");
+        let (index, len, expression) = parse(expect_expression, "true");
         let expression = expression.unwrap();
         assert_eq!(index, len);
         assert_eq!(expression, Expression::Bool(true));
@@ -239,7 +239,7 @@ mod tests {
 
     #[test]
     fn test_expect_bool_expression_false() {
-        let (index, len, expression) = parse(expect_bool_expression, "false");
+        let (index, len, expression) = parse(expect_expression, "false");
         let expression = expression.unwrap();
         assert_eq!(index, len);
         assert_eq!(expression, Expression::Bool(false));
