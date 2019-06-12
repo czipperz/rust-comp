@@ -1,6 +1,7 @@
 use rust_comp_diagnostic::*;
 use rust_comp_front::*;
 use rust_comp_opt::Opt;
+use std::time;
 
 pub enum Error {
     File(String),
@@ -8,7 +9,6 @@ pub enum Error {
 }
 
 pub fn run(mut diagnostic: Diagnostic, _opt: Opt) -> Result<(), Error> {
-    let start = std::time::Instant::now();
     let mut lines = 0;
     let mut bytes = 0;
     for i in 0..diagnostic.files.len() {
@@ -22,20 +22,25 @@ pub fn run(mut diagnostic: Diagnostic, _opt: Opt) -> Result<(), Error> {
     }
     println!("Lines: {}", lines);
     println!("Bytes: {}", bytes);
-    print_duration("File", start.elapsed());
 
-    let start = std::time::Instant::now();
+    let mut lex_total = time::Duration::default();
+    let mut parse_total = time::Duration::default();
     for i in 0..diagnostic.files.len() {
         let file_contents = &diagnostic.files_contents[i];
+
+        let start = time::Instant::now();
         let (tokens, eofpos) =
             lex::read_tokens(i, &file_contents).map_err(|e| handle_lex_error(&diagnostic, e))?;
-        //println!("{:?}", tokens);
+        lex_total += start.elapsed();
 
+        let start = time::Instant::now();
         let _top_levels = parse::parse(&file_contents, &tokens, eofpos)
             .map_err(|e| handle_parse_error(&diagnostic, e))?;
-        //println!("{:?}", top_levels);
+        parse_total += start.elapsed();
     }
-    print_duration("LexParse", start.elapsed());
+
+    print_duration("Lex", lex_total);
+    print_duration("Parse", parse_total);
     Ok(())
 }
 

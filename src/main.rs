@@ -14,14 +14,8 @@ fn main() {
 }
 
 fn run_main() -> Result<(), Error> {
-    let start = time::Instant::now();
-
     let args = parse();
-    print_duration("Arguments", start.elapsed());
-
     run(Diagnostic::new(args.files), args.opt)?;
-
-    print_duration("Total", start.elapsed());
     Ok(())
 }
 
