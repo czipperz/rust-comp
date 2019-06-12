@@ -49,6 +49,9 @@ fn handle_lex_error(diagnostic: &Diagnostic, e: lex::Error) -> Error {
         lex::Error::UnterminatedBlockComment(pos) => {
             diagnostic.print_pos_error(format_args!("unterminated block comment"), pos)
         }
+        lex::Error::UnrecognizedControlChar(pos) => {
+            diagnostic.print_pos_error(format_args!("unrecognized control character"), pos)
+        }
     }
     Error::Handled
 }

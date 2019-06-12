@@ -8,6 +8,7 @@ use std::collections::HashMap;
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Error {
     UnterminatedBlockComment(Pos),
+    UnrecognizedControlChar(Pos),
 }
 
 pub fn read_tokens<'a>(file: usize, contents: &str) -> Result<(Vec<Token>, Pos), Error> {
@@ -111,6 +112,10 @@ pub fn read_tokens<'a>(file: usize, contents: &str) -> Result<(Vec<Token>, Pos),
 
                 flush_temp_nonempty(&keywords, &mut tokens, tagged_iter.contents(), span);
                 span.start = span.end;
+            }
+
+            Some(ch) if ch.is_control() => {
+                return Err(Error::UnrecognizedControlChar(tagged_iter.pos()))
             }
 
             Some(_) => tagged_iter.advance(),
@@ -1049,6 +1054,14 @@ mod tests {
         assert_eq!(
             read_tokens(0, "let /* abc \n def /* */ "),
             Err(Error::UnterminatedBlockComment(Pos { file: 0, index: 4 })),
+        );
+    }
+
+    #[test]
+    fn test_read_tokens_unrecognized_control_char() {
+        assert_eq!(
+            read_tokens(0, "\u{0002}"),
+            Err(Error::UnrecognizedControlChar(Pos { file: 0, index: 0 }))
         );
     }
 }
