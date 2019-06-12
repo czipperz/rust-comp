@@ -1,4 +1,3 @@
-use super::combinator::*;
 use super::enum_::expect_enum;
 use super::fn_::expect_fn;
 use super::parser::Parser;
@@ -11,17 +10,14 @@ use crate::token::*;
 
 pub fn expect_top_level<'a>(parser: &mut Parser<'a, '_>) -> Result<TopLevel<'a>, Error> {
     let visibility = expect_visibility(parser)?;
-    let kind = one_of(
-        parser,
-        &mut [
-            expect_toplevel_fn,
-            expect_toplevel_struct,
-            expect_toplevel_enum,
-            expect_mod,
-            expect_use,
-        ][..],
-        Error::Expected("top level declaration", parser.span()),
-    )?;
+    let kind = match parser.peek() {
+        Some(TokenKind::Fn) => expect_toplevel_fn(parser),
+        Some(TokenKind::Struct) => expect_toplevel_struct(parser),
+        Some(TokenKind::Enum) => expect_toplevel_enum(parser),
+        Some(TokenKind::Mod) => expect_mod(parser),
+        Some(TokenKind::Use) => expect_use(parser),
+        _ => Err(Error::Expected("top level declaration", parser.span())),
+    }?;
     Ok(TopLevel { visibility, kind })
 }
 

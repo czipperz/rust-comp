@@ -14,19 +14,17 @@ pub fn expect_expression<'a>(parser: &mut Parser<'a, '_>) -> Result<Expression<'
 }
 
 fn expect_expression_basic<'a>(parser: &mut Parser<'a, '_>) -> Result<Expression<'a>, Error> {
-    one_of(
-        parser,
-        &mut [
-            expect_variable_expression,
-            expect_paren_expression,
-            expect_block_expression,
-            expect_if_expression,
-            expect_while_expression,
-            expect_match_expression,
-            expect_bool_expression,
-        ][..],
-        Error::Expected("expression", parser.span()),
-    )
+    match parser.peek() {
+        Some(TokenKind::Label) => expect_variable_expression(parser),
+        Some(TokenKind::OpenParen) => expect_paren_expression(parser),
+        Some(TokenKind::OpenCurly) => expect_block_expression(parser),
+        Some(TokenKind::If) => expect_if_expression(parser),
+        Some(TokenKind::While) => expect_while_expression(parser),
+        Some(TokenKind::Match) => expect_match_expression(parser),
+        Some(TokenKind::True) => expect_bool_expression(parser),
+        Some(TokenKind::False) => expect_bool_expression(parser),
+        _ => Err(Error::Expected("expression", parser.span())),
+    }
 }
 
 fn expression_chain<'a>(
@@ -185,18 +183,11 @@ fn expect_if_expression_<'a>(parser: &mut Parser<'a, '_>) -> Result<If<'a>, Erro
 }
 
 fn expect_else_expression<'a>(parser: &mut Parser<'a, '_>) -> Result<Else<'a>, Error> {
-    fn else_expression_if<'a>(parser: &mut Parser<'a, '_>) -> Result<Else<'a>, Error> {
-        expect_if_expression_(parser).map(Else::If)
+    match parser.peek() {
+        Some(TokenKind::If) => expect_if_expression_(parser).map(Else::If),
+        Some(TokenKind::OpenCurly) => expect_block(parser).map(Else::Block),
+        _ => Err(Error::Expected("else expression", parser.span())),
     }
-    fn else_expression_block<'a>(parser: &mut Parser<'a, '_>) -> Result<Else<'a>, Error> {
-        expect_block(parser).map(Else::Block)
-    }
-
-    one_of(
-        parser,
-        &mut [else_expression_if, else_expression_block][..],
-        Error::Expected("else expression", parser.span()),
-    )
 }
 
 fn expect_while_expression<'a>(parser: &mut Parser<'a, '_>) -> Result<Expression<'a>, Error> {
