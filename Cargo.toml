@@ -6,6 +6,7 @@ edition = "2018"
 
 [workspace]
 members = ["rust-comp-run", "rust-comp-front", "rust-comp-diagnostic", "rust-comp-opt"]
+exclude = ["target/report"]
 
 [dependencies]
 rust-comp-run = { path = "rust-comp-run" }
