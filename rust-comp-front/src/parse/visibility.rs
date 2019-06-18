@@ -1,21 +1,22 @@
 use super::parser::Parser;
 use super::path::expect_path;
+use super::tree::*;
 use super::Error;
-use crate::ast::Visibility;
 use crate::token::TokenKind;
 
-pub fn expect_visibility<'a>(parser: &mut Parser<'a, '_>) -> Result<Visibility<'a>, Error> {
-    if parser.expect_token(TokenKind::Pub).is_ok() {
-        if parser.expect_token(TokenKind::OpenParen).is_ok() {
-            if parser.expect_token(TokenKind::CloseParen).is_ok() {
-                Ok(Visibility::Public)
-            } else {
-                let path = expect_path(parser)?;
-                parser.expect_token(TokenKind::CloseParen)?;
-                Ok(Visibility::Path(path))
-            }
+pub fn expect_visibility<'a>(parser: &mut Parser) -> Result<Visibility, Error> {
+    if let Ok(pub_span) = parser.expect_token(TokenKind::Pub) {
+        if let Ok(open_paren_span) = parser.expect_token(TokenKind::OpenParen) {
+            let path = expect_path(parser)?;
+            let close_paren_span = parser.expect_token(TokenKind::CloseParen)?;
+            Ok(Visibility::Path(PathVisibility {
+                pub_span,
+                open_paren_span,
+                path,
+                close_paren_span,
+            }))
         } else {
-            Ok(Visibility::Public)
+            Ok(Visibility::Public(pub_span))
         }
     } else {
         Ok(Visibility::Private)
@@ -26,23 +27,21 @@ pub fn expect_visibility<'a>(parser: &mut Parser<'a, '_>) -> Result<Visibility<'
 mod tests {
     use super::super::test::parse;
     use super::*;
-    use crate::ast::Path;
     use crate::pos::Span;
+    use assert_matches::assert_matches;
 
     #[test]
     fn test_expect_visibility_nothing() {
         let (index, _, visibility) = parse(expect_visibility, "fn");
-        let visibility = visibility.unwrap();
         assert_eq!(index, 0);
-        assert_eq!(visibility, Visibility::Private);
+        assert_eq!(visibility, Ok(Visibility::Private));
     }
 
     #[test]
     fn test_expect_visibility_pub() {
         let (index, len, visibility) = parse(expect_visibility, "pub");
-        let visibility = visibility.unwrap();
         assert_eq!(index, len);
-        assert_eq!(visibility, Visibility::Public);
+        assert_matches!(visibility, Ok(Visibility::Public(_)));
     }
 
     #[test]
@@ -50,37 +49,40 @@ mod tests {
         let (index, len, visibility) = parse(expect_visibility, "pub(x::y)");
         let visibility = visibility.unwrap();
         assert_eq!(index, len);
-        assert_eq!(
+        assert_matches!(
             visibility,
-            Visibility::Path(Path {
-                path: vec!["x", "y"]
-            })
+            Visibility::Path(PathVisibility {
+                path,
+                ..
+            }) => {
+                assert_eq!(path.segments.len(), 2);
+                assert_eq!(path.prefix_separator, None);
+                assert_eq!(path.separator_spans.len(), 1);
+            }
         );
     }
 
     #[test]
     fn test_expect_visibility_path_no_closing_paren() {
         let (index, len, visibility) = parse(expect_visibility, "pub(x::y");
-        let error = visibility.unwrap_err();
         assert_eq!(index, len);
         assert_eq!(
-            error,
-            Error::ExpectedToken(
+            visibility,
+            Err(Error::ExpectedToken(
                 TokenKind::CloseParen,
                 Span {
                     file: 0,
                     start: 8,
                     end: 9,
                 }
-            )
+            ))
         );
     }
 
     #[test]
     fn test_expect_visibility_nothing_in_parens() {
         let (index, len, visibility) = parse(expect_visibility, "pub()");
-        let visibility = visibility.unwrap();
-        assert_eq!(index, len);
-        assert_eq!(visibility, Visibility::Public);
+        assert_eq!(index, len - 1);
+        assert!(visibility.is_err());
     }
 }

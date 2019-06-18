@@ -2,45 +2,49 @@ use super::block::expect_block;
 use super::combinator::*;
 use super::error::Error;
 use super::parser::Parser;
+use super::tree::*;
 use super::type_::expect_type;
-use crate::ast::*;
 use crate::token::TokenKind;
 
-pub fn expect_fn<'a>(parser: &mut Parser<'a, '_>) -> Result<Function<'a>, Error> {
-    parser.expect_token(TokenKind::Fn)?;
-    let name = parser.expect_label()?;
-    let parameters = expect_parameters(parser)?;
+pub fn expect_fn<'a>(parser: &mut Parser) -> Result<Function, Error> {
+    let fn_span = parser.expect_token(TokenKind::Fn)?;
+    let name = parser.expect_token(TokenKind::Label)?;
+    let open_paren_span = parser.expect_token(TokenKind::OpenParen)?;
+    let (parameters, comma_spans) = many_comma_separated(parser, expect_parameter)?;
+    let close_paren_span = parser.expect_token(TokenKind::CloseParen)?;
     let return_type = expect_return_type(parser)?;
     let body = expect_block(parser)?;
     Ok(Function {
+        fn_span,
         name,
+        open_paren_span,
         parameters,
+        comma_spans,
+        close_paren_span,
         return_type,
         body,
     })
 }
 
-fn expect_parameters<'a>(parser: &mut Parser<'a, '_>) -> Result<Vec<Parameter<'a>>, Error> {
-    parser.expect_token(TokenKind::OpenParen)?;
-    let parameters = many_separator(parser, expect_parameter, |parser| {
-        parser.expect_token(TokenKind::Comma)
-    })?;
-    parser.expect_token(TokenKind::CloseParen)?;
-    Ok(parameters)
-}
-
-fn expect_parameter<'a>(parser: &mut Parser<'a, '_>) -> Result<Parameter<'a>, Error> {
-    let name = parser.expect_label()?;
-    parser.expect_token(TokenKind::Colon)?;
+fn expect_parameter<'a>(parser: &mut Parser) -> Result<Parameter, Error> {
+    let name = parser.expect_token(TokenKind::Label)?;
+    let colon_span = parser.expect_token(TokenKind::Colon)?;
     let type_ = expect_type(parser)?;
-    Ok(Parameter { name, type_ })
+    Ok(Parameter {
+        name,
+        colon_span,
+        type_,
+    })
 }
 
-fn expect_return_type<'a>(parser: &mut Parser<'a, '_>) -> Result<Type<'a>, Error> {
-    if parser.expect_token(TokenKind::ThinArrow).is_ok() {
-        expect_type(parser)
+fn expect_return_type<'a>(parser: &mut Parser) -> Result<Option<ReturnType>, Error> {
+    if let Ok(thin_arrow_span) = parser.expect_token(TokenKind::ThinArrow) {
+        Ok(Some(ReturnType {
+            thin_arrow_span,
+            type_: expect_type(parser)?,
+        }))
     } else {
-        Ok(Type::Tuple(vec![]))
+        Ok(None)
     }
 }
 
@@ -49,6 +53,8 @@ mod tests {
     use super::super::test::parse;
     use super::*;
     use crate::lex::read_tokens;
+    use crate::pos::Span;
+    use assert_matches::assert_matches;
 
     #[test]
     fn test_expect_fn_invalid() {
@@ -65,77 +71,121 @@ mod tests {
     #[test]
     fn test_expect_fn_matching() {
         let (index, len, f) = parse(expect_fn, "fn f () {}");
-        let f = f.unwrap();
-        assert_eq!(index, len);
-        assert_eq!(f.name, "f");
-        assert_eq!(f.parameters.len(), 0);
-        assert_eq!(f.body.statements.len(), 0);
-    }
-
-    #[test]
-    fn test_expect_parameters_1_parameter() {
-        let (index, len, parameters) = parse(expect_parameters, "(x: i32)");
-        let parameters = parameters.unwrap();
         assert_eq!(index, len);
         assert_eq!(
-            parameters,
-            vec![Parameter {
-                name: "x",
-                type_: Type::Named(NamedType { name: "i32" })
-            }]
+            f,
+            Ok(Function {
+                fn_span: Span {
+                    file: 0,
+                    start: 0,
+                    end: 2
+                },
+                name: Span {
+                    file: 0,
+                    start: 3,
+                    end: 4
+                },
+                open_paren_span: Span {
+                    file: 0,
+                    start: 5,
+                    end: 6
+                },
+                parameters: vec![],
+                comma_spans: vec![],
+                close_paren_span: Span {
+                    file: 0,
+                    start: 6,
+                    end: 7
+                },
+                return_type: None,
+                body: Block {
+                    open_curly_span: Span {
+                        file: 0,
+                        start: 8,
+                        end: 9
+                    },
+                    statements: vec![],
+                    expression: None,
+                    close_curly_span: Span {
+                        file: 0,
+                        start: 9,
+                        end: 10
+                    },
+                }
+            })
         );
     }
 
     #[test]
-    fn test_expect_parameters_2_parameters() {
-        let (index, len, parameters) = parse(expect_parameters, "(x: i32, y: i32)");
-        let parameters = parameters.unwrap();
+    fn test_expect_parameters_1_parameter() {
+        let (index, len, function) = parse(expect_fn, "fn f(x: i32) {}");
         assert_eq!(index, len);
+        let function = function.unwrap();
+        assert_eq!(function.parameters.len(), 1);
+        assert_eq!(function.comma_spans, []);
+    }
+
+    #[test]
+    fn test_expect_parameters_2_parameters() {
+        let (index, len, function) = parse(expect_fn, "fn f(x: i32, y: i32) {}");
+        assert_eq!(index, len);
+        let function = function.unwrap();
+        assert_eq!(function.parameters.len(), 2);
         assert_eq!(
-            parameters,
-            vec![
-                Parameter {
-                    name: "x",
-                    type_: Type::Named(NamedType { name: "i32" })
-                },
-                Parameter {
-                    name: "y",
-                    type_: Type::Named(NamedType { name: "i32" })
-                }
-            ]
+            function.comma_spans,
+            [Span {
+                file: 0,
+                start: 11,
+                end: 12
+            }]
         );
     }
 
     #[test]
     fn test_expect_parameter() {
         let (index, len, parameter) = parse(expect_parameter, "x: i32");
-        let parameter = parameter.unwrap();
         assert_eq!(index, len);
         assert_eq!(
             parameter,
-            Parameter {
-                name: "x",
-                type_: Type::Named(NamedType { name: "i32" })
-            }
+            Ok(Parameter {
+                name: Span {
+                    file: 0,
+                    start: 0,
+                    end: 1
+                },
+                colon_span: Span {
+                    file: 0,
+                    start: 1,
+                    end: 2
+                },
+                type_: Type::Named(NamedType {
+                    name: Span {
+                        file: 0,
+                        start: 3,
+                        end: 6
+                    }
+                })
+            })
         );
     }
 
     #[test]
     fn test_expect_return_type_nothing() {
         let (index, _, return_type) = parse(expect_return_type, "{");
-        let return_type = return_type.unwrap();
         assert_eq!(index, 0);
-        assert_eq!(return_type, Type::Tuple(vec![]));
+        assert_eq!(return_type, Ok(None));
     }
 
     #[test]
     fn test_expect_return_type_something() {
         let (index, len, return_type) = parse(expect_return_type, "-> &x {");
-        let return_type = return_type.unwrap();
         assert_eq!(index, len - 1);
-        assert_eq!(
+        assert_matches!(
             return_type,
-            Type::Ref(Box::new(Type::Named(NamedType { name: "x" })))
+            Ok(Some(ReturnType {
+                type_: Type::Ref(_),
+                ..
+            }))
         );
     }
 }

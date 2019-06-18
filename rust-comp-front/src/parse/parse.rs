@@ -2,7 +2,7 @@ use super::combinator::many;
 use super::error::Error;
 use super::parser::Parser;
 use super::top_level::expect_top_level;
-use crate::ast::TopLevel;
+use super::tree::TopLevel;
 use crate::pos::Pos;
 use crate::token::Token;
 
@@ -10,7 +10,7 @@ pub fn parse<'a>(
     file_contents: &'a str,
     tokens: &'a [Token],
     eofpos: Pos,
-) -> Result<Vec<TopLevel<'a>>, Error> {
+) -> Result<Vec<TopLevel>, Error> {
     let mut parser = Parser::new(file_contents, tokens, eofpos);
     let top_levels = many(&mut parser, expect_top_level)?;
 

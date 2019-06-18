@@ -1,22 +1,31 @@
 use super::parser::Parser;
+use super::Error;
+use crate::pos::Span;
 
-pub fn many<'a, T, E, F>(parser: &mut Parser<'a, '_>, f: F) -> Result<Vec<T>, E>
+pub fn many<T, E, F>(parser: &mut Parser, f: F) -> Result<Vec<T>, E>
 where
-    F: FnMut(&mut Parser<'a, '_>) -> Result<T, E>,
-    T: 'a,
+    F: FnMut(&mut Parser) -> Result<T, E>,
 {
     many_separator(parser, f, |_| Ok(()))
 }
 
-pub fn many_separator<'a, T, E, F, S>(
-    parser: &mut Parser<'a, '_>,
-    mut f: F,
-    mut separator: S,
-) -> Result<Vec<T>, E>
+pub fn many_comma_separated<T, F>(parser: &mut Parser, f: F) -> Result<(Vec<T>, Vec<Span>), Error>
 where
-    F: FnMut(&mut Parser<'a, '_>) -> Result<T, E>,
-    S: FnMut(&mut Parser<'a, '_>) -> Result<(), E>,
-    T: 'a,
+    F: FnMut(&mut Parser) -> Result<T, Error>,
+{
+    use crate::token::TokenKind;
+    let mut comma_spans = Vec::new();
+    let spans = many_separator(parser, f, |p| {
+        p.expect_token(TokenKind::Comma)
+            .map(|s| comma_spans.push(s))
+    })?;
+    Ok((spans, comma_spans))
+}
+
+fn many_separator<T, E, F, S>(parser: &mut Parser, mut f: F, mut separator: S) -> Result<Vec<T>, E>
+where
+    F: FnMut(&mut Parser) -> Result<T, E>,
+    S: FnMut(&mut Parser) -> Result<(), E>,
 {
     let mut xs = Vec::new();
     loop {
@@ -36,10 +45,9 @@ where
     }
 }
 
-pub fn one_of<'a, T, E, F>(parser: &mut Parser<'a, '_>, fs: &mut [F], none_match: E) -> Result<T, E>
+pub fn one_of<T, E, F>(parser: &mut Parser, fs: &mut [F], none_match: E) -> Result<T, E>
 where
-    F: FnMut(&mut Parser<'a, '_>) -> Result<T, E>,
-    T: 'a,
+    F: FnMut(&mut Parser) -> Result<T, E>,
 {
     let old_index = parser.index;
     for f in fs {
@@ -52,10 +60,9 @@ where
     Err(none_match)
 }
 
-pub fn maybe<'a, T, E, F>(parser: &mut Parser<'a, '_>, mut f: F) -> Result<Option<T>, E>
+pub fn maybe<T, E, F>(parser: &mut Parser, mut f: F) -> Result<Option<T>, E>
 where
-    F: FnMut(&mut Parser<'a, '_>) -> Result<T, E>,
-    T: 'a,
+    F: FnMut(&mut Parser) -> Result<T, E>,
 {
     let old_index = parser.index;
     match f(parser) {

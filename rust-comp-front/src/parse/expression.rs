@@ -2,19 +2,20 @@ use super::block::expect_block;
 use super::combinator::*;
 use super::match_::expect_match;
 use super::parser::Parser;
+use super::tree::*;
 use super::Error;
-use crate::ast::*;
-use crate::token::TokenKind;
+use crate::pos::Span;
+use crate::token::*;
 
 type Precedence = i8;
 
-pub fn expect_expression<'a>(parser: &mut Parser<'a, '_>) -> Result<Expression<'a>, Error> {
+pub fn expect_expression(parser: &mut Parser) -> Result<Expression, Error> {
     let base = expect_expression_basic(parser)?;
     expression_chain(parser, base)
 }
 
-fn expect_expression_basic<'a>(parser: &mut Parser<'a, '_>) -> Result<Expression<'a>, Error> {
-    match parser.peek() {
+fn expect_expression_basic(parser: &mut Parser) -> Result<Expression, Error> {
+    match parser.peek_kind() {
         Some(TokenKind::Label) => expect_variable_expression(parser),
         Some(TokenKind::OpenParen) => expect_paren_expression(parser),
         Some(TokenKind::OpenCurly) => expect_block_expression(parser),
@@ -27,45 +28,41 @@ fn expect_expression_basic<'a>(parser: &mut Parser<'a, '_>) -> Result<Expression
     }
 }
 
-fn expression_chain<'a>(
-    parser: &mut Parser<'a, '_>,
-    mut expr: Expression<'a>,
-) -> Result<Expression<'a>, Error> {
-    let mut stack = Vec::new();
+fn expression_chain(parser: &mut Parser, mut expr: Expression) -> Result<Expression, Error> {
+    let mut stack: Vec<(Expression, Span, Precedence)> = Vec::new();
     let mut max_precedence = 20;
 
     while let Some(token) = parser.peek() {
-        if let Some(op) = BinOp::from_token(token) {
+        if is_bin_op(token.kind) {
             parser.index += 1;
             let next = expect_expression_basic(parser)?;
-            if op.precedence() <= max_precedence {
-                max_precedence = op.max_precedence();
-                stack.push((expr, op));
+            if precedence(token.kind) <= max_precedence {
+                max_precedence = continue_precedence(token.kind);
             } else {
                 // consolidate stack up to op.max_precedence()
-                while !stack.is_empty()
-                    && stack.last().unwrap().1.max_precedence() < op.precedence()
-                {
-                    let (left, lop) = stack.pop().unwrap();
-                    max_precedence = lop.max_precedence();
+                while !stack.is_empty() && stack.last().unwrap().2 < precedence(token.kind) {
+                    let (left, op, precedence) = stack.pop().unwrap();
+                    max_precedence = precedence;
                     expr = Expression::Binary(Binary {
                         left: Box::new(left),
-                        op: lop,
+                        op,
                         right: Box::new(expr),
                     });
                 }
-                stack.push((expr, op));
             }
+            stack.push((expr, token.span, continue_precedence(token.kind)));
             expr = next;
-        } else if token == TokenKind::OpenParen {
-            parser.index += 1;
+        } else if token.kind == TokenKind::OpenParen {
+            let open_paren_span = parser.expect_token(TokenKind::OpenParen).unwrap();
+            let (arguments, comma_spans) = many_comma_separated(parser, expect_expression)?;
+            let close_paren_span = parser.expect_token(TokenKind::CloseParen)?;
             expr = Expression::FunctionCall(FunctionCall {
                 function: Box::new(expr),
-                arguments: many_separator(parser, expect_expression, |p| {
-                    p.expect_token(TokenKind::Comma)
-                })?,
+                open_paren_span,
+                arguments,
+                comma_spans,
+                close_paren_span,
             });
-            parser.expect_token(TokenKind::CloseParen)?;
         } else {
             break;
         }
@@ -74,11 +71,8 @@ fn expression_chain<'a>(
     Ok(collapse_stack(expr, stack))
 }
 
-fn collapse_stack<'a>(
-    mut expr: Expression<'a>,
-    stack: Vec<(Expression<'a>, BinOp)>,
-) -> Expression<'a> {
-    for (left, op) in stack.into_iter().rev() {
+fn collapse_stack(mut expr: Expression, stack: Vec<(Expression, Span, Precedence)>) -> Expression {
+    for (left, op, _) in stack.into_iter().rev() {
         expr = Expression::Binary(Binary {
             left: Box::new(left),
             op,
@@ -88,130 +82,149 @@ fn collapse_stack<'a>(
     expr
 }
 
-impl BinOp {
-    fn from_token(token: TokenKind) -> Option<BinOp> {
-        match token {
-            TokenKind::Plus => Some(BinOp::Plus),
-            TokenKind::Minus => Some(BinOp::Minus),
-            TokenKind::Star => Some(BinOp::Times),
-            TokenKind::ForwardSlash => Some(BinOp::DividedBy),
-            TokenKind::Equals => Some(BinOp::EqualTo),
-            TokenKind::NotEquals => Some(BinOp::NotEqualTo),
-            TokenKind::Set => Some(BinOp::SetTo),
-            TokenKind::And => Some(BinOp::And),
-            TokenKind::Or => Some(BinOp::Or),
-            _ => None,
-        }
-    }
-
-    /// The precedence required to stop an active chain
-    fn precedence(self) -> Precedence {
-        match self {
-            BinOp::Times | BinOp::DividedBy => 7,
-            BinOp::Plus | BinOp::Minus => 8,
-            BinOp::EqualTo | BinOp::NotEqualTo => 13,
-            BinOp::And | BinOp::Or => 14,
-            BinOp::SetTo => 17,
-        }
-    }
-
-    /// The precedence required to continue
-    fn max_precedence(self) -> Precedence {
-        // max_precedence = precedence - if ltr { 1 } else { 0 }
-        match self {
-            BinOp::Times | BinOp::DividedBy => 6,
-            BinOp::Plus | BinOp::Minus => 7,
-            BinOp::EqualTo | BinOp::NotEqualTo => 13,
-            BinOp::And | BinOp::Or => 13,
-            BinOp::SetTo => 17,
-        }
+fn is_bin_op(token: TokenKind) -> bool {
+    match token {
+        TokenKind::Plus
+        | TokenKind::Minus
+        | TokenKind::Star
+        | TokenKind::ForwardSlash
+        | TokenKind::Equals
+        | TokenKind::NotEquals
+        | TokenKind::Set
+        | TokenKind::And
+        | TokenKind::Or => true,
+        _ => false,
     }
 }
 
-fn expect_variable_expression<'a>(parser: &mut Parser<'a, '_>) -> Result<Expression<'a>, Error> {
+/// The precedence required to stop an active chain
+fn precedence(token: TokenKind) -> Precedence {
+    match token {
+        TokenKind::Star | TokenKind::ForwardSlash => 7,
+        TokenKind::Plus | TokenKind::Minus => 8,
+        TokenKind::Equals | TokenKind::NotEquals => 13,
+        TokenKind::And | TokenKind::Or => 14,
+        TokenKind::Set => 17,
+        _ => unreachable!(),
+    }
+}
+
+/// The precedence required to continue
+fn continue_precedence(token: TokenKind) -> Precedence {
+    // continue_precedence = precedence - if ltr { 1 } else { 0 }
+    match token {
+        TokenKind::Star | TokenKind::ForwardSlash => 6,
+        TokenKind::Plus | TokenKind::Minus => 7,
+        TokenKind::Equals | TokenKind::NotEquals => 13,
+        TokenKind::And | TokenKind::Or => 13,
+        TokenKind::Set => 17,
+        _ => unreachable!(),
+    }
+}
+
+fn expect_variable_expression<'a>(parser: &mut Parser) -> Result<Expression, Error> {
     parser
-        .expect_label()
+        .expect_token(TokenKind::Label)
         .map(|name| Expression::Variable(Variable { name }))
 }
 
-fn expect_paren_expression<'a>(parser: &mut Parser<'a, '_>) -> Result<Expression<'a>, Error> {
-    parser.expect_token(TokenKind::OpenParen)?;
-    if parser.expect_token(TokenKind::CloseParen).is_ok() {
-        Ok(Expression::Tuple(vec![]))
+fn expect_paren_expression<'a>(parser: &mut Parser) -> Result<Expression, Error> {
+    let open_paren_span = parser.expect_token(TokenKind::OpenParen)?;
+    if let Ok(close_paren_span) = parser.expect_token(TokenKind::CloseParen) {
+        Ok(Expression::Tuple(Tuple {
+            open_paren_span,
+            expressions: vec![],
+            comma_spans: vec![],
+            close_paren_span,
+        }))
     } else {
         let expression = expect_expression(parser)?;
-        if parser.expect_token(TokenKind::Comma).is_ok() {
+        if parser.peek_kind() == Some(TokenKind::Comma) {
             let mut expressions = Vec::new();
             expressions.push(expression);
-            while parser.expect_token(TokenKind::CloseParen).is_err() {
+            let mut comma_spans = Vec::new();
+            comma_spans.push(parser.expect_token(TokenKind::Comma).unwrap());
+            while parser.peek_kind() != Some(TokenKind::CloseParen) {
                 expressions.push(expect_expression(parser)?);
-                if parser.expect_token(TokenKind::Comma).is_err() {
-                    parser.expect_token(TokenKind::CloseParen)?;
-                    break;
+                match parser.expect_token(TokenKind::Comma) {
+                    Ok(span) => comma_spans.push(span),
+                    Err(_) => break,
                 }
             }
-            Ok(Expression::Tuple(expressions))
+            let close_paren_span = parser.expect_token(TokenKind::CloseParen)?;
+            Ok(Expression::Tuple(Tuple {
+                open_paren_span,
+                expressions,
+                comma_spans,
+                close_paren_span,
+            }))
         } else {
-            parser.expect_token(TokenKind::CloseParen)?;
-            Ok(Expression::Paren(Box::new(expression)))
+            let close_paren_span = parser.expect_token(TokenKind::CloseParen)?;
+            Ok(Expression::Paren(ParenExpression {
+                open_paren_span,
+                expression: Box::new(expression),
+                close_paren_span,
+            }))
         }
     }
 }
 
-fn expect_block_expression<'a>(parser: &mut Parser<'a, '_>) -> Result<Expression<'a>, Error> {
+fn expect_block_expression<'a>(parser: &mut Parser) -> Result<Expression, Error> {
     expect_block(parser).map(Expression::Block)
 }
 
-fn expect_if_expression<'a>(parser: &mut Parser<'a, '_>) -> Result<Expression<'a>, Error> {
+fn expect_if_expression<'a>(parser: &mut Parser) -> Result<Expression, Error> {
     expect_if_expression_(parser).map(Expression::If)
 }
 
-fn expect_if_expression_<'a>(parser: &mut Parser<'a, '_>) -> Result<If<'a>, Error> {
-    parser.expect_token(TokenKind::If)?;
+fn expect_if_expression_<'a>(parser: &mut Parser) -> Result<If, Error> {
+    let if_span = parser.expect_token(TokenKind::If)?;
     let condition = expect_expression(parser)?;
     let then = expect_block(parser)?;
-    let else_ = if parser.expect_token(TokenKind::Else).is_ok() {
+    let else_ = if parser.peek_kind() == Some(TokenKind::Else) {
         Some(Box::new(expect_else_expression(parser)?))
     } else {
         None
     };
     Ok(If {
+        if_span,
         condition: Box::new(condition),
         then,
         else_,
     })
 }
 
-fn expect_else_expression<'a>(parser: &mut Parser<'a, '_>) -> Result<Else<'a>, Error> {
-    match parser.peek() {
-        Some(TokenKind::If) => expect_if_expression_(parser).map(Else::If),
-        Some(TokenKind::OpenCurly) => expect_block(parser).map(Else::Block),
+fn expect_else_expression<'a>(parser: &mut Parser) -> Result<Else, Error> {
+    let else_span = parser.expect_token(TokenKind::Else)?;
+    match parser.peek_kind() {
+        Some(TokenKind::If) => expect_if_expression_(parser).map(ElseKind::If),
+        Some(TokenKind::OpenCurly) => expect_block(parser).map(ElseKind::Block),
         _ => Err(Error::Expected("else expression", parser.span())),
     }
+    .map(|kind| Else { else_span, kind })
 }
 
-fn expect_while_expression<'a>(parser: &mut Parser<'a, '_>) -> Result<Expression<'a>, Error> {
-    parser.expect_token(TokenKind::While)?;
+fn expect_while_expression<'a>(parser: &mut Parser) -> Result<Expression, Error> {
+    let while_span = parser.expect_token(TokenKind::While)?;
     let condition = expect_expression(parser)?;
     let block = expect_block(parser)?;
     Ok(Expression::While(While {
+        while_span,
         condition: Box::new(condition),
         block,
     }))
 }
 
-fn expect_match_expression<'a>(parser: &mut Parser<'a, '_>) -> Result<Expression<'a>, Error> {
+fn expect_match_expression<'a>(parser: &mut Parser) -> Result<Expression, Error> {
     expect_match(parser).map(Expression::Match)
 }
 
-fn expect_true_expression<'a>(parser: &mut Parser<'a, '_>) -> Result<Expression<'a>, Error> {
-    parser.expect_token(TokenKind::True)?;
-    Ok(Expression::Bool(true))
+fn expect_true_expression<'a>(parser: &mut Parser) -> Result<Expression, Error> {
+    Ok(Expression::Bool(parser.expect_token(TokenKind::True)?))
 }
 
-fn expect_false_expression<'a>(parser: &mut Parser<'a, '_>) -> Result<Expression<'a>, Error> {
-    parser.expect_token(TokenKind::False)?;
-    Ok(Expression::Bool(false))
+fn expect_false_expression<'a>(parser: &mut Parser) -> Result<Expression, Error> {
+    Ok(Expression::Bool(parser.expect_token(TokenKind::False)?))
 }
 
 #[cfg(test)]
@@ -220,13 +233,23 @@ mod tests {
     use super::*;
     use crate::pos::Span;
     use crate::token::TokenKind;
+    use assert_matches::assert_matches;
 
     #[test]
     fn test_expect_variable_expression() {
         let (index, len, expression) = parse(expect_variable_expression, "ab");
         let expression = expression.unwrap();
         assert_eq!(index, len);
-        assert_eq!(expression, Expression::Variable(Variable { name: "ab" }));
+        assert_eq!(
+            expression,
+            Expression::Variable(Variable {
+                name: Span {
+                    file: 0,
+                    start: 0,
+                    end: 2
+                }
+            })
+        );
     }
 
     #[test]
@@ -234,7 +257,14 @@ mod tests {
         let (index, len, expression) = parse(expect_expression, "true");
         let expression = expression.unwrap();
         assert_eq!(index, len);
-        assert_eq!(expression, Expression::Bool(true));
+        assert_eq!(
+            expression,
+            Expression::Bool(Span {
+                file: 0,
+                start: 0,
+                end: 4
+            })
+        );
     }
 
     #[test]
@@ -242,7 +272,14 @@ mod tests {
         let (index, len, expression) = parse(expect_expression, "false");
         let expression = expression.unwrap();
         assert_eq!(index, len);
-        assert_eq!(expression, Expression::Bool(false));
+        assert_eq!(
+            expression,
+            Expression::Bool(Span {
+                file: 0,
+                start: 0,
+                end: 5
+            })
+        );
     }
 
     #[test]
@@ -252,7 +289,25 @@ mod tests {
         assert_eq!(index, len);
         assert_eq!(
             expression,
-            Expression::Paren(Box::new(Expression::Variable(Variable { name: "ab" })))
+            Expression::Paren(ParenExpression {
+                open_paren_span: Span {
+                    file: 0,
+                    start: 0,
+                    end: 1
+                },
+                expression: Box::new(Expression::Variable(Variable {
+                    name: Span {
+                        file: 0,
+                        start: 1,
+                        end: 3
+                    }
+                })),
+                close_paren_span: Span {
+                    file: 0,
+                    start: 3,
+                    end: 4
+                },
+            })
         );
     }
 
@@ -261,325 +316,339 @@ mod tests {
         let (index, len, expression) = parse(expect_expression, "()");
         let expression = expression.unwrap();
         assert_eq!(index, len);
-        assert_eq!(expression, Expression::Tuple(vec![]));
+        assert_eq!(
+            expression,
+            Expression::Tuple(Tuple {
+                open_paren_span: Span {
+                    file: 0,
+                    start: 0,
+                    end: 1
+                },
+                expressions: vec![],
+                comma_spans: vec![],
+                close_paren_span: Span {
+                    file: 0,
+                    start: 1,
+                    end: 2
+                }
+            })
+        );
     }
 
     #[test]
     fn test_expect_tuple_expression_1() {
         let (index, len, expression) = parse(expect_expression, "(ab,)");
-        let expression = expression.unwrap();
         assert_eq!(index, len);
-        assert_eq!(
-            expression,
-            Expression::Tuple(vec![Expression::Variable(Variable { name: "ab" })])
-        );
+        assert_matches!(expression, Ok(Expression::Tuple(Tuple {
+            expressions,
+            comma_spans,
+            ..
+        })) =>
+        {
+            assert_eq!(
+                expressions,
+                [Expression::Variable(Variable {
+                    name: Span {
+                        file: 0,
+                        start: 1,
+                        end: 3
+                    }
+                })]
+            );
+            assert_eq!(
+                comma_spans,
+                [Span {
+                    file: 0,
+                    start: 3,
+                    end: 4
+                }]
+            );
+        });
     }
 
     #[test]
     fn test_expect_tuple_expression_2() {
         let (index, len, expression) = parse(expect_expression, "(ab, cd)");
-        let expression = expression.unwrap();
         assert_eq!(index, len);
-        assert_eq!(
-            expression,
-            Expression::Tuple(vec![
-                Expression::Variable(Variable { name: "ab" }),
-                Expression::Variable(Variable { name: "cd" })
-            ])
-        );
+        assert_matches!(expression, Ok(Expression::Tuple(Tuple {
+            expressions,
+            comma_spans,
+            ..
+        })) =>
+        {
+            assert_eq!(
+                expressions,
+                [
+                    Expression::Variable(Variable {
+                        name: Span {
+                            file: 0,
+                            start: 1,
+                            end: 3
+                        }
+                    }),
+                    Expression::Variable(Variable {
+                        name: Span {
+                            file: 0,
+                            start: 5,
+                            end: 7
+                        }
+                    })
+                ]
+            );
+            assert_eq!(
+                comma_spans,
+                [Span {
+                    file: 0,
+                    start: 3,
+                    end: 4
+                }]
+            );
+        });
     }
 
     #[test]
     fn test_expect_variable_expression_fn_should_error() {
         let (index, _, expression) = parse(expect_variable_expression, "fn");
-        let error = expression.unwrap_err();
         assert_eq!(index, 0);
         assert_eq!(
-            error,
-            Error::ExpectedToken(
+            expression,
+            Err(Error::ExpectedToken(
                 TokenKind::Label,
                 Span {
                     file: 0,
                     start: 0,
                     end: 2
                 },
-            )
+            ))
         );
     }
 
     #[test]
     fn test_expect_block_expression() {
         let (index, len, expression) = parse(expect_block_expression, "{}");
-        let expression = expression.unwrap();
         assert_eq!(index, len);
         assert_eq!(
             expression,
-            Expression::Block(Block {
+            Ok(Expression::Block(Block {
+                open_curly_span: Span {
+                    file: 0,
+                    start: 0,
+                    end: 1
+                },
                 statements: vec![],
                 expression: None,
-            })
+                close_curly_span: Span {
+                    file: 0,
+                    start: 1,
+                    end: 2
+                },
+            }))
         );
     }
 
     #[test]
     fn test_expect_if_expression() {
         let (index, len, expression) = parse(expect_if_expression, "if b {}");
-        let expression = expression.unwrap();
         assert_eq!(index, len);
-        assert_eq!(
-            expression,
-            Expression::If(If {
-                condition: Box::new(Expression::Variable(Variable { name: "b" })),
-                then: Block {
-                    statements: vec![],
-                    expression: None,
-                },
-                else_: None,
-            })
-        );
+        assert_matches!(expression, Ok(Expression::If(If { else_: None, .. })));
     }
 
     #[test]
     fn test_expect_if_else_expression() {
         let (index, len, expression) = parse(expect_if_expression, "if b {} else {}");
-        let expression = expression.unwrap();
         assert_eq!(index, len);
-        assert_eq!(
-            expression,
-            Expression::If(If {
-                condition: Box::new(Expression::Variable(Variable { name: "b" })),
-                then: Block {
-                    statements: vec![],
-                    expression: None,
-                },
-                else_: Some(Box::new(Else::Block(Block {
-                    statements: vec![],
-                    expression: None,
-                })))
-            })
-        );
+        assert_matches!(expression, Ok(Expression::If(If { else_, .. })) => {
+            assert!(else_.is_some());
+            assert_matches!(else_.unwrap().kind, ElseKind::Block(_));
+        });
     }
 
     #[test]
     fn test_expect_if_else_if_expression() {
         let (index, len, expression) = parse(expect_if_expression, "if b {} else if c {}");
-        let expression = expression.unwrap();
         assert_eq!(index, len);
-        assert_eq!(
-            expression,
-            Expression::If(If {
-                condition: Box::new(Expression::Variable(Variable { name: "b" })),
-                then: Block {
-                    statements: vec![],
-                    expression: None,
-                },
-                else_: Some(Box::new(Else::If(If {
-                    condition: Box::new(Expression::Variable(Variable { name: "c" })),
-                    then: Block {
-                        statements: vec![],
-                        expression: None,
-                    },
-                    else_: None,
-                }))),
-            })
-        );
+        assert_matches!(expression, Ok(Expression::If(If { else_, .. })) => {
+            assert!(else_.is_some());
+            assert_matches!(else_.unwrap().kind, ElseKind::If(If { else_: None, .. }));
+        });
     }
 
     #[test]
     fn test_expect_while_expression() {
         let (index, len, expression) = parse(expect_while_expression, "while b {}");
-        let expression = expression.unwrap();
         assert_eq!(index, len);
-        assert_eq!(
-            expression,
-            Expression::While(While {
-                condition: Box::new(Expression::Variable(Variable { name: "b" })),
-                block: Block {
-                    statements: vec![],
-                    expression: None,
-                },
-            })
-        );
+        assert_matches!(expression, Ok(Expression::While(_)));
     }
 
     #[test]
     fn test_expect_expression_handles_plus_expressions() {
         let (index, len, expression) = parse(expect_expression, "a + b");
-        let expression = expression.unwrap();
         assert_eq!(index, len);
-        assert_eq!(
-            expression,
-            Expression::Binary(Binary {
-                left: Box::new(Expression::Variable(Variable { name: "a" })),
-                op: BinOp::Plus,
-                right: Box::new(Expression::Variable(Variable { name: "b" }))
-            }),
-        );
+        assert_matches!(expression, Ok(Expression::Binary(Binary { op, .. })) => {
+            assert_eq!(
+                op,
+                Span {
+                    file: 0,
+                    start: 2,
+                    end: 3
+                }
+            )
+        });
     }
 
     #[test]
     fn test_expect_expression_handles_minus_expressions() {
         let (index, len, expression) = parse(expect_expression, "a - b");
-        let expression = expression.unwrap();
         assert_eq!(index, len);
-        assert_eq!(
-            expression,
-            Expression::Binary(Binary {
-                left: Box::new(Expression::Variable(Variable { name: "a" })),
-                op: BinOp::Minus,
-                right: Box::new(Expression::Variable(Variable { name: "b" }))
-            }),
-        );
+        assert_matches!(expression, Ok(Expression::Binary(Binary { op, .. })) => {
+            assert_eq!(
+                op,
+                Span {
+                    file: 0,
+                    start: 2,
+                    end: 3
+                }
+            )
+        });
     }
 
     #[test]
     fn test_expect_expression_handles_times_expressions() {
         let (index, len, expression) = parse(expect_expression, "a * b");
-        let expression = expression.unwrap();
         assert_eq!(index, len);
-        assert_eq!(
-            expression,
-            Expression::Binary(Binary {
-                left: Box::new(Expression::Variable(Variable { name: "a" })),
-                op: BinOp::Times,
-                right: Box::new(Expression::Variable(Variable { name: "b" }))
-            }),
-        );
+        assert_matches!(expression, Ok(Expression::Binary(Binary { op, .. })) => {
+            assert_eq!(
+                op,
+                Span {
+                    file: 0,
+                    start: 2,
+                    end: 3
+                }
+            )
+        });
     }
 
     #[test]
     fn test_expect_expression_handles_divided_by_expressions() {
         let (index, len, expression) = parse(expect_expression, "a / b");
-        let expression = expression.unwrap();
         assert_eq!(index, len);
-        assert_eq!(
-            expression,
-            Expression::Binary(Binary {
-                left: Box::new(Expression::Variable(Variable { name: "a" })),
-                op: BinOp::DividedBy,
-                right: Box::new(Expression::Variable(Variable { name: "b" }))
-            }),
-        );
+        assert_matches!(expression, Ok(Expression::Binary(Binary { op, .. })) => {
+            assert_eq!(
+                op,
+                Span {
+                    file: 0,
+                    start: 2,
+                    end: 3
+                }
+            )
+        });
     }
 
     #[test]
     fn test_expect_expression_left_to_right_precedence() {
         let (index, len, expression) = parse(expect_expression, "a + b - c");
-        let expression = expression.unwrap();
         assert_eq!(index, len);
-        assert_eq!(
-            expression,
-            Expression::Binary(Binary {
-                left: Box::new(Expression::Binary(Binary {
-                    left: Box::new(Expression::Variable(Variable { name: "a" })),
-                    op: BinOp::Plus,
-                    right: Box::new(Expression::Variable(Variable { name: "b" })),
-                })),
-                op: BinOp::Minus,
-                right: Box::new(Expression::Variable(Variable { name: "c" })),
-            }),
-        );
+        assert_matches!(expression, Ok(Expression::Binary(Binary { left, op, .. })) => {
+            assert_eq!(
+                op,
+                Span {
+                    file: 0,
+                    start: 6,
+                    end: 7
+                }
+            );
+            assert_matches!(*left, Expression::Binary(Binary { op, .. }) => {
+                assert_eq!(
+                    op,
+                    Span {
+                        file: 0,
+                        start: 2,
+                        end: 3
+                    }
+                );
+            });
+        });
     }
 
     #[test]
     fn test_expect_expression_different_precedences() {
         let (index, len, expression) = parse(expect_expression, "a + b * c - d");
-        let expression = expression.unwrap();
         assert_eq!(index, len);
-        assert_eq!(
-            expression,
-            Expression::Binary(Binary {
-                left: Box::new(Expression::Binary(Binary {
-                    left: Box::new(Expression::Variable(Variable { name: "a" })),
-                    op: BinOp::Plus,
-                    right: Box::new(Expression::Binary(Binary {
-                        left: Box::new(Expression::Variable(Variable { name: "b" })),
-                        op: BinOp::Times,
-                        right: Box::new(Expression::Variable(Variable { name: "c" })),
-                    }))
-                })),
-                op: BinOp::Minus,
-                right: Box::new(Expression::Variable(Variable { name: "d" })),
-            }),
-        );
+        assert_matches!(expression, Ok(Expression::Binary(Binary { left, op, .. })) => {
+            assert_eq!(
+                op,
+                Span {
+                    file: 0,
+                    start: 10,
+                    end: 11
+                }
+            );
+            assert_matches!(*left, Expression::Binary(Binary { op, right, .. }) => {
+                assert_eq!(
+                    op,
+                    Span {
+                        file: 0,
+                        start: 2,
+                        end: 3
+                    }
+                );
+                assert_matches!(*right, Expression::Binary(Binary { op, .. }) => {
+                    assert_eq!(
+                        op,
+                        Span {
+                            file: 0,
+                            start: 6,
+                            end: 7
+                        }
+                    );
+                });
+            });
+        });
     }
 
     #[test]
     fn test_expect_expression_function_call_no_args() {
         let (index, len, expression) = parse(expect_expression, "f()");
-        let expression = expression.unwrap();
         assert_eq!(index, len);
-        assert_eq!(
+        assert_matches!(
             expression,
-            Expression::FunctionCall(FunctionCall {
-                function: Box::new(Expression::Variable(Variable { name: "f" })),
-                arguments: vec![],
-            }),
+            Ok(Expression::FunctionCall(FunctionCall {
+                arguments, ..
+            })) => {
+                assert_eq!(arguments.len(), 0);
+            }
         );
     }
 
     #[test]
     fn test_expect_expression_function_call_one_arg() {
         let (index, len, expression) = parse(expect_expression, "f(x + y)");
-        let expression = expression.unwrap();
         assert_eq!(index, len);
-        assert_eq!(
-            expression,
-            Expression::FunctionCall(FunctionCall {
-                function: Box::new(Expression::Variable(Variable { name: "f" })),
-                arguments: vec![Expression::Binary(Binary {
-                    left: Box::new(Expression::Variable(Variable { name: "x" })),
-                    op: BinOp::Plus,
-                    right: Box::new(Expression::Variable(Variable { name: "y" })),
-                })],
-            }),
-        );
+        assert_matches!(expression, Ok(Expression::FunctionCall(FunctionCall { arguments, .. })) => {
+            assert_eq!(arguments.len(), 1);
+            assert_matches!(arguments[0], Expression::Binary(Binary { .. }));
+        });
     }
 
     #[test]
     fn test_expect_expression_function_call_two_args() {
         let (index, len, expression) = parse(expect_expression, "f(x + y, z && a)");
-        let expression = expression.unwrap();
         assert_eq!(index, len);
-        assert_eq!(
-            expression,
-            Expression::FunctionCall(FunctionCall {
-                function: Box::new(Expression::Variable(Variable { name: "f" })),
-                arguments: vec![
-                    Expression::Binary(Binary {
-                        left: Box::new(Expression::Variable(Variable { name: "x" })),
-                        op: BinOp::Plus,
-                        right: Box::new(Expression::Variable(Variable { name: "y" })),
-                    }),
-                    Expression::Binary(Binary {
-                        left: Box::new(Expression::Variable(Variable { name: "z" })),
-                        op: BinOp::And,
-                        right: Box::new(Expression::Variable(Variable { name: "a" })),
-                    })
-                ],
-            }),
-        );
+        assert_matches!(expression, Ok(Expression::FunctionCall(FunctionCall { arguments, .. })) => {
+            assert_eq!(arguments.len(), 2);
+            assert_matches!(arguments[0], Expression::Binary(Binary { .. }));
+            assert_matches!(arguments[1], Expression::Binary(Binary { .. }));
+        });
     }
 
     #[test]
     fn test_expect_expression_function_call_tighter_than_normal_ops() {
         let (index, len, expression) = parse(expect_expression, "x * f(y) + z");
-        let expression = expression.unwrap();
         assert_eq!(index, len);
-        assert_eq!(
-            expression,
-            Expression::Binary(Binary {
-                left: Box::new(Expression::Binary(Binary {
-                    left: Box::new(Expression::Variable(Variable { name: "x" })),
-                    op: BinOp::Times,
-                    right: Box::new(Expression::FunctionCall(FunctionCall {
-                        function: Box::new(Expression::Variable(Variable { name: "f" })),
-                        arguments: vec![Expression::Variable(Variable { name: "y" })],
-                    })),
-                })),
-                op: BinOp::Plus,
-                right: Box::new(Expression::Variable(Variable { name: "z" })),
-            })
-        );
+        assert_matches!(expression, Ok(Expression::Binary(Binary { left, .. })) => {
+            assert_matches!(*left, Expression::Binary(Binary { right, .. }) => {
+                assert_matches!(*right, Expression::FunctionCall(FunctionCall { .. }));
+            });
+        });
     }
 }

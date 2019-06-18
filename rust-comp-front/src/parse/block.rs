@@ -2,12 +2,12 @@ use super::combinator::*;
 use super::expression::expect_expression;
 use super::parser::Parser;
 use super::statement::expect_statement;
+use super::tree::*;
 use super::Error;
-use crate::ast::*;
 use crate::token::TokenKind;
 
-pub fn expect_block<'a>(parser: &mut Parser<'a, '_>) -> Result<Block<'a>, Error> {
-    parser.expect_token(TokenKind::OpenCurly)?;
+pub fn expect_block(parser: &mut Parser) -> Result<Block, Error> {
+    let open_curly_span = parser.expect_token(TokenKind::OpenCurly)?;
 
     let mut statements = Vec::new();
     let expression;
@@ -36,10 +36,13 @@ pub fn expect_block<'a>(parser: &mut Parser<'a, '_>) -> Result<Block<'a>, Error>
             }
         }
     }
-    parser.expect_token(TokenKind::CloseCurly)?;
+    let close_curly_span = parser.expect_token(TokenKind::CloseCurly)?;
+
     Ok(Block {
+        open_curly_span,
         statements,
         expression: expression.map(Box::new),
+        close_curly_span,
     })
 }
 
@@ -63,7 +66,27 @@ mod tests {
         let (index, len, block) = parse(expect_block, "{;;}");
         let block = block.unwrap();
         assert_eq!(index, len);
-        assert_eq!(block.statements, [Statement::Empty, Statement::Empty]);
+        assert_eq!(
+            block.statements,
+            [
+                Statement {
+                    kind: StatementKind::Empty,
+                    semicolon_span: Some(Span {
+                        file: 0,
+                        start: 1,
+                        end: 2
+                    }),
+                },
+                Statement {
+                    kind: StatementKind::Empty,
+                    semicolon_span: Some(Span {
+                        file: 0,
+                        start: 2,
+                        end: 3
+                    }),
+                },
+            ]
+        );
         assert_eq!(block.expression, None);
     }
 
@@ -74,13 +97,30 @@ mod tests {
         assert_eq!(index, len);
         assert_eq!(
             block.statements,
-            [Statement::Expression(Expression::Variable(Variable {
-                name: "x"
-            }))]
+            [Statement {
+                kind: StatementKind::Expression(Expression::Variable(Variable {
+                    name: Span {
+                        file: 0,
+                        start: 1,
+                        end: 2
+                    }
+                })),
+                semicolon_span: Some(Span {
+                    file: 0,
+                    start: 2,
+                    end: 3
+                }),
+            }]
         );
         assert_eq!(
             block.expression,
-            Some(Box::new(Expression::Variable(Variable { name: "y" })))
+            Some(Box::new(Expression::Variable(Variable {
+                name: Span {
+                    file: 0,
+                    start: 3,
+                    end: 4
+                }
+            })))
         );
     }
 

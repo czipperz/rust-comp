@@ -3,30 +3,41 @@ use super::expression::expect_expression;
 use super::parser::Parser;
 use super::pattern::expect_pattern;
 use super::statement::needs_semicolon;
-use crate::ast::*;
+use super::tree::*;
 use crate::token::TokenKind;
 
-pub fn expect_match<'a>(parser: &mut Parser<'a, '_>) -> Result<Match<'a>, Error> {
-    parser.expect_token(TokenKind::Match)?;
+pub fn expect_match<'a>(parser: &mut Parser) -> Result<Match, Error> {
+    let match_span = parser.expect_token(TokenKind::Match)?;
     let value = expect_expression(parser)?;
-    parser.expect_token(TokenKind::OpenCurly)?;
+    let open_curly_span = parser.expect_token(TokenKind::OpenCurly)?;
     let mut matches = Vec::new();
-    while parser.expect_token(TokenKind::CloseCurly).is_err() {
-        matches.push(expect_pair(parser)?);
-        if needs_semicolon(&matches.last().unwrap().value)
-            && parser.expect_token(TokenKind::Comma).is_err()
-        {
-            parser.expect_token(TokenKind::CloseCurly)?;
-            break;
+    let mut comma_spans = Vec::new();
+    while parser.peek_kind() != Some(TokenKind::CloseCurly) {
+        let match_item = expect_match_item(parser)?;
+        let need_semicolon = needs_semicolon(&match_item.value);
+        matches.push(match_item);
+        match parser.expect_token(TokenKind::Comma) {
+            Ok(span) => comma_spans.push(Some(span)),
+            Err(_) => {
+                comma_spans.push(None);
+                if need_semicolon {
+                    break;
+                }
+            }
         }
     }
+    let close_curly_span = parser.expect_token(TokenKind::CloseCurly)?;
     Ok(Match {
+        match_span,
         value: Box::new(value),
+        open_curly_span,
         matches,
+        comma_spans,
+        close_curly_span,
     })
 }
 
-fn expect_pair<'a>(parser: &mut Parser<'a, '_>) -> Result<MatchItem<'a>, Error> {
+fn expect_match_item<'a>(parser: &mut Parser) -> Result<MatchItem, Error> {
     let pattern = expect_pattern(parser)?;
     parser.expect_token(TokenKind::FatArrow)?;
     let value = expect_expression(parser)?;
@@ -41,74 +52,39 @@ mod tests {
     #[test]
     fn test_expect_match_0() {
         let (index, len, match_) = parse(expect_match, "match x {}");
-        let match_ = match_.unwrap();
         assert_eq!(index, len);
-        assert_eq!(
-            match_,
-            Match {
-                value: Box::new(Expression::Variable(Variable { name: "x" })),
-                matches: vec![]
-            }
-        );
+        let match_ = match_.unwrap();
+        assert_eq!(match_.matches.len(), 0);
     }
 
     #[test]
     fn test_expect_match_1() {
         let (index, len, match_) = parse(expect_match, "match x { a => () }");
-        let match_ = match_.unwrap();
         assert_eq!(index, len);
-        assert_eq!(
-            match_,
-            Match {
-                value: Box::new(Expression::Variable(Variable { name: "x" })),
-                matches: vec![MatchItem {
-                    pattern: Pattern::Named("a"),
-                    value: Expression::Tuple(vec![]),
-                }]
-            }
-        );
+        let match_ = match_.unwrap();
+        assert_eq!(match_.matches.len(), 1);
+        assert_eq!(match_.comma_spans.len(), 1);
+        assert!(match_.comma_spans[0].is_none());
     }
 
     #[test]
     fn test_expect_match_1_trailing_comma() {
         let (index, len, match_) = parse(expect_match, "match x { a => (), }");
-        let match_ = match_.unwrap();
         assert_eq!(index, len);
-        assert_eq!(
-            match_,
-            Match {
-                value: Box::new(Expression::Variable(Variable { name: "x" })),
-                matches: vec![MatchItem {
-                    pattern: Pattern::Named("a"),
-                    value: Expression::Tuple(vec![]),
-                }]
-            }
-        );
+        let match_ = match_.unwrap();
+        assert_eq!(match_.matches.len(), 1);
+        assert_eq!(match_.comma_spans.len(), 1);
+        assert!(match_.comma_spans[0].is_some());
     }
 
     #[test]
     fn test_expect_match_2_no_comma_because_braces() {
         let (index, len, match_) = parse(expect_match, "match x { a => {} b => () }");
-        let match_ = match_.unwrap();
         assert_eq!(index, len);
-        assert_eq!(
-            match_,
-            Match {
-                value: Box::new(Expression::Variable(Variable { name: "x" })),
-                matches: vec![
-                    MatchItem {
-                        pattern: Pattern::Named("a"),
-                        value: Expression::Block(Block {
-                            statements: Vec::new(),
-                            expression: None
-                        }),
-                    },
-                    MatchItem {
-                        pattern: Pattern::Named("b"),
-                        value: Expression::Tuple(vec![]),
-                    }
-                ]
-            }
-        );
+        let match_ = match_.unwrap();
+        assert_eq!(match_.matches.len(), 2);
+        assert_eq!(match_.comma_spans.len(), 2);
+        assert!(match_.comma_spans[0].is_none());
+        assert!(match_.comma_spans[1].is_none());
     }
 }

@@ -3,16 +3,16 @@ use crate::pos::*;
 use crate::token::*;
 
 pub struct Parser<'a, 't> {
-    file_contents: &'a str,
+    _file_contents: &'a str,
     tokens: &'t [Token],
     eofpos: Pos,
     pub index: usize,
 }
 
 impl<'a, 't> Parser<'a, 't> {
-    pub fn new(file_contents: &'a str, tokens: &'t [Token], eofpos: Pos) -> Self {
+    pub fn new(_file_contents: &'a str, tokens: &'t [Token], eofpos: Pos) -> Self {
         Parser {
-            file_contents,
+            _file_contents,
             tokens,
             eofpos,
             index: 0,
@@ -35,16 +35,11 @@ impl<'a, 't> Parser<'a, 't> {
         }
     }
 
-    pub fn expect_label(&mut self) -> Result<&'a str, Error> {
-        self.expect_token(TokenKind::Label)?;
-        let span = self.tokens[self.index - 1].span;
-        Ok(&self.file_contents[span])
-    }
-
-    pub fn expect_token(&mut self, expected: TokenKind) -> Result<(), Error> {
+    pub fn expect_token(&mut self, expected: TokenKind) -> Result<Span, Error> {
         if self.index < self.tokens.len() && self.tokens[self.index].kind == expected {
+            let span = self.span();
             self.index += 1;
-            Ok(())
+            Ok(span)
         } else {
             Err(Error::ExpectedToken(
                 expected,
@@ -57,8 +52,12 @@ impl<'a, 't> Parser<'a, 't> {
         }
     }
 
-    pub fn peek(&self) -> Option<TokenKind> {
-        self.tokens.get(self.index).map(|t| t.kind)
+    pub fn peek(&self) -> Option<Token> {
+        self.tokens.get(self.index).cloned()
+    }
+
+    pub fn peek_kind(&self) -> Option<TokenKind> {
+        self.peek().map(|t| t.kind)
     }
 }
 
@@ -102,32 +101,6 @@ mod tests {
                 end: eofpos.index + 1
             }
         );
-    }
-
-    #[test]
-    fn test_expect_label_out_of_bounds() {
-        let contents = "";
-        let mut parser = Parser::new(contents, &[], Pos { file: 0, index: 0 });
-        assert!(parser.expect_label().is_err());
-        assert_eq!(parser.index, 0);
-    }
-
-    #[test]
-    fn test_expect_label_matches() {
-        let contents = "abc";
-        let (tokens, eofpos) = read_tokens(0, contents).unwrap();
-        let mut parser = Parser::new(contents, &tokens, eofpos);
-        assert_eq!(parser.expect_label().unwrap(), "abc");
-        assert_eq!(parser.index, tokens.len());
-    }
-
-    #[test]
-    fn test_expect_label_no_match() {
-        let contents = "fn";
-        let (tokens, eofpos) = read_tokens(0, contents).unwrap();
-        let mut parser = Parser::new(contents, &tokens, eofpos);
-        assert!(parser.expect_label().is_err());
-        assert_eq!(parser.index, 0);
     }
 
     #[test]

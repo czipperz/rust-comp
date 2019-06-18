@@ -21,3 +21,6 @@ pub use error::Error;
 
 mod parse;
 pub use parse::*;
+
+mod tree;
+pub use tree::*;

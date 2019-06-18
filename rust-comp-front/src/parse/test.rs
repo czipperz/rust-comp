@@ -3,7 +3,7 @@ use crate::lex::read_tokens;
 
 pub fn parse<'a, F, T, E>(mut f: F, file_contents: &'a str) -> (usize, usize, Result<T, E>)
 where
-    F: FnMut(&mut Parser<'a, '_>) -> Result<T, E>,
+    F: FnMut(&mut Parser) -> Result<T, E>,
     T: 'a,
 {
     let (tokens, eofpos) = read_tokens(0, file_contents).unwrap();
