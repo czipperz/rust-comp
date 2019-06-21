@@ -23,6 +23,7 @@ pub fn read_tokens<'a>(file: usize, contents: &str) -> Result<(Vec<Token>, Pos),
     keywords.insert(",", TokenKind::Comma);
     keywords.insert("-", TokenKind::Minus);
     keywords.insert("->", TokenKind::ThinArrow);
+    keywords.insert(".", TokenKind::Dot);
     keywords.insert("/", TokenKind::ForwardSlash);
     keywords.insert(":", TokenKind::Colon);
     keywords.insert("::", TokenKind::ColonColon);
@@ -126,7 +127,7 @@ pub fn read_tokens<'a>(file: usize, contents: &str) -> Result<(Vec<Token>, Pos),
 }
 
 fn is_symbol(ch: char) -> bool {
-    let symbols = "!&()*+,-/:;=>{|}";
+    let symbols = "!&()*+,-./:;=>{|}";
     ch.is_ascii() && symbols.as_bytes().binary_search(&(ch as u8)).is_ok()
 }
 
@@ -727,6 +728,24 @@ mod tests {
                     },
                 }],
                 Pos { file: 0, index: 2 }
+            ))
+        );
+    }
+
+    #[test]
+    fn test_read_tokens_dot() {
+        assert_eq!(
+            read_tokens(0, "."),
+            Ok((
+                vec![Token {
+                    kind: TokenKind::Dot,
+                    span: Span {
+                        file: 0,
+                        start: 0,
+                        end: 1,
+                    },
+                }],
+                Pos { file: 0, index: 1 }
             ))
         );
     }

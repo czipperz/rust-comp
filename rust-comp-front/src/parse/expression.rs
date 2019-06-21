@@ -39,20 +39,19 @@ fn expression_chain(parser: &mut Parser, mut expr: Expression) -> Result<Express
             if precedence(token.kind) <= max_precedence {
                 max_precedence = continue_precedence(token.kind);
             } else {
-                // consolidate stack up to op.max_precedence()
-                while !stack.is_empty() && stack.last().unwrap().2 < precedence(token.kind) {
-                    let (left, op, precedence) = stack.pop().unwrap();
-                    max_precedence = precedence;
-                    expr = Expression::Binary(Binary {
-                        left: Box::new(left),
-                        op,
-                        right: Box::new(expr),
-                    });
-                }
+                expr = consolidate_stack(
+                    expr,
+                    &mut max_precedence,
+                    &mut stack,
+                    precedence(token.kind),
+                );
             }
             stack.push((expr, token.span, continue_precedence(token.kind)));
             expr = next;
         } else if token.kind == TokenKind::OpenParen {
+            if max_precedence < 3 {
+                expr = consolidate_stack(expr, &mut max_precedence, &mut stack, 3);
+            }
             let open_paren_span = parser.expect_token(TokenKind::OpenParen).unwrap();
             let (arguments, comma_spans) = many_comma_separated(parser, expect_expression)?;
             let close_paren_span = parser.expect_token(TokenKind::CloseParen)?;
@@ -71,6 +70,25 @@ fn expression_chain(parser: &mut Parser, mut expr: Expression) -> Result<Express
     Ok(collapse_stack(expr, stack))
 }
 
+fn consolidate_stack(
+    mut expr: Expression,
+    max_precedence: &mut Precedence,
+    stack: &mut Vec<(Expression, Span, Precedence)>,
+    token_precedence: Precedence,
+) -> Expression {
+    // consolidate stack up to token_precedence
+    while !stack.is_empty() && stack.last().unwrap().2 < token_precedence {
+        let (left, op, precedence) = stack.pop().unwrap();
+        *max_precedence = precedence;
+        expr = Expression::Binary(Binary {
+            left: Box::new(left),
+            op,
+            right: Box::new(expr),
+        });
+    }
+    expr
+}
+
 fn collapse_stack(mut expr: Expression, stack: Vec<(Expression, Span, Precedence)>) -> Expression {
     for (left, op, _) in stack.into_iter().rev() {
         expr = Expression::Binary(Binary {
@@ -84,10 +102,11 @@ fn collapse_stack(mut expr: Expression, stack: Vec<(Expression, Span, Precedence
 
 fn is_bin_op(token: TokenKind) -> bool {
     match token {
-        TokenKind::Plus
-        | TokenKind::Minus
+        TokenKind::Dot
         | TokenKind::Star
         | TokenKind::ForwardSlash
+        | TokenKind::Plus
+        | TokenKind::Minus
         | TokenKind::Equals
         | TokenKind::NotEquals
         | TokenKind::Set
@@ -100,12 +119,13 @@ fn is_bin_op(token: TokenKind) -> bool {
 /// The precedence required to stop an active chain
 fn precedence(token: TokenKind) -> Precedence {
     match token {
+        TokenKind::Dot => 2,
         TokenKind::Star | TokenKind::ForwardSlash => 7,
         TokenKind::Plus | TokenKind::Minus => 8,
         TokenKind::Equals | TokenKind::NotEquals => 13,
         TokenKind::And | TokenKind::Or => 14,
         TokenKind::Set => 17,
-        _ => unreachable!(),
+        _ => unreachable!("{:?}", token),
     }
 }
 
@@ -113,6 +133,7 @@ fn precedence(token: TokenKind) -> Precedence {
 fn continue_precedence(token: TokenKind) -> Precedence {
     // continue_precedence = precedence - if ltr { 1 } else { 0 }
     match token {
+        TokenKind::Dot => 1,
         TokenKind::Star | TokenKind::ForwardSlash => 6,
         TokenKind::Plus | TokenKind::Minus => 7,
         TokenKind::Equals | TokenKind::NotEquals => 13,
@@ -649,6 +670,34 @@ mod tests {
             assert_matches!(*left, Expression::Binary(Binary { right, .. }) => {
                 assert_matches!(*right, Expression::FunctionCall(FunctionCall { .. }));
             });
+        });
+    }
+
+    #[test]
+    fn test_expect_expression_mult_then_set() {
+        let (index, len, expression) = parse(expect_expression, "x * f(y) = z");
+        assert_eq!(index, len);
+        assert_matches!(expression, Ok(Expression::Binary(Binary { left, op, .. })) => {
+            assert_eq!(op, Span { file: 0, start: 9, end: 10});
+            assert_matches!(*left, Expression::Binary(Binary { left, .. }) => {
+                assert_matches!(*left, Expression::Variable(_));
+            });
+        });
+    }
+
+    #[test]
+    fn test_expect_expression_field_access() {
+        let (index, len, expression) = parse(expect_expression, "a.b");
+        assert_eq!(index, len);
+        assert_matches!(expression, Ok(Expression::Binary(Binary { .. })));
+    }
+
+    #[test]
+    fn test_expect_expression_method_call() {
+        let (index, len, expression) = parse(expect_expression, "a.b()");
+        assert_eq!(index, len);
+        assert_matches!(expression, Ok(Expression::FunctionCall(FunctionCall {function,..})) => {
+            assert_matches!(*function, Expression::Binary(Binary { .. }));
         });
     }
 }
