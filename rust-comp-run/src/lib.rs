@@ -25,6 +25,7 @@ pub fn run(mut diagnostic: Diagnostic, _opt: Opt) -> Result<(), Error> {
 
     let mut lex_total = time::Duration::default();
     let mut parse_total = time::Duration::default();
+    let mut parse_to_syntax_total = time::Duration::default();
     for i in 0..diagnostic.files.len() {
         let file_contents = &diagnostic.files_contents[i];
 
@@ -34,13 +35,21 @@ pub fn run(mut diagnostic: Diagnostic, _opt: Opt) -> Result<(), Error> {
         lex_total += start.elapsed();
 
         let start = time::Instant::now();
-        let _top_levels = parse::parse(&file_contents, &tokens, eofpos)
+        let top_levels = parse::parse(&file_contents, &tokens, eofpos)
             .map_err(|e| handle_parse_error(&diagnostic, e))?;
         parse_total += start.elapsed();
+
+        let start = time::Instant::now();
+        let _top_levels: Vec<_> = top_levels
+            .iter()
+            .map(parse_to_syntax::convert_top_level)
+            .collect();
+        parse_to_syntax_total += start.elapsed();
     }
 
     print_duration("Lex", lex_total);
     print_duration("Parse", parse_total);
+    print_duration("Parse to Syntax", parse_to_syntax_total);
     Ok(())
 }
 
