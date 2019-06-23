@@ -155,7 +155,7 @@ pub enum Expression {
     Match(Match),
     Binary(Binary),
     FunctionCall(FunctionCall),
-    Bool(Span),
+    Bool(Token),
     Tuple(Tuple),
 }
 

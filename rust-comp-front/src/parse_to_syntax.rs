@@ -268,8 +268,8 @@ impl Context {
                 }
             }
             Bool(b) => syntax::Expression {
-                span: *b,
-                kind: syntax::ExpressionKind::Bool(self.convert_bool(*b)),
+                span: b.span,
+                kind: syntax::ExpressionKind::Bool(self.convert_bool(b.kind)),
             },
             Tuple(t) => syntax::Expression {
                 span: span_encompassing(t.open_paren_span, t.close_paren_span),
@@ -401,8 +401,12 @@ impl Context {
         }
     }
 
-    pub fn convert_bool(&mut self, _s: Span) -> bool {
-        unimplemented!()
+    pub fn convert_bool(&mut self, kind: TokenKind) -> bool {
+        match kind {
+            TokenKind::True => true,
+            TokenKind::False => false,
+            _ => unreachable!("Token {:?} is not a boolean token", kind),
+        }
     }
 
     pub fn convert_let(&mut self, l: &parse::Let) -> syntax::Let {
