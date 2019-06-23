@@ -1,4 +1,5 @@
 use crate::pos::Span;
+use crate::token::Token;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TopLevel {
@@ -240,7 +241,7 @@ pub struct ParenPattern {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Binary {
     pub left: Box<Expression>,
-    pub op: Span,
+    pub op: Token,
     pub right: Box<Expression>,
 }
 

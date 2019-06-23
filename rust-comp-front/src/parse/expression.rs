@@ -4,7 +4,6 @@ use super::match_::expect_match;
 use super::parser::Parser;
 use super::tree::*;
 use super::Error;
-use crate::pos::Span;
 use crate::token::*;
 
 type Precedence = i8;
@@ -29,7 +28,7 @@ fn expect_expression_basic(parser: &mut Parser) -> Result<Expression, Error> {
 }
 
 fn expression_chain(parser: &mut Parser, mut expr: Expression) -> Result<Expression, Error> {
-    let mut stack: Vec<(Expression, Span, Precedence)> = Vec::new();
+    let mut stack: Vec<(Expression, Token, Precedence)> = Vec::new();
     let mut max_precedence = 20;
 
     while let Some(token) = parser.peek() {
@@ -46,7 +45,8 @@ fn expression_chain(parser: &mut Parser, mut expr: Expression) -> Result<Express
                     precedence(token.kind),
                 );
             }
-            stack.push((expr, token.span, continue_precedence(token.kind)));
+            let cont = continue_precedence(token.kind);
+            stack.push((expr, token, cont));
             expr = next;
         } else if token.kind == TokenKind::OpenParen {
             if max_precedence < 3 {
@@ -73,7 +73,7 @@ fn expression_chain(parser: &mut Parser, mut expr: Expression) -> Result<Express
 fn consolidate_stack(
     mut expr: Expression,
     max_precedence: &mut Precedence,
-    stack: &mut Vec<(Expression, Span, Precedence)>,
+    stack: &mut Vec<(Expression, Token, Precedence)>,
     token_precedence: Precedence,
 ) -> Expression {
     // consolidate stack up to token_precedence
@@ -89,7 +89,7 @@ fn consolidate_stack(
     expr
 }
 
-fn collapse_stack(mut expr: Expression, stack: Vec<(Expression, Span, Precedence)>) -> Expression {
+fn collapse_stack(mut expr: Expression, stack: Vec<(Expression, Token, Precedence)>) -> Expression {
     for (left, op, _) in stack.into_iter().rev() {
         expr = Expression::Binary(Binary {
             left: Box::new(left),
@@ -508,10 +508,13 @@ mod tests {
         assert_matches!(expression, Ok(Expression::Binary(Binary { op, .. })) => {
             assert_eq!(
                 op,
-                Span {
-                    file: 0,
-                    start: 2,
-                    end: 3
+                Token {
+                    span: Span {
+                        file: 0,
+                        start: 2,
+                        end: 3,
+                    },
+                    kind: TokenKind::Plus,
                 }
             )
         });
@@ -524,10 +527,13 @@ mod tests {
         assert_matches!(expression, Ok(Expression::Binary(Binary { op, .. })) => {
             assert_eq!(
                 op,
-                Span {
-                    file: 0,
-                    start: 2,
-                    end: 3
+                Token {
+                    span: Span {
+                        file: 0,
+                        start: 2,
+                        end: 3
+                    },
+                    kind: TokenKind::Minus,
                 }
             )
         });
@@ -540,10 +546,13 @@ mod tests {
         assert_matches!(expression, Ok(Expression::Binary(Binary { op, .. })) => {
             assert_eq!(
                 op,
-                Span {
-                    file: 0,
-                    start: 2,
-                    end: 3
+                Token {
+                    span: Span {
+                        file: 0,
+                        start: 2,
+                        end: 3
+                    },
+                    kind: TokenKind::Star,
                 }
             )
         });
@@ -556,10 +565,13 @@ mod tests {
         assert_matches!(expression, Ok(Expression::Binary(Binary { op, .. })) => {
             assert_eq!(
                 op,
-                Span {
-                    file: 0,
-                    start: 2,
-                    end: 3
+                Token {
+                    span: Span {
+                        file: 0,
+                        start: 2,
+                        end: 3
+                    },
+                    kind: TokenKind::ForwardSlash,
                 }
             )
         });
@@ -570,23 +582,9 @@ mod tests {
         let (index, len, expression) = parse(expect_expression, "a + b - c");
         assert_eq!(index, len);
         assert_matches!(expression, Ok(Expression::Binary(Binary { left, op, .. })) => {
-            assert_eq!(
-                op,
-                Span {
-                    file: 0,
-                    start: 6,
-                    end: 7
-                }
-            );
+            assert_eq!(op.kind, TokenKind::Minus);
             assert_matches!(*left, Expression::Binary(Binary { op, .. }) => {
-                assert_eq!(
-                    op,
-                    Span {
-                        file: 0,
-                        start: 2,
-                        end: 3
-                    }
-                );
+                assert_eq!(op.kind, TokenKind::Plus);
             });
         });
     }
@@ -596,32 +594,11 @@ mod tests {
         let (index, len, expression) = parse(expect_expression, "a + b * c - d");
         assert_eq!(index, len);
         assert_matches!(expression, Ok(Expression::Binary(Binary { left, op, .. })) => {
-            assert_eq!(
-                op,
-                Span {
-                    file: 0,
-                    start: 10,
-                    end: 11
-                }
-            );
+            assert_eq!(op.kind, TokenKind::Minus);
             assert_matches!(*left, Expression::Binary(Binary { op, right, .. }) => {
-                assert_eq!(
-                    op,
-                    Span {
-                        file: 0,
-                        start: 2,
-                        end: 3
-                    }
-                );
+                assert_eq!(op.kind, TokenKind::Plus);
                 assert_matches!(*right, Expression::Binary(Binary { op, .. }) => {
-                    assert_eq!(
-                        op,
-                        Span {
-                            file: 0,
-                            start: 6,
-                            end: 7
-                        }
-                    );
+                    assert_eq!(op.kind, TokenKind::Star);
                 });
             });
         });
@@ -678,7 +655,7 @@ mod tests {
         let (index, len, expression) = parse(expect_expression, "x * f(y) = z");
         assert_eq!(index, len);
         assert_matches!(expression, Ok(Expression::Binary(Binary { left, op, .. })) => {
-            assert_eq!(op, Span { file: 0, start: 9, end: 10});
+            assert_eq!(op.kind, TokenKind::Set);
             assert_matches!(*left, Expression::Binary(Binary { left, .. }) => {
                 assert_matches!(*left, Expression::Variable(_));
             });
@@ -689,7 +666,9 @@ mod tests {
     fn test_expect_expression_field_access() {
         let (index, len, expression) = parse(expect_expression, "a.b");
         assert_eq!(index, len);
-        assert_matches!(expression, Ok(Expression::Binary(Binary { .. })));
+        assert_matches!(expression, Ok(Expression::Binary(Binary { op, .. })) => {
+            assert_eq!(op.kind, TokenKind::Dot);
+        });
     }
 
     #[test]
