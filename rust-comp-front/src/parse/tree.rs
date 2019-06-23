@@ -210,6 +210,7 @@ pub struct Match {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MatchItem {
     pub pattern: Pattern,
+    pub fat_arrow_span: Span,
     pub value: Expression,
 }
 

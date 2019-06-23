@@ -39,9 +39,13 @@ pub fn expect_match<'a>(parser: &mut Parser) -> Result<Match, Error> {
 
 fn expect_match_item<'a>(parser: &mut Parser) -> Result<MatchItem, Error> {
     let pattern = expect_pattern(parser)?;
-    parser.expect_token(TokenKind::FatArrow)?;
+    let fat_arrow_span = parser.expect_token(TokenKind::FatArrow)?;
     let value = expect_expression(parser)?;
-    Ok(MatchItem { pattern, value })
+    Ok(MatchItem {
+        pattern,
+        fat_arrow_span,
+        value,
+    })
 }
 
 #[cfg(test)]
