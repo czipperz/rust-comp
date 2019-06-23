@@ -7,4 +7,5 @@ edition = "2018"
 [dependencies]
 rust-comp-core = { path = "../rust-comp-core" }
 rust-comp-front = { path = "../rust-comp-front" }
+rust-comp-syntax = { path = "../rust-comp-syntax" }
 rust-comp-opt = { path = "../rust-comp-opt" }

@@ -1,4 +1,4 @@
-use crate::pos::Span;
+use rust_comp_core::pos::Span;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TopLevel {

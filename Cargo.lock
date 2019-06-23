@@ -108,6 +108,7 @@ version = "0.1.0"
 dependencies = [
  "assert_matches 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "rust-comp-core 0.1.0",
+ "rust-comp-syntax 0.1.0",
 ]
 
 [[package]]
@@ -124,6 +125,14 @@ dependencies = [
  "rust-comp-core 0.1.0",
  "rust-comp-front 0.1.0",
  "rust-comp-opt 0.1.0",
+ "rust-comp-syntax 0.1.0",
+]
+
+[[package]]
+name = "rust-comp-syntax"
+version = "0.1.0"
+dependencies = [
+ "rust-comp-core 0.1.0",
 ]
 
 [[package]]

@@ -1,8 +1,8 @@
 use crate::parse;
 use crate::pos::Span;
-use crate::syntax;
 use crate::token::TokenKind;
 use rust_comp_core::diagnostic::Diagnostic;
+use rust_comp_syntax as syntax;
 
 pub struct Context<'a> {
     diagnostic: &'a Diagnostic,
