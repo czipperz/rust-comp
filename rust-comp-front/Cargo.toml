@@ -5,6 +5,7 @@ authors = ["Chris Gregory <czipperz@gmail.com>"]
 edition = "2018"
 
 [dependencies]
+rust-comp-core = { path = "../rust-comp-core" }
 
 [dev-dependencies]
 assert_matches = "*"

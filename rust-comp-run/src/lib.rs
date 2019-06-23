@@ -1,4 +1,4 @@
-use rust_comp_diagnostic::*;
+use rust_comp_core::diagnostic::*;
 use rust_comp_front::*;
 use rust_comp_opt::Opt;
 use std::time;

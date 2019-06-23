@@ -5,6 +5,6 @@ authors = ["Chris Gregory <czipperz@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-rust-comp-diagnostic = { path = "../rust-comp-diagnostic" }
+rust-comp-core = { path = "../rust-comp-core" }
 rust-comp-front = { path = "../rust-comp-front" }
 rust-comp-opt = { path = "../rust-comp-opt" }

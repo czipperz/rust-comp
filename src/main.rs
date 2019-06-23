@@ -1,4 +1,4 @@
-use rust_comp_diagnostic::Diagnostic;
+use rust_comp_core::diagnostic::Diagnostic;
 use rust_comp_opt::parse;
 use rust_comp_run::{run, Error};
 

@@ -93,23 +93,21 @@ dependencies = [
 name = "rust-comp"
 version = "0.1.0"
 dependencies = [
- "rust-comp-diagnostic 0.1.0",
+ "rust-comp-core 0.1.0",
  "rust-comp-opt 0.1.0",
  "rust-comp-run 0.1.0",
 ]
 
 [[package]]
-name = "rust-comp-diagnostic"
+name = "rust-comp-core"
 version = "0.1.0"
-dependencies = [
- "rust-comp-front 0.1.0",
-]
 
 [[package]]
 name = "rust-comp-front"
 version = "0.1.0"
 dependencies = [
  "assert_matches 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rust-comp-core 0.1.0",
 ]
 
 [[package]]
@@ -123,7 +121,7 @@ dependencies = [
 name = "rust-comp-run"
 version = "0.1.0"
 dependencies = [
- "rust-comp-diagnostic 0.1.0",
+ "rust-comp-core 0.1.0",
  "rust-comp-front 0.1.0",
  "rust-comp-opt 0.1.0",
 ]
