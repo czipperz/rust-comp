@@ -155,6 +155,7 @@ pub enum Expression {
     Match(Match),
     Binary(Binary),
     FunctionCall(FunctionCall),
+    MemberAccess(MemberAccess),
     Bool(Token),
     Tuple(Tuple),
 }
@@ -252,6 +253,13 @@ pub struct FunctionCall {
     pub arguments: Vec<Expression>,
     pub comma_spans: Vec<Span>,
     pub close_paren_span: Span,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct MemberAccess {
+    pub object: Box<Expression>,
+    pub dot_span: Span,
+    pub member: Span,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

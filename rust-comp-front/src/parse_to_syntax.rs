@@ -264,10 +264,32 @@ impl<'a> Context<'a> {
                 }
             }
             FunctionCall(fc) => {
-                let sfc = self.convert_function_call(fc);
+                if let parse::Expression::MemberAccess(ma) = &*fc.function {
+                    let sma = self.convert_member_access(&ma);
+                    syntax::Expression {
+                        span: span_encompassing(sma.object.span, fc.close_paren_span),
+                        kind: syntax::ExpressionKind::MemberCall(syntax::MemberCall {
+                            member: sma,
+                            arguments: fc
+                                .arguments
+                                .iter()
+                                .map(|a| self.convert_expression(a))
+                                .collect(),
+                        }),
+                    }
+                } else {
+                    let sfc = self.convert_function_call(fc);
+                    syntax::Expression {
+                        span: span_encompassing(sfc.function.span, fc.close_paren_span),
+                        kind: syntax::ExpressionKind::FunctionCall(sfc),
+                    }
+                }
+            }
+            MemberAccess(ma) => {
+                let sma = self.convert_member_access(ma);
                 syntax::Expression {
-                    span: span_encompassing(sfc.function.span, fc.close_paren_span),
-                    kind: syntax::ExpressionKind::FunctionCall(sfc),
+                    span: span_encompassing(sma.object.span, ma.member),
+                    kind: syntax::ExpressionKind::MemberAccess(sma),
                 }
             }
             Bool(b) => syntax::Expression {
@@ -412,6 +434,13 @@ impl<'a> Context<'a> {
         }
     }
 
+    pub fn convert_member_access(&mut self, ma: &parse::MemberAccess) -> syntax::MemberAccess {
+        syntax::MemberAccess {
+            object: Box::new(self.convert_expression(&ma.object)),
+            member: self.convert_symbol(ma.member),
+        }
+    }
+
     pub fn convert_let(&mut self, l: &parse::Let) -> syntax::Let {
         syntax::Let {
             name_span: match l.name {
@@ -537,5 +566,63 @@ fn span_encompassing(start: Span, end: Span) -> Span {
         file: start.file,
         start: start.start,
         end: end.end,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::lex::read_tokens;
+    use crate::parse::parse;
+    use assert_matches::assert_matches;
+
+    #[test]
+    fn test_member_call_is_converted() {
+        let file_contents = "fn f() { a.b() }";
+        let (tokens, eofpos) = read_tokens(0, file_contents).unwrap();
+        let top_levels = parse(file_contents, &tokens, eofpos).unwrap();
+        let mut diagnostic = Diagnostic::new(vec!["".to_string()]);
+        diagnostic.files_contents.push(file_contents.to_string());
+
+        let top_level = Context::new(&diagnostic).convert_top_level(&top_levels[0]);
+
+        assert_matches!(
+            top_level,
+            syntax::TopLevel {
+                kind: syntax::TopLevelKind::Function(syntax::Function { body, .. }),
+                ..
+            } => {
+                let expression = body.expression.unwrap();
+                assert_matches!(expression.kind, syntax::ExpressionKind::MemberCall(mc) => {
+                    assert_matches!(mc.member.object.kind, syntax::ExpressionKind::Variable(_));
+                    assert_eq!(mc.arguments.len(), 0);
+                });
+            }
+        );
+    }
+
+    #[test]
+    fn test_function_call_on_member() {
+        let file_contents = "fn f() { (a.b)() }";
+        let (tokens, eofpos) = read_tokens(0, file_contents).unwrap();
+        let top_levels = parse(file_contents, &tokens, eofpos).unwrap();
+        let mut diagnostic = Diagnostic::new(vec!["".to_string()]);
+        diagnostic.files_contents.push(file_contents.to_string());
+
+        let top_level = Context::new(&diagnostic).convert_top_level(&top_levels[0]);
+
+        assert_matches!(
+            top_level,
+            syntax::TopLevel {
+                kind: syntax::TopLevelKind::Function(syntax::Function { body, .. }),
+                ..
+            } => {
+                let expression = body.expression.unwrap();
+                assert_matches!(expression.kind, syntax::ExpressionKind::FunctionCall(mc) => {
+                    assert_matches!(mc.function.kind, syntax::ExpressionKind::MemberAccess(_));
+                    assert_eq!(mc.arguments.len(), 0);
+                });
+            }
+        );
     }
 }

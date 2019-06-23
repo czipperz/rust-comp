@@ -48,6 +48,19 @@ fn expression_chain(parser: &mut Parser, mut expr: Expression) -> Result<Express
             let cont = continue_precedence(token.kind);
             stack.push((expr, token, cont));
             expr = next;
+        } else if token.kind == TokenKind::Dot {
+            parser.index += 1;
+            let member = parser.expect_token(TokenKind::Label)?;
+            if 2 <= max_precedence {
+                max_precedence = 1;
+            } else {
+                expr = consolidate_stack(expr, &mut max_precedence, &mut stack, 2);
+            }
+            expr = Expression::MemberAccess(MemberAccess {
+                object: Box::new(expr),
+                dot_span: token.span,
+                member,
+            });
         } else if token.kind == TokenKind::OpenParen {
             if max_precedence < 3 {
                 expr = consolidate_stack(expr, &mut max_precedence, &mut stack, 3);
@@ -102,8 +115,7 @@ fn collapse_stack(mut expr: Expression, stack: Vec<(Expression, Token, Precedenc
 
 fn is_bin_op(token: TokenKind) -> bool {
     match token {
-        TokenKind::Dot
-        | TokenKind::Star
+        TokenKind::Star
         | TokenKind::ForwardSlash
         | TokenKind::Plus
         | TokenKind::Minus
@@ -119,7 +131,6 @@ fn is_bin_op(token: TokenKind) -> bool {
 /// The precedence required to stop an active chain
 fn precedence(token: TokenKind) -> Precedence {
     match token {
-        TokenKind::Dot => 2,
         TokenKind::Star | TokenKind::ForwardSlash => 7,
         TokenKind::Plus | TokenKind::Minus => 8,
         TokenKind::Equals | TokenKind::NotEquals => 13,
@@ -133,7 +144,6 @@ fn precedence(token: TokenKind) -> Precedence {
 fn continue_precedence(token: TokenKind) -> Precedence {
     // continue_precedence = precedence - if ltr { 1 } else { 0 }
     match token {
-        TokenKind::Dot => 1,
         TokenKind::Star | TokenKind::ForwardSlash => 6,
         TokenKind::Plus | TokenKind::Minus => 7,
         TokenKind::Equals | TokenKind::NotEquals => 13,
@@ -679,8 +689,16 @@ mod tests {
     fn test_expect_expression_field_access() {
         let (index, len, expression) = parse(expect_expression, "a.b");
         assert_eq!(index, len);
-        assert_matches!(expression, Ok(Expression::Binary(Binary { op, .. })) => {
-            assert_eq!(op.kind, TokenKind::Dot);
+        assert_matches!(expression, Ok(Expression::MemberAccess(MemberAccess {
+            object,
+            dot_span,
+            member,
+        })) => {
+            assert_eq!(*object, Expression::Variable(Variable {
+                name: Span { file: 0, start: 0, end: 1 }
+            }));
+            assert_eq!(dot_span, Span { file: 0, start: 1, end: 2 });
+            assert_eq!(member, Span { file: 0, start: 2, end: 3 });
         });
     }
 
@@ -689,7 +707,7 @@ mod tests {
         let (index, len, expression) = parse(expect_expression, "a.b()");
         assert_eq!(index, len);
         assert_matches!(expression, Ok(Expression::FunctionCall(FunctionCall {function,..})) => {
-            assert_matches!(*function, Expression::Binary(Binary { .. }));
+            assert_matches!(*function, Expression::MemberAccess(_));
         });
     }
 }

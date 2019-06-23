@@ -126,6 +126,8 @@ pub enum ExpressionKind {
     Match(Match),
     Binary(Binary),
     FunctionCall(FunctionCall),
+    MemberCall(MemberCall),
+    MemberAccess(MemberAccess),
     Bool(bool),
     Tuple(Vec<Expression>),
 }
@@ -205,6 +207,18 @@ pub enum BinaryOp {
 pub struct FunctionCall {
     pub function: Box<Expression>,
     pub arguments: Vec<Expression>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct MemberCall {
+    pub member: MemberAccess,
+    pub arguments: Vec<Expression>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct MemberAccess {
+    pub object: Box<Expression>,
+    pub member: Symbol,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
