@@ -23,6 +23,8 @@ pub fn run(mut diagnostic: Diagnostic, _opt: Opt) -> Result<(), Error> {
     println!("Lines: {}", lines);
     println!("Bytes: {}", bytes);
 
+    let start = time::Instant::now();
+
     let mut lex_total = time::Duration::default();
     let mut parse_total = time::Duration::default();
     let mut parse_to_syntax_total = time::Duration::default();
@@ -48,6 +50,7 @@ pub fn run(mut diagnostic: Diagnostic, _opt: Opt) -> Result<(), Error> {
         parse_to_syntax_total += start.elapsed();
     }
 
+    print_duration("Total Non/IO", start.elapsed());
     print_duration("Lex", lex_total);
     print_duration("Parse", parse_total);
     print_duration("Parse to Syntax", parse_to_syntax_total);
