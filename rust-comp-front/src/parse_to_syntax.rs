@@ -2,12 +2,15 @@ use crate::parse;
 use crate::pos::Span;
 use crate::syntax;
 use crate::token::TokenKind;
+use rust_comp_core::diagnostic::Diagnostic;
 
-pub struct Context {}
+pub struct Context<'a> {
+    diagnostic: &'a Diagnostic,
+}
 
-impl Context {
-    pub fn new() -> Self {
-        Context {}
+impl<'a> Context<'a> {
+    pub fn new(diagnostic: &'a Diagnostic) -> Self {
+        Context { diagnostic }
     }
 
     pub fn convert_top_level(&mut self, top_level: &parse::TopLevel) -> syntax::TopLevel {
@@ -500,8 +503,16 @@ impl Context {
         }
     }
 
-    pub fn convert_symbol(&mut self, _span: Span) -> syntax::Symbol {
-        unimplemented!()
+    pub fn convert_symbol(&mut self, span: Span) -> syntax::Symbol {
+        use std::collections::hash_map::DefaultHasher;
+        use std::hash::{Hash, Hasher};
+        let name = &self.diagnostic.files_contents[span.file][span.start..span.end];
+        let mut hasher = DefaultHasher::new();
+        name.hash(&mut hasher);
+        syntax::Symbol {
+            span,
+            id: syntax::SymbolId(hasher.finish()),
+        }
     }
 }
 

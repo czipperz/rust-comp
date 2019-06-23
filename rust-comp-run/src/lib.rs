@@ -40,7 +40,7 @@ pub fn run(mut diagnostic: Diagnostic, _opt: Opt) -> Result<(), Error> {
         parse_total += start.elapsed();
 
         let start = time::Instant::now();
-        let mut context = parse_to_syntax::Context::new();
+        let mut context = parse_to_syntax::Context::new(&diagnostic);
         let _top_levels: Vec<_> = top_levels
             .iter()
             .map(|tl| context.convert_top_level(tl))

@@ -246,4 +246,4 @@ pub struct Symbol {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct SymbolId(usize);
+pub struct SymbolId(pub u64);
