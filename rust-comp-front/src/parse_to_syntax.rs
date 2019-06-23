@@ -352,8 +352,19 @@ pub fn convert_binary(b: &parse::Binary) -> syntax::Binary {
     }
 }
 
-pub fn convert_binary_op(_tk: TokenKind) -> syntax::BinaryOp {
-    unimplemented!()
+pub fn convert_binary_op(tk: TokenKind) -> syntax::BinaryOp {
+    match tk {
+        TokenKind::Star => syntax::BinaryOp::Times,
+        TokenKind::ForwardSlash => syntax::BinaryOp::DividedBy,
+        TokenKind::Plus => syntax::BinaryOp::Plus,
+        TokenKind::Minus => syntax::BinaryOp::Minus,
+        TokenKind::Equals => syntax::BinaryOp::IsEqualTo,
+        TokenKind::NotEquals => syntax::BinaryOp::IsNotEqualTo,
+        TokenKind::Set => syntax::BinaryOp::SetTo,
+        TokenKind::And => syntax::BinaryOp::And,
+        TokenKind::Or => syntax::BinaryOp::Or,
+        _ => unreachable!("Token {:?} is not a binary operator", tk),
+    }
 }
 
 pub fn convert_function_call(fc: &parse::FunctionCall) -> syntax::FunctionCall {

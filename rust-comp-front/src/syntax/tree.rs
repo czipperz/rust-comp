@@ -189,7 +189,17 @@ pub struct Binary {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum BinaryOp {}
+pub enum BinaryOp {
+    Times,
+    DividedBy,
+    Plus,
+    Minus,
+    IsEqualTo,
+    IsNotEqualTo,
+    SetTo,
+    And,
+    Or,
+}
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct FunctionCall {
