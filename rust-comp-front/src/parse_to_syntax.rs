@@ -349,7 +349,7 @@ impl<'a> Context<'a> {
         match p {
             Named(s) => syntax::Pattern {
                 span: *s,
-                kind: syntax::PatternKind::Named(self.convert_symbol(*s).id),
+                kind: syntax::PatternKind::Named(self.convert_symbol_id(*s)),
             },
             Tuple(t) => syntax::Pattern {
                 span: span_encompassing(t.open_paren_span, t.close_paren_span),
@@ -418,7 +418,7 @@ impl<'a> Context<'a> {
                 Ok(s) => s,
                 Err(s) => s,
             },
-            name: l.name.ok().map(|n| self.convert_symbol(n).id),
+            name: l.name.ok().map(|n| self.convert_symbol_id(n)),
             type_: l.type_.as_ref().map(|lt| self.convert_type(&lt.type_)),
             value: l
                 .value
@@ -504,15 +504,19 @@ impl<'a> Context<'a> {
     }
 
     pub fn convert_symbol(&mut self, span: Span) -> syntax::Symbol {
+        syntax::Symbol {
+            span,
+            id: self.convert_symbol_id(span),
+        }
+    }
+
+    pub fn convert_symbol_id(&mut self, span: Span) -> syntax::SymbolId {
         use std::collections::hash_map::DefaultHasher;
         use std::hash::{Hash, Hasher};
         let name = &self.diagnostic.files_contents[span.file][span.start..span.end];
         let mut hasher = DefaultHasher::new();
         name.hash(&mut hasher);
-        syntax::Symbol {
-            span,
-            id: syntax::SymbolId(hasher.finish()),
-        }
+        syntax::SymbolId(hasher.finish())
     }
 }
 
