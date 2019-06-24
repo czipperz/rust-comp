@@ -75,10 +75,9 @@ impl Diagnostic {
         Ok(())
     }
 
-    pub fn add_file_contents(&mut self, contents: String) -> &str {
+    pub fn add_file_contents(&mut self, contents: String) {
         self.files_lines.push(file_lines(&contents));
         self.files_contents.push(contents);
-        &self.files_contents[self.files_contents.len() - 1]
     }
 }
 
