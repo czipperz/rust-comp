@@ -1,4 +1,3 @@
-use super::combinator::*;
 use super::expression::expect_expression;
 use super::parser::Parser;
 use super::tree::*;
@@ -7,15 +6,20 @@ use super::Error;
 use crate::token::*;
 
 pub fn expect_statement<'a>(parser: &mut Parser) -> Result<Statement, Error> {
-    one_of(
-        parser,
-        &mut [
-            expect_let_statement,
-            expect_empty_statement,
-            expect_expression_statement,
-        ][..],
-        Error::Expected("statement", parser.span()),
-    )
+    match parser.peek_kind() {
+        Some(TokenKind::Let) => expect_let_statement(parser),
+        Some(TokenKind::Semicolon) => expect_empty_statement(parser),
+        _ => {
+            let index = parser.index;
+            expect_expression_statement(parser).map_err(|e| {
+                if index == parser.index {
+                    Error::Expected("statement", parser.span())
+                } else {
+                    e
+                }
+            })
+        }
+    }
 }
 
 fn expect_let_statement<'a>(parser: &mut Parser) -> Result<Statement, Error> {
