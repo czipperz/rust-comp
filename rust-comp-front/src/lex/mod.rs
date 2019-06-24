@@ -96,17 +96,11 @@ pub fn read_tokens<'a>(file: usize, contents: &str) -> Result<(Vec<Token>, Pos),
 
                 // start a new symbol token
                 tagged_iter.advance();
-                if "-=".contains(ch) {
-                    if tagged_iter.peek() == Some('>') {
-                        tagged_iter.advance();
-                    }
-                }
-                if "!=".contains(ch) {
-                    if tagged_iter.peek() == Some('=') {
-                        tagged_iter.advance();
-                    }
-                }
-                if ":&|".contains(ch) && tagged_iter.peek() == Some(ch) {
+                if "-=".contains(ch) && tagged_iter.peek() == Some('>') {
+                    tagged_iter.advance();
+                } else if "!=".contains(ch) && tagged_iter.peek() == Some('=') {
+                    tagged_iter.advance();
+                } else if ":&|".contains(ch) && tagged_iter.peek() == Some(ch) {
                     tagged_iter.advance();
                 }
                 span.end = tagged_iter.pos().index;
@@ -692,6 +686,34 @@ mod tests {
                     },
                 }],
                 Pos { file: 0, index: 2 }
+            ))
+        );
+    }
+
+    #[test]
+    fn test_read_tokens_fat_arrow_set() {
+        assert_eq!(
+            read_tokens(0, "=>="),
+            Ok((
+                vec![
+                    Token {
+                        kind: TokenKind::FatArrow,
+                        span: Span {
+                            file: 0,
+                            start: 0,
+                            end: 2
+                        },
+                    },
+                    Token {
+                        kind: TokenKind::Set,
+                        span: Span {
+                            file: 0,
+                            start: 2,
+                            end: 3
+                        },
+                    }
+                ],
+                Pos { file: 0, index: 3 }
             ))
         );
     }
