@@ -207,9 +207,12 @@ fn flush_temp_nonempty(
     file_contents: &str,
     span: Span,
 ) {
+    let s = &file_contents[span];
     tokens.push(Token {
-        kind: if let Some(kind) = keywords.get(&file_contents[span]) {
+        kind: if let Some(kind) = keywords.get(s) {
             *kind
+        } else if s.chars().all(|c| c.is_ascii_digit()) {
+            TokenKind::Integer
         } else {
             TokenKind::Label
         },
@@ -356,6 +359,42 @@ mod tests {
                     },
                 }],
                 Pos { file: 0, index: 3 }
+            ))
+        );
+    }
+
+    #[test]
+    fn test_read_tokens_number() {
+        assert_eq!(
+            read_tokens(0, "123"),
+            Ok((
+                vec![Token {
+                    kind: TokenKind::Integer,
+                    span: Span {
+                        file: 0,
+                        start: 0,
+                        end: 3
+                    },
+                }],
+                Pos { file: 0, index: 3 }
+            ))
+        );
+    }
+
+    #[test]
+    fn test_read_tokens_mixed_letters_numbers_is_label() {
+        assert_eq!(
+            read_tokens(0, "abc123"),
+            Ok((
+                vec![Token {
+                    kind: TokenKind::Label,
+                    span: Span {
+                        file: 0,
+                        start: 0,
+                        end: 6
+                    },
+                }],
+                Pos { file: 0, index: 6 }
             ))
         );
     }

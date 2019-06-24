@@ -96,6 +96,7 @@ pub fn needs_semicolon(expression: &Expression) -> bool {
         Expression::FunctionCall(_) => true,
         Expression::MemberAccess(_) => true,
         Expression::Bool(_) => true,
+        Expression::Integer(_) => true,
         Expression::Tuple(_) => true,
     }
 }

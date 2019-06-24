@@ -129,6 +129,7 @@ pub enum ExpressionKind {
     MemberCall(MemberCall),
     MemberAccess(MemberAccess),
     Bool(bool),
+    Integer(u128),
     Tuple(Vec<Expression>),
 }
 

@@ -78,6 +78,9 @@ fn handle_parse_error(diagnostic: &Diagnostic, e: parse::Error) -> Error {
         parse::Error::Expected(thing, span) => {
             diagnostic.print_span_error(format_args!("expected {}", thing), span)
         }
+        parse::Error::IntegerOutOfRange(span) => {
+            diagnostic.print_span_error(format_args!("integer out of range"), span)
+        }
     }
     Error::Handled
 }

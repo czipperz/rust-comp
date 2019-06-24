@@ -23,6 +23,7 @@ fn expect_expression_basic(parser: &mut Parser) -> Result<Expression, Error> {
         Some(TokenKind::Match) => expect_match_expression(parser),
         Some(TokenKind::True) => expect_true_expression(parser),
         Some(TokenKind::False) => expect_false_expression(parser),
+        Some(TokenKind::Integer) => expect_integer_expression(parser),
         _ => Err(Error::Expected("expression", parser.span())),
     }
 }
@@ -262,6 +263,16 @@ fn expect_bool_expression(parser: &mut Parser, kind: TokenKind) -> Result<Expres
     Ok(Expression::Bool(Token {
         span: parser.expect_token(kind)?,
         kind,
+    }))
+}
+
+fn expect_integer_expression(parser: &mut Parser) -> Result<Expression, Error> {
+    use std::str::FromStr;
+    let span = parser.expect_token(TokenKind::Integer)?;
+    Ok(Expression::Integer(Integer {
+        span,
+        value: u128::from_str(parser.file_span(span))
+            .map_err(|_| Error::IntegerOutOfRange(span))?,
     }))
 }
 

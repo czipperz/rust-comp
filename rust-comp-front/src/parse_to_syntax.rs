@@ -296,6 +296,10 @@ impl<'a> Context<'a> {
                 span: b.span,
                 kind: syntax::ExpressionKind::Bool(self.convert_bool(b.kind)),
             },
+            Integer(parse::Integer { span, value }) => syntax::Expression {
+                span: *span,
+                kind: syntax::ExpressionKind::Integer(*value),
+            },
             Tuple(t) => syntax::Expression {
                 span: span_encompassing(t.open_paren_span, t.close_paren_span),
                 kind: syntax::ExpressionKind::Tuple(

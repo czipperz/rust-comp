@@ -5,4 +5,5 @@ use crate::token::TokenKind;
 pub enum Error {
     ExpectedToken(TokenKind, Span),
     Expected(&'static str, Span),
+    IntegerOutOfRange(Span),
 }

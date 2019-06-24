@@ -3,16 +3,16 @@ use crate::pos::*;
 use crate::token::*;
 
 pub struct Parser<'a, 't> {
-    _file_contents: &'a str,
+    file_contents: &'a str,
     tokens: &'t [Token],
     eofpos: Pos,
     pub index: usize,
 }
 
 impl<'a, 't> Parser<'a, 't> {
-    pub fn new(_file_contents: &'a str, tokens: &'t [Token], eofpos: Pos) -> Self {
+    pub fn new(file_contents: &'a str, tokens: &'t [Token], eofpos: Pos) -> Self {
         Parser {
-            _file_contents,
+            file_contents,
             tokens,
             eofpos,
             index: 0,
@@ -58,6 +58,10 @@ impl<'a, 't> Parser<'a, 't> {
 
     pub fn peek_kind(&self) -> Option<TokenKind> {
         self.peek().map(|t| t.kind)
+    }
+
+    pub fn file_span(&self, span: Span) -> &'a str {
+        &self.file_contents[span.start..span.end]
     }
 }
 
