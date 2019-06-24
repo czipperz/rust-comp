@@ -3,15 +3,15 @@ use std::fmt;
 use std::io;
 
 pub struct Diagnostic {
-    pub files: Vec<String>,
+    pub files_names: Vec<String>,
     pub files_contents: Vec<String>,
     pub files_lines: Vec<Vec<usize>>,
 }
 
 impl Diagnostic {
-    pub fn new(files: Vec<String>) -> Self {
+    pub fn new(files_names: Vec<String>) -> Self {
         Diagnostic {
-            files,
+            files_names,
             files_contents: Vec::new(),
             files_lines: Vec::new(),
         }
@@ -46,7 +46,7 @@ impl Diagnostic {
         writeln!(
             stream,
             "{}:{}:{}:",
-            self.files[span.file],
+            self.files_names[span.file],
             line + 1,
             column + 1
         )?;
@@ -120,7 +120,7 @@ mod tests {
     #[test]
     fn test_new() {
         let diagnostic = Diagnostic::new(vec!["abc".to_string()]);
-        assert_eq!(diagnostic.files, ["abc".to_string()]);
+        assert_eq!(diagnostic.files_names, ["abc".to_string()]);
         assert_eq!(diagnostic.files_contents.len(), 0);
         assert_eq!(diagnostic.files_lines.len(), 0);
     }

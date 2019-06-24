@@ -11,10 +11,14 @@ pub enum Error {
 pub fn run(mut diagnostic: Diagnostic, _opt: Opt) -> Result<(), Error> {
     let mut lines = 0;
     let mut bytes = 0;
-    for i in 0..diagnostic.files.len() {
-        let file_contents = match read_file::read_file(&diagnostic.files[i]) {
+    for i in 0..diagnostic.files_names.len() {
+        let file_contents = match read_file::read_file(&diagnostic.files_names[i]) {
             Ok(file_contents) => file_contents,
-            Err(_) => return Err(Error::File(diagnostic.files.into_iter().nth(i).unwrap())),
+            Err(_) => {
+                return Err(Error::File(
+                    diagnostic.files_names.into_iter().nth(i).unwrap(),
+                ))
+            }
         };
         diagnostic.add_file_contents(file_contents);
         bytes += diagnostic.files_contents[i].len();
@@ -28,7 +32,7 @@ pub fn run(mut diagnostic: Diagnostic, _opt: Opt) -> Result<(), Error> {
     let mut lex_total = time::Duration::default();
     let mut parse_total = time::Duration::default();
     let mut parse_to_syntax_total = time::Duration::default();
-    for i in 0..diagnostic.files.len() {
+    for i in 0..diagnostic.files_names.len() {
         let file_contents = &diagnostic.files_contents[i];
 
         let start = time::Instant::now();
