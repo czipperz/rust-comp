@@ -3,18 +3,19 @@ use crate::pos::*;
 pub struct TaggedIter<'a> {
     contents: &'a str,
     pos: Pos,
-    next: Option<char>,
-    next2: Option<char>,
+    offset: usize,
+    next: [Option<char>; 8],
 }
 
 impl<'a> TaggedIter<'a> {
     pub fn new(file: usize, contents: &'a str) -> Self {
-        let mut chars = contents.chars();
+        let mut next = [None; 8];
+        chars(&mut next, contents);
         TaggedIter {
             contents,
             pos: Pos { file, index: 0 },
-            next: chars.next(),
-            next2: chars.next(),
+            offset: 0,
+            next,
         }
     }
 
@@ -27,11 +28,11 @@ impl<'a> TaggedIter<'a> {
     }
 
     pub fn peek(&self) -> Option<char> {
-        self.next
+        self.next[self.offset]
     }
 
     pub fn peek2(&self) -> Option<char> {
-        self.next2
+        self.next[self.offset + 1]
     }
 
     pub fn advance(&mut self) {
@@ -40,12 +41,22 @@ impl<'a> TaggedIter<'a> {
 
             // Reading from memory is expensive.  We call peek often but rarely
             // call advance.  Thus we prestore the values here.
-            let mut chars = self.contents[self.pos.index..].chars();
-            self.next = chars.next();
-            self.next2 = chars.next();
+            if self.offset + 2 >= self.next.len() {
+                chars(&mut self.next, &self.contents[self.pos.index..]);
+                self.offset = 0;
+            } else {
+                self.offset += 1;
+            }
         } else {
             panic!();
         }
+    }
+}
+
+fn chars(next: &mut [Option<char>], contents: &str) {
+    let mut chars = contents.chars();
+    for i in 0..next.len() {
+        next[i] = chars.next();
     }
 }
 
