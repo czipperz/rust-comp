@@ -1,6 +1,6 @@
 use rust_comp_core::diagnostic::*;
 use rust_comp_front::*;
-use rust_comp_opt::Opt;
+use rust_comp_opt::Args;
 use std::time;
 
 pub enum Error {
@@ -8,9 +8,10 @@ pub enum Error {
     Handled,
 }
 
-pub fn run(mut diagnostic: Diagnostic, _opt: Opt) -> Result<(), Error> {
+pub fn run(args: Args) -> Result<(), Error> {
     let mut lines = 0;
     let mut bytes = 0;
+    let mut diagnostic = Diagnostic::new(args.files);
     for i in 0..diagnostic.files() {
         let file_contents = match read_file::read_file(diagnostic.file_name(i)) {
             Ok(file_contents) => file_contents,

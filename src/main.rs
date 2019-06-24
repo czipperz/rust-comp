@@ -1,4 +1,3 @@
-use rust_comp_core::diagnostic::Diagnostic;
 use rust_comp_opt::parse;
 use rust_comp_run::{run, Error};
 
@@ -13,9 +12,7 @@ fn main() {
 }
 
 fn run_main() -> Result<(), Error> {
-    let args = parse();
-    run(Diagnostic::new(args.files), args.opt)?;
-    Ok(())
+    run(parse())
 }
 
 fn handle_error(e: Error) {

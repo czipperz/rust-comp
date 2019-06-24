@@ -9,6 +9,5 @@ members = ["rust-comp-run", "rust-comp-core", "rust-comp-front", "rust-comp-synt
 exclude = ["target/report"]
 
 [dependencies]
-rust-comp-core = { path = "rust-comp-core" }
 rust-comp-run = { path = "rust-comp-run" }
 rust-comp-opt = { path = "rust-comp-opt" }

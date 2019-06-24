@@ -93,7 +93,6 @@ dependencies = [
 name = "rust-comp"
 version = "0.1.0"
 dependencies = [
- "rust-comp-core 0.1.0",
  "rust-comp-opt 0.1.0",
  "rust-comp-run 0.1.0",
 ]
