@@ -542,7 +542,7 @@ impl<'a> Context<'a> {
     pub fn convert_symbol_id(&mut self, span: Span) -> syntax::SymbolId {
         use std::collections::hash_map::DefaultHasher;
         use std::hash::{Hash, Hasher};
-        let name = &self.diagnostic.files_contents[span.file][span.start..span.end];
+        let name = self.diagnostic.file_span(span);
         let mut hasher = DefaultHasher::new();
         name.hash(&mut hasher);
         syntax::SymbolId(hasher.finish())
@@ -582,7 +582,7 @@ mod tests {
         let (tokens, eofpos) = read_tokens(0, file_contents).unwrap();
         let top_levels = parse(file_contents, &tokens, eofpos).unwrap();
         let mut diagnostic = Diagnostic::new(vec!["".to_string()]);
-        diagnostic.files_contents.push(file_contents.to_string());
+        diagnostic.add_file_contents(file_contents.to_string());
 
         let top_level = Context::new(&diagnostic).convert_top_level(&top_levels[0]);
 
@@ -607,7 +607,7 @@ mod tests {
         let (tokens, eofpos) = read_tokens(0, file_contents).unwrap();
         let top_levels = parse(file_contents, &tokens, eofpos).unwrap();
         let mut diagnostic = Diagnostic::new(vec!["".to_string()]);
-        diagnostic.files_contents.push(file_contents.to_string());
+        diagnostic.add_file_contents(file_contents.to_string());
 
         let top_level = Context::new(&diagnostic).convert_top_level(&top_levels[0]);
 

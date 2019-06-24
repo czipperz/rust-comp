@@ -3,9 +3,9 @@ use std::fmt;
 use std::io;
 
 pub struct Diagnostic {
-    pub files_names: Vec<String>,
-    pub files_contents: Vec<String>,
-    pub files_lines: Vec<Vec<usize>>,
+    files_names: Vec<String>,
+    files_contents: Vec<String>,
+    files_lines: Vec<Vec<usize>>,
 }
 
 impl Diagnostic {
@@ -75,9 +75,29 @@ impl Diagnostic {
         Ok(())
     }
 
+    pub fn files(&self) -> usize {
+        self.files_names.len()
+    }
+
+    pub fn file_name(&self, file: usize) -> &str {
+        &self.files_names[file]
+    }
+
     pub fn add_file_contents(&mut self, contents: String) {
         self.files_lines.push(file_lines(&contents));
         self.files_contents.push(contents);
+    }
+
+    pub fn file_contents(&self, file: usize) -> &str {
+        &self.files_contents[file]
+    }
+
+    pub fn file_span(&self, span: Span) -> &str {
+        &self.files_contents[span.file][span.start..span.end]
+    }
+
+    pub fn file_lines(&self, file: usize) -> usize {
+        self.files_lines[file].len()
     }
 }
 
