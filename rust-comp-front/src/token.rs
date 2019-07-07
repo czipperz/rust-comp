@@ -11,6 +11,7 @@ pub struct Token {
 pub enum TokenKind {
     Ampersand,
     And,
+    Bar,
     CloseCurly,
     CloseParen,
     Colon,
@@ -59,6 +60,7 @@ impl fmt::Display for TokenKind {
             match self {
                 Ampersand => "`&`",
                 And => "`&&`",
+                Bar => "`|`",
                 CloseCurly => "`}`",
                 CloseParen => "`)`",
                 Colon => "`:`",

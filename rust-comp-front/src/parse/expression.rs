@@ -120,6 +120,8 @@ fn is_bin_op(token: TokenKind) -> bool {
         | TokenKind::ForwardSlash
         | TokenKind::Plus
         | TokenKind::Minus
+        | TokenKind::Ampersand
+        | TokenKind::Bar
         | TokenKind::Equals
         | TokenKind::NotEquals
         | TokenKind::Set
@@ -134,6 +136,8 @@ fn precedence(token: TokenKind) -> Precedence {
     match token {
         TokenKind::Star | TokenKind::ForwardSlash => 7,
         TokenKind::Plus | TokenKind::Minus => 8,
+        TokenKind::Ampersand => 10,
+        TokenKind::Bar => 12,
         TokenKind::Equals | TokenKind::NotEquals => 13,
         TokenKind::And | TokenKind::Or => 14,
         TokenKind::Set => 17,
@@ -147,6 +151,8 @@ fn continue_precedence(token: TokenKind) -> Precedence {
     match token {
         TokenKind::Star | TokenKind::ForwardSlash => 6,
         TokenKind::Plus | TokenKind::Minus => 7,
+        TokenKind::Ampersand => 9,
+        TokenKind::Bar => 11,
         TokenKind::Equals | TokenKind::NotEquals => 13,
         TokenKind::And | TokenKind::Or => 13,
         TokenKind::Set => 17,
@@ -568,6 +574,44 @@ mod tests {
                         end: 3
                     },
                     kind: TokenKind::Minus,
+                }
+            )
+        });
+    }
+
+    #[test]
+    fn test_expect_expression_handles_bin_and_expressions() {
+        let (index, len, expression) = parse(expect_expression, "a & b");
+        assert_eq!(index, len);
+        assert_matches!(expression, Ok(Expression::Binary(Binary { op, .. })) => {
+            assert_eq!(
+                op,
+                Token {
+                    span: Span {
+                        file: 0,
+                        start: 2,
+                        end: 3
+                    },
+                    kind: TokenKind::Ampersand,
+                }
+            )
+        });
+    }
+
+    #[test]
+    fn test_expect_expression_handles_bin_or_expressions() {
+        let (index, len, expression) = parse(expect_expression, "a | b");
+        assert_eq!(index, len);
+        assert_matches!(expression, Ok(Expression::Binary(Binary { op, .. })) => {
+            assert_eq!(
+                op,
+                Token {
+                    span: Span {
+                        file: 0,
+                        start: 2,
+                        end: 3
+                    },
+                    kind: TokenKind::Bar,
                 }
             )
         });

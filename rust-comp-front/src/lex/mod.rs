@@ -48,6 +48,7 @@ pub fn read_tokens<'a>(file: usize, contents: &str) -> Result<(Vec<Token>, Pos),
     keywords.insert("use", TokenKind::Use);
     keywords.insert("while", TokenKind::While);
     keywords.insert("{", TokenKind::OpenCurly);
+    keywords.insert("|", TokenKind::Bar);
     keywords.insert("||", TokenKind::Or);
     keywords.insert("}", TokenKind::CloseCurly);
 
@@ -959,6 +960,24 @@ mod tests {
                     },
                 }],
                 Pos { file: 0, index: 2 }
+            ))
+        );
+    }
+
+    #[test]
+    fn test_read_tokens_bar() {
+        assert_eq!(
+            read_tokens(0, "|"),
+            Ok((
+                vec![Token {
+                    kind: TokenKind::Bar,
+                    span: Span {
+                        file: 0,
+                        start: 0,
+                        end: 1,
+                    },
+                }],
+                Pos { file: 0, index: 1 }
             ))
         );
     }

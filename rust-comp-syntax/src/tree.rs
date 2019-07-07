@@ -197,6 +197,8 @@ pub enum BinaryOp {
     DividedBy,
     Plus,
     Minus,
+    BitAnd,
+    BitOr,
     IsEqualTo,
     IsNotEqualTo,
     SetTo,

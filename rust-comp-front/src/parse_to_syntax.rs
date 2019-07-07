@@ -410,6 +410,8 @@ impl<'a> Context<'a> {
             TokenKind::ForwardSlash => syntax::BinaryOp::DividedBy,
             TokenKind::Plus => syntax::BinaryOp::Plus,
             TokenKind::Minus => syntax::BinaryOp::Minus,
+            TokenKind::Ampersand => syntax::BinaryOp::BitAnd,
+            TokenKind::Bar => syntax::BinaryOp::BitOr,
             TokenKind::Equals => syntax::BinaryOp::IsEqualTo,
             TokenKind::NotEquals => syntax::BinaryOp::IsNotEqualTo,
             TokenKind::Set => syntax::BinaryOp::SetTo,
