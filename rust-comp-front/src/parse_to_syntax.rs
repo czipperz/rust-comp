@@ -245,6 +245,10 @@ impl<'a> Context<'a> {
                     kind: syntax::ExpressionKind::If(si),
                 }
             }
+            Loop(l) => syntax::Expression {
+                span: span_encompassing(l.loop_span, l.block.close_curly_span),
+                kind: syntax::ExpressionKind::Loop(self.convert_loop(l)),
+            },
             While(w) => syntax::Expression {
                 span: span_encompassing(w.while_span, w.block.close_curly_span),
                 kind: syntax::ExpressionKind::While(self.convert_while(w)),
@@ -339,6 +343,12 @@ impl<'a> Context<'a> {
         match ek {
             If(i) => syntax::ElseKind::If(self.convert_if(i)),
             Block(b) => syntax::ElseKind::Block(self.convert_block(b)),
+        }
+    }
+
+    pub fn convert_loop(&mut self, l: &parse::Loop) -> syntax::Loop {
+        syntax::Loop {
+            block: self.convert_block(&l.block),
         }
     }
 

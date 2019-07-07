@@ -19,6 +19,7 @@ fn expect_expression_basic(parser: &mut Parser) -> Result<Expression, Error> {
         Some(TokenKind::OpenParen) => expect_paren_expression(parser),
         Some(TokenKind::OpenCurly) => expect_block_expression(parser),
         Some(TokenKind::If) => expect_if_expression(parser),
+        Some(TokenKind::Loop) => expect_loop_expression(parser),
         Some(TokenKind::While) => expect_while_expression(parser),
         Some(TokenKind::Match) => expect_match_expression(parser),
         Some(TokenKind::True) => expect_true_expression(parser),
@@ -251,6 +252,12 @@ fn expect_while_expression<'a>(parser: &mut Parser) -> Result<Expression, Error>
         condition: Box::new(condition),
         block,
     }))
+}
+
+fn expect_loop_expression<'a>(parser: &mut Parser) -> Result<Expression, Error> {
+    let loop_span = parser.expect_token(TokenKind::Loop)?;
+    let block = expect_block(parser)?;
+    Ok(Expression::Loop(Loop { loop_span, block }))
 }
 
 fn expect_match_expression<'a>(parser: &mut Parser) -> Result<Expression, Error> {
@@ -532,6 +539,13 @@ mod tests {
             assert!(else_.is_some());
             assert_matches!(else_.unwrap().kind, ElseKind::If(If { else_: None, .. }));
         });
+    }
+
+    #[test]
+    fn test_expect_loop_expression() {
+        let (index, len, expression) = parse(expect_loop_expression, "loop {}");
+        assert_eq!(index, len);
+        assert_matches!(expression, Ok(Expression::Loop(_)));
     }
 
     #[test]

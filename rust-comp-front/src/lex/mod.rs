@@ -39,6 +39,7 @@ pub fn read_tokens<'a>(file: usize, contents: &str) -> Result<(Vec<Token>, Pos),
     keywords.insert("fn", TokenKind::Fn);
     keywords.insert("if", TokenKind::If);
     keywords.insert("let", TokenKind::Let);
+    keywords.insert("loop", TokenKind::Loop);
     keywords.insert("match", TokenKind::Match);
     keywords.insert("mod", TokenKind::Mod);
     keywords.insert("mut", TokenKind::Mut);
@@ -440,6 +441,24 @@ mod tests {
                     },
                 }],
                 Pos { file: 0, index: 3 }
+            ))
+        );
+    }
+
+    #[test]
+    fn test_read_tokens_loop() {
+        assert_eq!(
+            read_tokens(0, "loop"),
+            Ok((
+                vec![Token {
+                    kind: TokenKind::Loop,
+                    span: Span {
+                        file: 0,
+                        start: 0,
+                        end: 4
+                    },
+                }],
+                Pos { file: 0, index: 4 }
             ))
         );
     }

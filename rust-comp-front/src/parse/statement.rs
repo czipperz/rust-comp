@@ -90,6 +90,7 @@ pub fn needs_semicolon(expression: &Expression) -> bool {
         Expression::Paren(_) => true,
         Expression::Block(_) => false,
         Expression::If(_) => false,
+        Expression::Loop(_) => false,
         Expression::While(_) => false,
         Expression::Match(_) => false,
         Expression::Binary(_) => true,

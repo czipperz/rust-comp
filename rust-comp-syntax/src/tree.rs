@@ -122,6 +122,7 @@ pub enum ExpressionKind {
     Variable(Symbol),
     Block(Block),
     If(If),
+    Loop(Loop),
     While(While),
     Match(Match),
     Binary(Binary),
@@ -150,6 +151,11 @@ pub struct Else {
 pub enum ElseKind {
     If(If),
     Block(Block),
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Loop {
+    pub block: Block,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
