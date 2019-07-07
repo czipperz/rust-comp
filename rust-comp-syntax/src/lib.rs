@@ -130,9 +130,8 @@ pub enum ExpressionKind {
     FunctionCall(FunctionCall),
     MemberCall(MemberCall),
     MemberAccess(MemberAccess),
-    Bool(bool),
-    Integer(u128),
     Tuple(Vec<Expression>),
+    Value(Value),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -196,6 +195,7 @@ pub enum PatternKind {
     Named(SymbolId),
     Tuple(Vec<Pattern>),
     NamedTuple(Symbol, Vec<Pattern>),
+    Value(Value),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -236,6 +236,12 @@ pub struct MemberCall {
 pub struct MemberAccess {
     pub object: Box<Expression>,
     pub member: Symbol,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Value {
+    Bool(bool),
+    Integer(u128),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

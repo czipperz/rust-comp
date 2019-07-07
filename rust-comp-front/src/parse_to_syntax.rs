@@ -299,11 +299,11 @@ impl<'a> Context<'a> {
             }
             Bool(b) => syntax::Expression {
                 span: b.span,
-                kind: syntax::ExpressionKind::Bool(self.convert_bool(b.kind)),
+                kind: syntax::ExpressionKind::Value(self.convert_bool(b.kind)),
             },
             Integer(parse::Integer { span, value }) => syntax::Expression {
                 span: *span,
-                kind: syntax::ExpressionKind::Integer(*value),
+                kind: syntax::ExpressionKind::Value(syntax::Value::Integer(*value)),
             },
             Tuple(t) => syntax::Expression {
                 span: span_encompassing(t.open_paren_span, t.close_paren_span),
@@ -451,12 +451,12 @@ impl<'a> Context<'a> {
         }
     }
 
-    pub fn convert_bool(&mut self, kind: TokenKind) -> bool {
-        match kind {
+    pub fn convert_bool(&mut self, kind: TokenKind) -> syntax::Value {
+        syntax::Value::Bool(match kind {
             TokenKind::True => true,
             TokenKind::False => false,
             _ => unreachable!("Token {:?} is not a boolean token", kind),
-        }
+        })
     }
 
     pub fn convert_member_access(&mut self, ma: &parse::MemberAccess) -> syntax::MemberAccess {
