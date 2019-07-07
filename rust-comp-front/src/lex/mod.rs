@@ -37,6 +37,7 @@ pub fn read_tokens<'a>(file: usize, contents: &str) -> Result<(Vec<Token>, Pos),
     keywords.insert("enum", TokenKind::Enum);
     keywords.insert("false", TokenKind::False);
     keywords.insert("fn", TokenKind::Fn);
+    keywords.insert("for", TokenKind::For);
     keywords.insert("if", TokenKind::If);
     keywords.insert("in", TokenKind::In);
     keywords.insert("let", TokenKind::Let);
@@ -334,6 +335,24 @@ mod tests {
                     },
                 }],
                 Pos { file: 0, index: 2 }
+            ))
+        );
+    }
+
+    #[test]
+    fn test_read_tokens_for_eof() {
+        assert_eq!(
+            read_tokens(0, "for"),
+            Ok((
+                vec![Token {
+                    kind: TokenKind::For,
+                    span: Span {
+                        file: 0,
+                        start: 0,
+                        end: 3
+                    },
+                }],
+                Pos { file: 0, index: 3 }
             ))
         );
     }
