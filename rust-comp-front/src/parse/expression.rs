@@ -21,6 +21,7 @@ fn expect_expression_basic(parser: &mut Parser) -> Result<Expression, Error> {
         Some(TokenKind::If) => expect_if_expression(parser),
         Some(TokenKind::Loop) => expect_loop_expression(parser),
         Some(TokenKind::While) => expect_while_expression(parser),
+        Some(TokenKind::For) => expect_for_expression(parser),
         Some(TokenKind::Match) => expect_match_expression(parser),
         Some(TokenKind::True) => expect_true_expression(parser),
         Some(TokenKind::False) => expect_false_expression(parser),
@@ -258,6 +259,21 @@ fn expect_loop_expression<'a>(parser: &mut Parser) -> Result<Expression, Error> 
     let loop_span = parser.expect_token(TokenKind::Loop)?;
     let block = expect_block(parser)?;
     Ok(Expression::Loop(Loop { loop_span, block }))
+}
+
+fn expect_for_expression<'a>(parser: &mut Parser) -> Result<Expression, Error> {
+    let for_span = parser.expect_token(TokenKind::For)?;
+    let var = parser.expect_token(TokenKind::Label)?;
+    let in_span = parser.expect_token(TokenKind::In)?;
+    let expr = expect_expression(parser)?;
+    let block = expect_block(parser)?;
+    Ok(Expression::For(For {
+        for_span,
+        var,
+        in_span,
+        expr: Box::new(expr),
+        block,
+    }))
 }
 
 fn expect_match_expression<'a>(parser: &mut Parser) -> Result<Expression, Error> {
@@ -553,6 +569,13 @@ mod tests {
         let (index, len, expression) = parse(expect_while_expression, "while b {}");
         assert_eq!(index, len);
         assert_matches!(expression, Ok(Expression::While(_)));
+    }
+
+    #[test]
+    fn test_expect_for_expression() {
+        let (index, len, expression) = parse(expect_for_expression, "for x in f() {}");
+        assert_eq!(index, len);
+        assert_matches!(expression, Ok(Expression::For(_)));
     }
 
     #[test]

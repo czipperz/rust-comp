@@ -253,6 +253,10 @@ impl<'a> Context<'a> {
                 span: span_encompassing(w.while_span, w.block.close_curly_span),
                 kind: syntax::ExpressionKind::While(self.convert_while(w)),
             },
+            For(f) => syntax::Expression {
+                span: span_encompassing(f.for_span, f.block.close_curly_span),
+                kind: syntax::ExpressionKind::For(self.convert_for(f)),
+            },
             Match(m) => syntax::Expression {
                 span: span_encompassing(m.match_span, m.close_curly_span),
                 kind: syntax::ExpressionKind::Match(self.convert_match(m)),
@@ -355,6 +359,14 @@ impl<'a> Context<'a> {
     pub fn convert_while(&mut self, w: &parse::While) -> syntax::While {
         syntax::While {
             condition: Box::new(self.convert_expression(&w.condition)),
+            block: self.convert_block(&w.block),
+        }
+    }
+
+    pub fn convert_for(&mut self, w: &parse::For) -> syntax::For {
+        syntax::For {
+            var: self.convert_symbol(w.var),
+            expr: Box::new(self.convert_expression(&w.expr)),
             block: self.convert_block(&w.block),
         }
     }

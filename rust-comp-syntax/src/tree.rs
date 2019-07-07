@@ -124,6 +124,7 @@ pub enum ExpressionKind {
     If(If),
     Loop(Loop),
     While(While),
+    For(For),
     Match(Match),
     Binary(Binary),
     FunctionCall(FunctionCall),
@@ -161,6 +162,13 @@ pub struct Loop {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct While {
     pub condition: Box<Expression>,
+    pub block: Block,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct For {
+    pub var: Symbol,
+    pub expr: Box<Expression>,
     pub block: Block,
 }
 

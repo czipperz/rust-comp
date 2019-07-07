@@ -153,6 +153,7 @@ pub enum Expression {
     If(If),
     Loop(Loop),
     While(While),
+    For(For),
     Match(Match),
     Binary(Binary),
     FunctionCall(FunctionCall),
@@ -204,6 +205,15 @@ pub struct Loop {
 pub struct While {
     pub while_span: Span,
     pub condition: Box<Expression>,
+    pub block: Block,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct For {
+    pub for_span: Span,
+    pub var: Span,
+    pub in_span: Span,
+    pub expr: Box<Expression>,
     pub block: Block,
 }
 
