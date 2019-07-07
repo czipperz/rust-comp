@@ -74,16 +74,8 @@ pub fn read_tokens<'a>(file: usize, contents: &str) -> Result<(Vec<Token>, Pos),
                 // end the current token
                 flush_temp(&keywords, &mut tokens, tagged_iter.contents(), span);
 
-                // eat all whitespace
-                tagged_iter.advance();
-                loop {
-                    match tagged_iter.peek() {
-                        Some(ch) if ch.is_whitespace() => {
-                            tagged_iter.advance();
-                        }
-                        _ => break,
-                    }
-                }
+                skip_whitespace(&mut tagged_iter);
+
                 span.start = tagged_iter.pos().index;
             }
 
@@ -96,13 +88,7 @@ pub fn read_tokens<'a>(file: usize, contents: &str) -> Result<(Vec<Token>, Pos),
 
                 // start a new symbol token
                 tagged_iter.advance();
-                if "-=".contains(ch) && tagged_iter.peek() == Some('>') {
-                    tagged_iter.advance();
-                } else if "!=".contains(ch) && tagged_iter.peek() == Some('=') {
-                    tagged_iter.advance();
-                } else if ":&|".contains(ch) && tagged_iter.peek() == Some(ch) {
-                    tagged_iter.advance();
-                }
+                handle_multicharacter_symbol(ch, &mut tagged_iter);
                 span.end = tagged_iter.pos().index;
 
                 flush_temp_nonempty(&keywords, &mut tokens, tagged_iter.contents(), span);
@@ -123,6 +109,16 @@ pub fn read_tokens<'a>(file: usize, contents: &str) -> Result<(Vec<Token>, Pos),
 fn is_symbol(ch: char) -> bool {
     let symbols = "!&()*+,-./:;=>{|}";
     ch.is_ascii() && symbols.as_bytes().binary_search(&(ch as u8)).is_ok()
+}
+
+fn handle_multicharacter_symbol(ch: char, tagged_iter: &mut TaggedIter) {
+    if "-=".contains(ch) && tagged_iter.peek() == Some('>') {
+        tagged_iter.advance();
+    } else if "!=".contains(ch) && tagged_iter.peek() == Some('=') {
+        tagged_iter.advance();
+    } else if ":&|".contains(ch) && tagged_iter.peek() == Some(ch) {
+        tagged_iter.advance();
+    }
 }
 
 fn skip_comments(
@@ -188,6 +184,18 @@ fn skip_block_comment(tagged_iter: &mut TaggedIter) -> Result<(), Error> {
     tagged_iter.advance();
     tagged_iter.advance();
     Ok(())
+}
+
+fn skip_whitespace(tagged_iter: &mut TaggedIter) {
+    tagged_iter.advance();
+    loop {
+        match tagged_iter.peek() {
+            Some(ch) if ch.is_whitespace() => {
+                tagged_iter.advance();
+            }
+            _ => break,
+        }
+    }
 }
 
 fn flush_temp(
