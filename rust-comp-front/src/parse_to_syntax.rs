@@ -262,9 +262,6 @@ impl<'a> Context<'a> {
                 kind: syntax::ExpressionKind::Match(self.convert_match(m)),
             },
             Binary(b) => {
-                // this is a rust compiler bug, remove when
-                // https://github.com/rust-lang/rust/issues/62083 is closed
-                #[allow(unused_variables)]
                 let sb = self.convert_binary(b);
                 syntax::Expression {
                     span: span_encompassing(sb.left.span, sb.right.span),
