@@ -193,6 +193,7 @@ pub struct Pattern {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum PatternKind {
     Named(SymbolId),
+    Hole,
     Tuple(Vec<Pattern>),
     NamedTuple(Symbol, Vec<Pattern>),
     Value(Value),

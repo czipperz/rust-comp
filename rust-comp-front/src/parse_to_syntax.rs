@@ -391,6 +391,10 @@ impl<'a> Context<'a> {
                 span: *s,
                 kind: syntax::PatternKind::Named(self.convert_symbol_id(*s)),
             },
+            Hole(s) => syntax::Pattern {
+                span: *s,
+                kind: syntax::PatternKind::Hole,
+            },
             Tuple(t) => syntax::Pattern {
                 span: span_encompassing(t.open_paren_span, t.close_paren_span),
                 kind: syntax::PatternKind::Tuple(self.convert_tuple_pattern(t)),

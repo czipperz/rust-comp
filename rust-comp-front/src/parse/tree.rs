@@ -237,6 +237,7 @@ pub struct MatchItem {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Pattern {
     Named(Span),
+    Hole(Span),
     Tuple(TuplePattern),
     Paren(ParenPattern),
     NamedTuple(Span, TuplePattern),

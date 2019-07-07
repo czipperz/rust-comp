@@ -7,6 +7,7 @@ use crate::token::TokenKind;
 pub fn expect_pattern(parser: &mut Parser) -> Result<Pattern, Error> {
     match parser.peek_kind() {
         Some(TokenKind::Label) => expect_named_pattern(parser),
+        Some(TokenKind::Underscore) => expect_hole_pattern(parser),
         Some(TokenKind::OpenParen) => expect_paren_pattern(parser),
         _ => Err(Error::Expected("pattern", parser.span())),
     }
@@ -19,6 +20,10 @@ fn expect_named_pattern(parser: &mut Parser) -> Result<Pattern, Error> {
     } else {
         Ok(Pattern::Named(name))
     }
+}
+
+fn expect_hole_pattern(parser: &mut Parser) -> Result<Pattern, Error> {
+    Ok(Pattern::Hole(parser.expect_token(TokenKind::Underscore)?))
 }
 
 fn expect_paren_pattern(parser: &mut Parser) -> Result<Pattern, Error> {
@@ -80,6 +85,20 @@ mod tests {
                 file: 0,
                 start: 0,
                 end: 3
+            }))
+        );
+    }
+
+    #[test]
+    fn test_expect_pattern_hole() {
+        let (index, len, pattern) = parse(expect_pattern, "_");
+        assert_eq!(index, len);
+        assert_eq!(
+            pattern,
+            Ok(Pattern::Hole(Span {
+                file: 0,
+                start: 0,
+                end: 1
             }))
         );
     }
