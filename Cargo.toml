@@ -5,7 +5,7 @@ authors = ["Chris Gregory <czipperz@gmail.com>"]
 edition = "2018"
 
 [workspace]
-members = ["rust-comp-run", "rust-comp-core", "rust-comp-front", "rust-comp-syntax", "rust-comp-opt"]
+members = ["rust-comp-run", "rust-comp-core", "rust-comp-front", "rust-comp-syntax", "rust-comp-middle", "rust-comp-opt"]
 exclude = ["target/report"]
 
 [dependencies]
