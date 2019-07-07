@@ -10,6 +10,7 @@ members = [
 	"rust-comp-core",
 	"rust-comp-front",
 	"rust-comp-syntax",
+	"rust-comp-syntax-to-middle",
 	"rust-comp-middle",
 	"rust-comp-opt",
 ]
