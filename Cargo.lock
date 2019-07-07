@@ -113,6 +113,9 @@ dependencies = [
 [[package]]
 name = "rust-comp-middle"
 version = "0.1.0"
+dependencies = [
+ "rust-comp-core 0.1.0",
+]
 
 [[package]]
 name = "rust-comp-opt"
