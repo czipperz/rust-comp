@@ -307,12 +307,7 @@ impl<'a> Context<'a> {
             },
             Tuple(t) => syntax::Expression {
                 span: span_encompassing(t.open_paren_span, t.close_paren_span),
-                kind: syntax::ExpressionKind::Tuple(
-                    t.expressions
-                        .iter()
-                        .map(|e| self.convert_expression(e))
-                        .collect(),
-                ),
+                kind: syntax::ExpressionKind::Tuple(self.convert_tuple(t)),
             },
         }
     }
@@ -457,6 +452,13 @@ impl<'a> Context<'a> {
             TokenKind::False => false,
             _ => unreachable!("Token {:?} is not a boolean token", kind),
         })
+    }
+
+    pub fn convert_tuple(&mut self, t: &parse::Tuple) -> Vec<syntax::Expression> {
+        t.expressions
+            .iter()
+            .map(|e| self.convert_expression(e))
+            .collect()
     }
 
     pub fn convert_member_access(&mut self, ma: &parse::MemberAccess) -> syntax::MemberAccess {
