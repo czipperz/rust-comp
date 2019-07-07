@@ -281,17 +281,16 @@ fn expect_match_expression<'a>(parser: &mut Parser) -> Result<Expression, Error>
 }
 
 fn expect_true_expression<'a>(parser: &mut Parser) -> Result<Expression, Error> {
-    expect_bool_expression(parser, TokenKind::True)
+    Ok(Expression::Bool(Bool {
+        span: parser.expect_token(TokenKind::True)?,
+        value: true,
+    }))
 }
 
 fn expect_false_expression<'a>(parser: &mut Parser) -> Result<Expression, Error> {
-    expect_bool_expression(parser, TokenKind::False)
-}
-
-fn expect_bool_expression(parser: &mut Parser, kind: TokenKind) -> Result<Expression, Error> {
-    Ok(Expression::Bool(Token {
-        span: parser.expect_token(kind)?,
-        kind,
+    Ok(Expression::Bool(Bool {
+        span: parser.expect_token(TokenKind::False)?,
+        value: false,
     }))
 }
 
@@ -337,13 +336,13 @@ mod tests {
         assert_eq!(index, len);
         assert_eq!(
             expression,
-            Expression::Bool(Token {
+            Expression::Bool(Bool {
                 span: Span {
                     file: 0,
                     start: 0,
                     end: 4
                 },
-                kind: TokenKind::True,
+                value: true,
             })
         );
     }
@@ -355,13 +354,13 @@ mod tests {
         assert_eq!(index, len);
         assert_eq!(
             expression,
-            Expression::Bool(Token {
+            Expression::Bool(Bool {
                 span: Span {
                     file: 0,
                     start: 0,
                     end: 5
                 },
-                kind: TokenKind::False,
+                value: false,
             })
         );
     }

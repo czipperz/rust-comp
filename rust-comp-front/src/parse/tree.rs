@@ -158,7 +158,7 @@ pub enum Expression {
     Binary(Binary),
     FunctionCall(FunctionCall),
     MemberAccess(MemberAccess),
-    Bool(Token),
+    Bool(Bool),
     Integer(Integer),
     Tuple(Tuple),
 }
@@ -279,6 +279,12 @@ pub struct MemberAccess {
     pub object: Box<Expression>,
     pub dot_span: Span,
     pub member: Span,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Bool {
+    pub span: Span,
+    pub value: bool,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
