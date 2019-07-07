@@ -38,6 +38,7 @@ pub fn read_tokens<'a>(file: usize, contents: &str) -> Result<(Vec<Token>, Pos),
     keywords.insert("false", TokenKind::False);
     keywords.insert("fn", TokenKind::Fn);
     keywords.insert("if", TokenKind::If);
+    keywords.insert("in", TokenKind::In);
     keywords.insert("let", TokenKind::Let);
     keywords.insert("loop", TokenKind::Loop);
     keywords.insert("match", TokenKind::Match);
@@ -416,6 +417,24 @@ mod tests {
             Ok((
                 vec![Token {
                     kind: TokenKind::If,
+                    span: Span {
+                        file: 0,
+                        start: 0,
+                        end: 2
+                    },
+                }],
+                Pos { file: 0, index: 2 }
+            ))
+        );
+    }
+
+    #[test]
+    fn test_read_tokens_in() {
+        assert_eq!(
+            read_tokens(0, "in"),
+            Ok((
+                vec![Token {
+                    kind: TokenKind::In,
                     span: Span {
                         file: 0,
                         start: 0,
