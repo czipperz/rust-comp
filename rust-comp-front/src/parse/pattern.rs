@@ -5,16 +5,19 @@ use super::tree::*;
 use crate::token::TokenKind;
 
 pub fn expect_pattern(parser: &mut Parser) -> Result<Pattern, Error> {
-    if let Ok(name) = parser.expect_token(TokenKind::Label) {
-        if parser.peek_kind() == Some(TokenKind::OpenParen) {
-            Ok(Pattern::NamedTuple(name, expect_tuple_pattern(parser)?))
-        } else {
-            Ok(Pattern::Named(name))
-        }
-    } else if parser.peek_kind() == Some(TokenKind::OpenParen) {
-        Ok(expect_paren_pattern(parser)?)
+    match parser.peek_kind() {
+        Some(TokenKind::Label) => expect_named_pattern(parser),
+        Some(TokenKind::OpenParen) => expect_paren_pattern(parser),
+        _ => Err(Error::Expected("pattern", parser.span())),
+    }
+}
+
+fn expect_named_pattern(parser: &mut Parser) -> Result<Pattern, Error> {
+    let name = parser.expect_token(TokenKind::Label)?;
+    if parser.peek_kind() == Some(TokenKind::OpenParen) {
+        Ok(Pattern::NamedTuple(name, expect_tuple_pattern(parser)?))
     } else {
-        Err(Error::Expected("pattern", parser.span()))
+        Ok(Pattern::Named(name))
     }
 }
 
