@@ -17,7 +17,10 @@ pub enum Visibility {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PathVisibility {
     pub span: Span,
+    pub pub_span: Span,
+    pub open_paren_span: Span,
     pub path: Path,
+    pub close_paren_span: Span,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -31,8 +34,12 @@ pub enum TopLevelKind {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Struct {
+    pub struct_span: Span,
     pub name: Symbol,
+    pub open_curly_span: Span,
     pub fields: Vec<Field>,
+    pub comma_spans: Vec<Span>,
+    pub close_curly_span: Span,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -40,13 +47,18 @@ pub struct Field {
     pub span: Span,
     pub visibility: Visibility,
     pub name: Symbol,
+    pub colon_span: Span,
     pub type_: Type,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Enum {
+    pub enum_span: Span,
     pub name: Symbol,
+    pub open_curly_span: Span,
     pub variants: Vec<Variant>,
+    pub comma_spans: Vec<Span>,
+    pub close_curly_span: Span,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -63,11 +75,14 @@ pub enum VariantData {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ModFile {
+    pub mod_span: Span,
     pub name: Symbol,
+    pub semicolon_span: Span,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Use {
+    pub use_span: Span,
     pub base: Path,
     pub suffix: UsePathSuffix,
 }
@@ -79,8 +94,10 @@ pub enum UsePathSuffix {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Path {
-    pub prefix_separator: bool,
+    pub prefix_separator: Option<Span>,
     pub segments: Vec<Symbol>,
+    /// One shorter than segments
+    pub separator_spans: Vec<Span>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
