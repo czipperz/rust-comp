@@ -1,4 +1,5 @@
 use rust_comp_core::pos::Span;
+use rust_comp_syntax as syntax;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TopLevel {
@@ -7,18 +8,8 @@ pub struct TopLevel {
     pub kind: TopLevelKind,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub enum Visibility {
-    Private,
-    Path(PathVisibility),
-    Public(Span),
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct PathVisibility {
-    pub span: Span,
-    pub path: Path,
-}
+pub use syntax::PathVisibility;
+pub use syntax::Visibility;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum TopLevelKind {
@@ -29,59 +20,15 @@ pub enum TopLevelKind {
     Use(Use),
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Struct {
-    pub name: Symbol,
-    pub fields: Vec<Field>,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Field {
-    pub span: Span,
-    pub visibility: Visibility,
-    pub name: Symbol,
-    pub type_: Type,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Enum {
-    pub name: Symbol,
-    pub variants: Vec<Variant>,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Variant {
-    pub name: Symbol,
-    pub data: VariantData,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub enum VariantData {
-    None,
-    Tuple(Vec<Type>),
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct ModFile {
-    pub name: Symbol,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Use {
-    pub base: Path,
-    pub suffix: UsePathSuffix,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub enum UsePathSuffix {
-    Item(Symbol),
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Path {
-    pub prefix_separator: bool,
-    pub segments: Vec<Symbol>,
-}
+pub use syntax::Enum;
+pub use syntax::Field;
+pub use syntax::ModFile;
+pub use syntax::Path;
+pub use syntax::Struct;
+pub use syntax::Use;
+pub use syntax::UsePathSuffix;
+pub use syntax::Variant;
+pub use syntax::VariantData;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Function {
@@ -91,12 +38,7 @@ pub struct Function {
     pub body: Block,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Parameter {
-    pub span: Span,
-    pub name: Symbol,
-    pub type_: Type,
-}
+pub use syntax::Parameter;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Statement {
@@ -106,7 +48,6 @@ pub struct Statement {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum StatementKind {
-    Empty,
     Expression(Expression),
     Let(Let),
 }
@@ -127,8 +68,7 @@ pub enum ExpressionKind {
     FunctionCall(FunctionCall),
     MemberCall(MemberCall),
     MemberAccess(MemberAccess),
-    Bool(bool),
-    Integer(u128),
+    Value(Value),
     Tuple(Vec<Expression>),
 }
 
@@ -150,18 +90,8 @@ pub struct MatchItem {
     pub value: Expression,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Pattern {
-    pub span: Span,
-    pub kind: PatternKind,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub enum PatternKind {
-    Named(SymbolId),
-    Tuple(Vec<Pattern>),
-    NamedTuple(Symbol, Vec<Pattern>),
-}
+pub use syntax::Pattern;
+pub use syntax::PatternKind;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Binary {
@@ -170,20 +100,7 @@ pub struct Binary {
     pub right: Box<Expression>,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum BinaryOp {
-    Times,
-    DividedBy,
-    Plus,
-    Minus,
-    BitAnd,
-    BitOr,
-    IsEqualTo,
-    IsNotEqualTo,
-    SetTo,
-    And,
-    Or,
-}
+pub use syntax::BinaryOp;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct FunctionCall {
@@ -203,6 +120,8 @@ pub struct MemberAccess {
     pub member: Symbol,
 }
 
+pub use syntax::Value;
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Let {
     pub name_span: Span,
@@ -218,28 +137,7 @@ pub struct Block {
     pub expression: Option<Box<Expression>>,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Type {
-    pub span: Span,
-    pub kind: TypeKind,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub enum TypeKind {
-    Named(Symbol),
-    Ref(Box<Type>),
-    RefMut(Box<Type>),
-    PtrConst(Box<Type>),
-    PtrMut(Box<Type>),
-    Tuple(Vec<Type>),
-    Hole,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Symbol {
-    pub span: Span,
-    pub id: SymbolId,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct SymbolId(pub u64);
+pub use syntax::Symbol;
+pub use syntax::SymbolId;
+pub use syntax::Type;
+pub use syntax::TypeKind;

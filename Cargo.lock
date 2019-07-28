@@ -115,6 +115,7 @@ name = "rust-comp-middle"
 version = "0.1.0"
 dependencies = [
  "rust-comp-core 0.1.0",
+ "rust-comp-syntax 0.1.0",
 ]
 
 [[package]]
@@ -144,6 +145,10 @@ dependencies = [
 [[package]]
 name = "rust-comp-syntax-to-middle"
 version = "0.1.0"
+dependencies = [
+ "rust-comp-middle 0.1.0",
+ "rust-comp-syntax 0.1.0",
+]
 
 [[package]]
 name = "strsim"
