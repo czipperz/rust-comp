@@ -120,8 +120,8 @@ pub struct Expression {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ExpressionKind {
     Variable(Symbol),
-    Block(Block),
-    If(If),
+    Block(UnspannedBlock),
+    If(UnspannedIf),
     Loop(Loop),
     While(While),
     For(For),
@@ -136,6 +136,12 @@ pub enum ExpressionKind {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct If {
+    pub span: Span,
+    pub it: UnspannedIf,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct UnspannedIf {
     pub condition: Box<Expression>,
     pub then: Block,
     pub else_: Option<Box<Else>>,
@@ -256,6 +262,12 @@ pub struct Let {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Block {
+    pub span: Span,
+    pub it: UnspannedBlock,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct UnspannedBlock {
     pub statements: Vec<Statement>,
     pub expression: Option<Box<Expression>>,
 }

@@ -236,7 +236,7 @@ impl<'a> Context<'a> {
             }
             Block(b) => syntax::Expression {
                 span: span_encompassing(b.open_curly_span, b.close_curly_span),
-                kind: syntax::ExpressionKind::Block(self.convert_block(b)),
+                kind: syntax::ExpressionKind::Block(self.convert_block(b).it),
             },
             If(i) => {
                 let si = self.convert_if(i);
@@ -314,21 +314,22 @@ impl<'a> Context<'a> {
 
     pub fn convert_if(&mut self, i: &parse::If) -> syntax::If {
         syntax::If {
+            span: 
+            it: 
+        syntax::UnspannedIf {
             condition: Box::new(self.convert_expression(&i.condition)),
             then: self.convert_block(&i.then),
             else_: i.else_.as_ref().map(|e| Box::new(self.convert_else(e))),
+        }
         }
     }
 
     pub fn convert_else(&mut self, e: &parse::Else) -> syntax::Else {
         let kind = self.convert_else_kind(&e.kind);
         syntax::Else {
-            span: match (&e.kind, &kind) {
-                (parse::ElseKind::If(i), syntax::ElseKind::If(si)) => if_span(i, si),
-                (parse::ElseKind::Block(b), syntax::ElseKind::Block(_)) => {
-                    span_encompassing(b.open_curly_span, b.close_curly_span)
-                }
-                _ => unreachable!(),
+            span: match &kind {
+                syntax::ElseKind::If(i) => i.span,
+                syntax::ElseKind::Block(b) => b.span,
             },
             kind,
         }
@@ -576,7 +577,7 @@ impl<'a> Context<'a> {
     }
 }
 
-fn if_span(i: &parse::If, si: &syntax::If) -> Span {
+fn if_span(i: &parse::If, si: &syntax::UnspannedIf) -> Span {
     span_encompassing(
         i.if_span,
         if let Some(e) = &si.else_ {
